@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic } from "lucide-react"
-import { OpenAI } from "openai"
 import { toast } from "@/hooks/use-toast"
+import OpenAI from "openai"
 
 type RowData = {
   id: number
@@ -36,96 +36,96 @@ type Message = {
 
 type InventoryItem = {
   id: string
-  description: string
-  category: string
-  barcode: string
-  initialQuantity: number
-  availableQuantity: number
-  unitOfMeasure: string
-  minStock: number
-  maxStock: number
-  purchasePrice: number
-  salePrice: number
-  entryDate: string
-  supplier: string
-  location: string
-  expirationDate: string
-  status: string
-  totalValue: number
-  responsiblePerson: string
-  notes: string
+  descripcion: string
+  categoria: string
+  codigoBarras: string
+  cantidadInicial: number
+  cantidadDisponible: number
+  unidadMedida: string
+  stockMinimo: number
+  stockMaximo: number
+  precioCompra: number
+  precioVenta: number
+  fechaIngreso: string
+  proveedor: string
+  ubicacion: string
+  fechaVencimiento: string
+  estado: string
+  valorTotal: number
+  responsable: string
+  notas: string
 }
 
 type InvoiceItem = {
   id: string
-  issueDate: string
-  customerName: string
-  customerAddress: string
-  taxId: string
-  productDetails: string
-  quantity: number
-  unitPrice: number
+  fechaEmision: string
+  nombreCliente: string
+  direccionCliente: string
+  rfc: string
+  detallesProducto: string
+  cantidad: number
+  precioUnitario: number
   subtotal: number
-  taxes: number
+  impuestos: number
   total: number
-  paymentMethod: string
-  dueDate: string
-  status: string
-  purchaseOrderNumber: string
-  discounts: number
-  notes: string
-  issuerDetails: string
-  signature: string
+  metodoPago: string
+  fechaVencimiento: string
+  estado: string
+  numeroOrdenCompra: string
+  descuentos: number
+  notas: string
+  detallesEmisor: string
+  firma: string
 }
 
 const inventoryFields = [
   { id: 'id', label: 'Número de Ítem (ID)', type: 'text' },
-  { id: 'description', label: 'Descripción del Producto', type: 'text' },
-  { id: 'category', label: 'Categoría', type: 'text' },
-  { id: 'barcode', label: 'Código de Barras/SKU', type: 'text' },
-  { id: 'initialQuantity', label: 'Cantidad Inicial', type: 'number' },
-  { id: 'availableQuantity', label: 'Cantidad Disponible', type: 'number' },
-  { id: 'unitOfMeasure', label: 'Unidades de Medida', type: 'text' },
-  { id: 'minStock', label: 'Stock Mínimo', type: 'number' },
-  { id: 'maxStock', label: 'Stock Máximo', type: 'number' },
-  { id: 'purchasePrice', label: 'Precio de Compra Unitario', type: 'number' },
-  { id: 'salePrice', label: 'Precio de Venta Unitario', type: 'number' },
-  { id: 'entryDate', label: 'Fecha de Ingreso', type: 'date' },
-  { id: 'supplier', label: 'Proveedor', type: 'text' },
-  { id: 'location', label: 'Ubicación en el Almacén', type: 'text' },
-  { id: 'expirationDate', label: 'Fecha de Vencimiento', type: 'date' },
-  { id: 'status', label: 'Estado del Producto', type: 'text' },
-  { id: 'totalValue', label: 'Valor Total', type: 'number' },
-  { id: 'responsiblePerson', label: 'Responsable del Registro', type: 'text' },
-  { id: 'notes', label: 'Notas o Comentarios', type: 'textarea' },
+  { id: 'descripcion', label: 'Descripción del Producto', type: 'text' },
+  { id: 'categoria', label: 'Categoría', type: 'text' },
+  { id: 'codigoBarras', label: 'Código de Barras/SKU', type: 'text' },
+  { id: 'cantidadInicial', label: 'Cantidad Inicial', type: 'number' },
+  { id: 'cantidadDisponible', label: 'Cantidad Disponible', type: 'number' },
+  { id: 'unidadMedida', label: 'Unidades de Medida', type: 'text' },
+  { id: 'stockMinimo', label: 'Stock Mínimo', type: 'number' },
+  { id: 'stockMaximo', label: 'Stock Máximo', type: 'number' },
+  { id: 'precioCompra', label: 'Precio de Compra Unitario', type: 'number' },
+  { id: 'precioVenta', label: 'Precio de Venta Unitario', type: 'number' },
+  { id: 'fechaIngreso', label: 'Fecha de Ingreso', type: 'date' },
+  { id: 'proveedor', label: 'Proveedor', type: 'text' },
+  { id: 'ubicacion', label: 'Ubicación en el Almacén', type: 'text' },
+  { id: 'fechaVencimiento', label: 'Fecha de Vencimiento', type: 'date' },
+  { id: 'estado', label: 'Estado del Producto', type: 'text' },
+  { id: 'valorTotal', label: 'Valor Total', type: 'number' },
+  { id: 'responsable', label: 'Responsable del Registro', type: 'text' },
+  { id: 'notas', label: 'Notas o Comentarios', type: 'textarea' },
 ]
 
 const invoiceFields = [
   { id: 'id', label: 'Número de Factura', type: 'text' },
-  { id: 'issueDate', label: 'Fecha de Emisión', type: 'date' },
-  { id: 'customerName', label: 'Nombre del Cliente', type: 'text' },
-  { id: 'customerAddress', label: 'Dirección del Cliente', type: 'text' },
-  { id: 'taxId', label: 'RFC/NIF', type: 'text' },
-  { id: 'productDetails', label: 'Detalles del Producto/Servicio', type: 'text' },
-  { id: 'quantity', label: 'Cantidad de Productos/Servicios', type: 'number' },
-  { id: 'unitPrice', label: 'Precio Unitario', type: 'number' },
+  { id: 'fechaEmision', label: 'Fecha de Emisión', type: 'date' },
+  { id: 'nombreCliente', label: 'Nombre del Cliente', type: 'text' },
+  { id: 'direccionCliente', label: 'Dirección del Cliente', type: 'text' },
+  { id: 'rfc', label: 'RFC/NIF', type: 'text' },
+  { id: 'detallesProducto', label: 'Detalles del Producto/Servicio', type: 'text' },
+  { id: 'cantidad', label: 'Cantidad de Productos/Servicios', type: 'number' },
+  { id: 'precioUnitario', label: 'Precio Unitario', type: 'number' },
   { id: 'subtotal', label: 'Subtotal', type: 'number' },
-  { id: 'taxes', label: 'Impuestos Aplicables', type: 'number' },
+  { id: 'impuestos', label: 'Impuestos Aplicables', type: 'number' },
   { id: 'total', label: 'Total a Pagar', type: 'number' },
-  { id: 'paymentMethod', label: 'Método de Pago', type: 'text' },
-  { id: 'dueDate', label: 'Fecha de Vencimiento del Pago', type: 'date' },
-  { id: 'status', label: 'Estado de la Factura', type: 'text' },
-  { id: 'purchaseOrderNumber', label: 'Número de Orden de Compra', type: 'text' },
-  { id: 'discounts', label: 'Descuentos Aplicados', type: 'number' },
-  { id: 'notes', label: 'Observaciones o Notas', type: 'textarea' },
-  { id: 'issuerDetails', label: 'Datos del Emisor', type: 'text' },
-  { id: 'signature', label: 'Firma', type: 'text' },
+  { id: 'metodoPago', label: 'Método de Pago', type: 'text' },
+  { id: 'fechaVencimiento', label: 'Fecha de Vencimiento del Pago', type: 'date' },
+  { id: 'estado', label: 'Estado de la Factura', type: 'text' },
+  { id: 'numeroOrdenCompra', label: 'Número de Orden de Compra', type: 'text' },
+  { id: 'descuentos', label: 'Descuentos Aplicados', type: 'number' },
+  { id: 'notas', label: 'Observaciones o Notas', type: 'textarea' },
+  { id: 'detallesEmisor', label: 'Datos del Emisor', type: 'text' },
+  { id: 'firma', label: 'Firma', type: 'text' },
 ]
 
 const openai = new OpenAI({
   apiKey: "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",
   dangerouslyAllowBrowser: true
-})
+});
 
 export default function ContabilidadApp() {
   const [activeTab, setActiveTab] = useState("libro-diario")
@@ -259,17 +259,30 @@ export default function ContabilidadApp() {
       setInputMessage("")
 
       try {
-        const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+        const completion = await openai.chat.completions.create({
           messages: [
-            { role: "system", content: "You are Alice IA, a helpful assistant for accounting and finance." },
+            {"role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas. Vas a utilizar términos simples y entendibles. Principalmente vas a funcionar para una aplicación de contabilidad la cual tiene los siguientes aspectos: 1. Libro Diario 2. Dashboards 3. Registro de Inventario 4. Registro de Facturación."},
             ...messages,
             userMessage
           ],
-        })
+          model: "gpt-3.5-turbo",
+        });
 
-        const assistantMessage = { role: 'assistant' as const, content: response.choices[0].message.content || "Lo siento, no pude generar una respuesta." }
+        const assistantMessage = { role: 'assistant' as const, content: completion.choices[0].message.content || "Lo siento, no pude generar una respuesta." }
         setMessages(prev => [...prev, assistantMessage])
+
+        // Generar audio de la respuesta
+        const speech = await openai.audio.speech.create({
+          model: "tts-1",
+          voice: "nova",
+          input: assistantMessage.content,
+        });
+
+        const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg'
+        }));
+        const audio = new Audio(audioUrl);
+        audio.play();
+
       } catch (error) {
         console.error("Error al comunicarse con la IA:", error)
         setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }])
@@ -288,7 +301,7 @@ export default function ContabilidadApp() {
   }
 
   const handleAddInventoryItem = () => {
-    if (selectedInventoryFields.some((field: string) => !newInventoryItem[field as keyof InventoryItem])) {
+    if (selectedInventoryFields.some(field => !newInventoryItem[field as keyof InventoryItem])) {
       toast({
         title: "Error",
         description: "Por favor, complete todos los campos seleccionados antes de agregar un nuevo ítem.",
@@ -676,8 +689,8 @@ export default function ContabilidadApp() {
                     <CardTitle>Resumen de Inventario</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p>Total de ítems: {inventoryItems.length}</p>
-                    <p>Valor total del inventario: ${inventoryItems.reduce((sum, item) => sum + item.totalValue, 0).toFixed(2)}</p>
+                    <p className="font-bold">Total de Ítems: {inventoryItems.length}</p>
+                    <p className="font-bold">Valor Total del Inventario: ${inventoryItems.reduce((sum, item) => sum + item.valorTotal, 0).toFixed(2)}</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -689,7 +702,7 @@ export default function ContabilidadApp() {
                       <PieChart>
                         <Pie
                           data={Object.entries(inventoryItems.reduce((acc, item) => {
-                            acc[item.category] = (acc[item.category] || 0) + 1
+                            acc[item.categoria] = (acc[item.categoria] || 0) + 1
                             return acc
                           }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
                           cx="50%"
@@ -717,162 +730,158 @@ export default function ContabilidadApp() {
         {activeTab === "inventario" && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Registro de Inventario</h2>
+            <Button onClick={() => setIsCreatingInventoryItem(true)} className="mb-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Ítem
+            </Button>
+            {isCreatingInventoryItem && (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Nuevo Ítem de Inventario</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {inventoryFields.map((field) => (
+                      <div key={field.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={field.id}
+                          checked={selectedInventoryFields.includes(field.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedInventoryFields(
+                              checked
+                                ? [...selectedInventoryFields, field.id]
+                                : selectedInventoryFields.filter((id) => id !== field.id)
+                            )
+                          }}
+                        />
+                        <label
+                          htmlFor={field.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {field.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedInventoryFields.map((fieldId) => {
+                    const field = inventoryFields.find((f) => f.id === fieldId)
+                    return (
+                      <div key={fieldId} className="mb-4">
+                        <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1">
+                          {field?.label}
+                        </label>
+                        <Input
+                          type={field?.type}
+                          id={fieldId}
+                          value={newInventoryItem[fieldId as keyof InventoryItem] || ""}
+                          onChange={(e) =>
+                            setNewInventoryItem({ ...newInventoryItem, [fieldId]: e.target.value })
+                          }
+                        />
+                      </div>
+                    )
+                  })}
+                  <Button onClick={handleAddInventoryItem}>Agregar Ítem</Button>
+                </CardContent>
+              </Card>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
-                  {inventoryFields.map(field => (
+                  {inventoryFields.map((field) => (
                     <TableHead key={field.id}>{field.label}</TableHead>
                   ))}
-                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {inventoryItems.map((item, index) => (
                   <TableRow key={index}>
-                    {inventoryFields.map(field => (
-                      <TableCell key={field.id}>{item[field.id as keyof InventoryItem] || '-'}</TableCell>
+                    {inventoryFields.map((field) => (
+                      <TableCell key={field.id}>{item[field.id as keyof InventoryItem]}</TableCell>
                     ))}
-                    <TableCell>
-                      <Button size="sm" variant="destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            {isCreatingInventoryItem ? (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Nuevo Ítem de Inventario</h3>
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  {inventoryFields.map(field => (
-                    <div key={field.id} className="flex items-center">
-                      <Checkbox
-                        id={`checkbox-${field.id}`}
-                        checked={selectedInventoryFields.includes(field.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedInventoryFields([...selectedInventoryFields, field.id])
-                          } else {
-                            setSelectedInventoryFields(selectedInventoryFields.filter(id => id !== field.id))
-                          }
-                        }}
-                      />
-                      <label htmlFor={`checkbox-${field.id}`} className="ml-2">
-                        {field.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                {selectedInventoryFields.map(fieldId => {
-                  const field = inventoryFields.find(f => f.id === fieldId)
-                  if (!field) return null
-                  return (
-                    <div key={field.id} className="mb-4">
-                      <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label}
-                      </label>
-                      <Input
-                        id={field.id}
-                        type={field.type}
-                        value={newInventoryItem[field.id as keyof InventoryItem] || ''}
-                        onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
-                      />
-                    </div>
-                  )
-                })}
-                <div className="flex justify-end space-x-2">
-                  <Button onClick={() => setIsCreatingInventoryItem(false)}>Cancelar</Button>
-                  <Button onClick={handleAddInventoryItem}>Agregar Ítem</Button>
-                </div>
-              </div>
-            ) : (
-              <Button onClick={() => setIsCreatingInventoryItem(true)} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Ítem de Inventario
-              </Button>
-            )}
           </div>
         )}
 
         {activeTab === "facturacion" && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Registro de Facturación</h2>
+            <Button onClick={() => setIsCreatingInvoiceItem(true)} className="mb-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Factura
+            </Button>
+            {isCreatingInvoiceItem && (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Nueva Factura</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {invoiceFields.map((field) => (
+                      <div key={field.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={field.id}
+                          checked={selectedInvoiceFields.includes(field.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedInvoiceFields(
+                              checked
+                                ? [...selectedInvoiceFields, field.id]
+                                : selectedInvoiceFields.filter((id) => id !== field.id)
+                            )
+                          }}
+                        />
+                        <label
+                          htmlFor={field.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {field.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedInvoiceFields.map((fieldId) => {
+                    const field = invoiceFields.find((f) => f.id === fieldId)
+                    return (
+                      <div key={fieldId} className="mb-4">
+                        <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1">
+                          {field?.label}
+                        </label>
+                        <Input
+                          type={field?.type}
+                          id={fieldId}
+                          value={newInvoiceItem[fieldId as keyof InvoiceItem] || ""}
+                          onChange={(e) =>
+                            setNewInvoiceItem({ ...newInvoiceItem, [fieldId]: e.target.value })
+                          }
+                        />
+                      </div>
+                    )
+                  })}
+                  <Button onClick={handleAddInvoiceItem}>Agregar Factura</Button>
+                </CardContent>
+              </Card>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
-                  {invoiceFields.map(field => (
+                  {invoiceFields.map((field) => (
                     <TableHead key={field.id}>{field.label}</TableHead>
                   ))}
-                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoiceItems.map((item, index) => (
                   <TableRow key={index}>
-                    {invoiceFields.map(field => (
-                      <TableCell key={field.id}>{item[field.id as keyof InvoiceItem] || '-'}</TableCell>
+                    {invoiceFields.map((field) => (
+                      <TableCell key={field.id}>{item[field.id as keyof InvoiceItem]}</TableCell>
                     ))}
-                    <TableCell>
-                      <Button size="sm" variant="destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            {isCreatingInvoiceItem ? (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Nueva Factura</h3>
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  {invoiceFields.map(field => (
-                    <div key={field.id} className="flex items-center">
-                      <Checkbox
-                        id={`checkbox-${field.id}`}
-                        checked={selectedInvoiceFields.includes(field.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedInvoiceFields([...selectedInvoiceFields, field.id])
-                          } else {
-                            setSelectedInvoiceFields(selectedInvoiceFields.filter(id => id !== field.id))
-                          }
-                        }}
-                      />
-                      <label htmlFor={`checkbox-${field.id}`} className="ml-2">
-                        {field.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                {selectedInvoiceFields.map(fieldId => {
-                  const field = invoiceFields.find(f => f.id === fieldId)
-                  if (!field) return null
-                  return (
-                    <div key={field.id} className="mb-4">
-                      <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label}
-                      </label>
-                      <Input
-                        id={field.id}
-                        type={field.type}
-                        value={newInvoiceItem[field.id as keyof InvoiceItem] || ''}
-                        onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
-                      />
-                    </div>
-                  )
-                })}
-                <div className="flex justify-end space-x-2">
-                  <Button onClick={() => setIsCreatingInvoiceItem(false)}>Cancelar</Button>
-                  <Button onClick={handleAddInvoiceItem}>Agregar Factura</Button>
-                </div>
-              </div>
-            ) : (
-              <Button onClick={() => setIsCreatingInvoiceItem(true)} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Factura
-              </Button>
-            )}
           </div>
         )}
       </div>
