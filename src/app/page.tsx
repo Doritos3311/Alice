@@ -20,7 +20,6 @@ import { format, parse, isValid } from "date-fns"
 import { es } from "date-fns/locale"
 import OpenAI from "openai"
 
-
 type RowData = {
   id: number
   fecha: string
@@ -158,6 +157,7 @@ export default function ContabilidadApp() {
   const [newInventoryItem, setNewInventoryItem] = useState<InventoryItem>({
     id: '',
     descripcion: '',
+    categoria: '',
     cantidadDisponible: 0,
     stockMinimo: 0,
     precioCompra: 0,
@@ -166,7 +166,7 @@ export default function ContabilidadApp() {
     proveedor: '',
   } as InventoryItem)
   const [selectedInventoryFields, setSelectedInventoryFields] = useState<string[]>([
-    'id', 'descripcion', 'cantidadDisponible', 'stockMinimo', 'precioCompra', 'precioVenta', 'fechaIngreso', 'proveedor'
+    'id', 'descripcion', 'categoria', 'cantidadDisponible', 'stockMinimo', 'precioCompra', 'precioVenta', 'fechaIngreso', 'proveedor'
   ])
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
   const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({
@@ -194,6 +194,10 @@ export default function ContabilidadApp() {
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   const [advancedViewInventory, setAdvancedViewInventory] = useState(false)
   const [advancedViewInvoice, setAdvancedViewInvoice] = useState(false)
+  const [invoiceFilterDate, setInvoiceFilterDate] = useState(new Date().toISOString().split('T')[0])
+  const [invoiceFilterMonth, setInvoiceFilterMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [invoiceFilterYear, setInvoiceFilterYear] = useState(new Date().getFullYear().toString())
+  const [invoiceFilterType, setInvoiceFilterType] = useState("all")
 
   useEffect(() => {
     if (chatRef.current) {
@@ -202,7 +206,7 @@ export default function ContabilidadApp() {
   }, [messages])
 
   const handleAddRow = () => {
-    if (Object.values(newRow).some(value => value === "" || value === 0)) {
+    if (Object.values(newRow).some(value => value === "")) {
       toast({
         title: "Error",
         description: "Por favor, complete todos los campos antes de agregar una nueva fila.",
@@ -221,7 +225,7 @@ export default function ContabilidadApp() {
 
   const handleSaveRow = (id: number) => {
     const editedRow = data.find(row => row.id === id)
-    if (editedRow && Object.values(editedRow).some(value => value === "" || value === 0)) {
+    if (editedRow && Object.values(editedRow).some(value => value === "")) {
       toast({
         title: "Error",
         description: "Por favor, complete todos los campos antes de guardar la fila.",
@@ -357,6 +361,7 @@ export default function ContabilidadApp() {
     setNewInventoryItem({
       id: '',
       descripcion: '',
+      categoria: '',
       cantidadDisponible: 0,
       stockMinimo: 0,
       precioCompra: 0,
@@ -409,6 +414,7 @@ export default function ContabilidadApp() {
     setNewInventoryItem({
       id: '',
       descripcion: '',
+      categoria: '',
       cantidadDisponible: 0,
       stockMinimo: 0,
       precioCompra: 0,
@@ -463,6 +469,22 @@ export default function ContabilidadApp() {
     setUser({ name: "", email: "", photo: "" })
     setIsLoggedIn(false)
   }
+
+  const filteredInvoiceItems = useMemo(() => {
+    return invoiceItems.filter(item => {
+      const itemDate = new Date(item.fechaEmision)
+      switch (invoiceFilterType) {
+        case "day":
+          return item.fechaEmision === invoiceFilterDate
+        case "month":
+          return item.fechaEmision.startsWith(invoiceFilterMonth)
+        case "year":
+          return item.fechaEmision.startsWith(invoiceFilterYear)
+        default:
+          return true
+      }
+    })
+  }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -635,27 +657,13 @@ export default function ContabilidadApp() {
                   <TableRow key={row.id}>
                     <TableCell>
                       {editingId === row.id ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={`w-[180px] justify-start text-left font-normal`}
-                            >
-                              <Calendar className="mr-2 h-4 w-4" />
-                              {row.fecha ? format(new Date(row.fecha), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <CalendarComponent
-                              mode="single"
-                              selected={new Date(row.fecha)}
-                              onSelect={(date) => date && handleInputChange(row.id, 'fecha', date.toISOString().split('T')[0])}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <Input
+                          type="date"
+                          value={row.fecha}
+                          onChange={(e) => handleInputChange(row.id, 'fecha', e.target.value)}
+                        />
                       ) : (
-                        format(new Date(row.fecha), "PPP", { locale: es })
+                        row.fecha
                       )}
                     </TableCell>
                     <TableCell>
@@ -680,7 +688,7 @@ export default function ContabilidadApp() {
                         row.descripcion
                       )}
                     </TableCell>
-                    <TableCell className="text-green-600 font-bold">
+                    <TableCell>
                       {editingId === row.id ? (
                         <Input
                           type="number"
@@ -691,7 +699,7 @@ export default function ContabilidadApp() {
                         `$${row.debe.toFixed(2)}`
                       )}
                     </TableCell>
-                    <TableCell className="text-red-600 font-bold">
+                    <TableCell>
                       {editingId === row.id ? (
                         <Input
                           type="number"
@@ -720,25 +728,12 @@ export default function ContabilidadApp() {
                 ))}
                 <TableRow>
                   <TableCell>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={`w-[180px] justify-start text-left font-normal`}
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {newRow.fecha ? format(new Date(newRow.fecha), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <CalendarComponent
-                          mode="single"
-                          selected={new Date(newRow.fecha)}
-                          onSelect={(date) => date && handleNewRowChange('fecha', date.toISOString().split('T')[0])}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      type="date"
+                      value={newRow.fecha}
+                      onChange={(e) => handleNewRowChange('fecha', e.target.value)}
+                      placeholder="Fecha"
+                    />
                   </TableCell>
                   <TableCell>
                     <Input
@@ -788,16 +783,6 @@ export default function ContabilidadApp() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
             <div className="mb-4 flex items-center space-x-4">
-              <Select value={dashboardType} onValueChange={setDashboardType}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Seleccionar tipo de dashboard" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="financial">Financiero</SelectItem>
-                  <SelectItem value="inventory">Inventario</SelectItem>
-                  <SelectItem value="sales">Ventas</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={timeFrame} onValueChange={setTimeFrame}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Seleccionar período" />
@@ -849,19 +834,33 @@ export default function ContabilidadApp() {
                 />
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dashboardType === "financial" && (
-                <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Resumen Financiero</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-green-600 font-bold">Total Debe: ${totals.debe.toFixed(2)}</p>
-                      <p className="text-red-600 font-bold">Total Haber: ${totals.haber.toFixed(2)}</p>
-                      <p className="font-bold">Balance: ${(totals.debe - totals.haber).toFixed(2)}</p>
-                    </CardContent>
-                  </Card>
+            <Tabs defaultValue="financial" className="w-full">
+              <TabsList>
+                <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
+                <TabsTrigger value="inventory" onClick={() => setDashboardType("inventory")}>Inventario</TabsTrigger>
+              </TabsList>
+              <TabsContent value="financial">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="col-span-2">
+                  {/*Dashboard Resumen Financiaero*/}
+                  <CardHeader>
+                    <CardTitle>Resumen Financiero</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex justify-around items-center">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                      <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                      <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                      <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
                   <Card>
                     <CardHeader>
                       <CardTitle>Gráfico de Barras</CardTitle>
@@ -924,90 +923,123 @@ export default function ContabilidadApp() {
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
-                </>
-              )}
-              {dashboardType === "inventory" && (
-                <>
+                </div>
+              </TabsContent>
+              <TabsContent value="inventory">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
                       <CardTitle>Resumen de Inventario</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="font-bold">Total de Productos: {inventoryItems.length}</p>
-                      <p className="font-bold">Valor Total del Inventario: ${inventoryItems.reduce((total, item) => total + item.cantidadDisponible * item.precioCompra, 0).toFixed(2)}</p>
+                      <p>Total de ítems: {inventoryItems.length}</p>
+                      <p>Valor total del inventario: ${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader>
-                      <CardTitle>Productos con Bajo Stock</CardTitle>
+                      <CardTitle>Ítems por Categoría</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ul>
-                        {inventoryItems.filter(item => item.cantidadDisponible < item.stockMinimo).map(item => (
-                          <li key={item.id}>{item.descripcion} - Disponible: {item.cantidadDisponible}</li>
-                        ))}
-                      </ul>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(inventoryItems.reduce((acc, item) => {
+                              acc[item.categoria] = (acc[item.categoria] || 0) + 1
+                              return acc
+                            }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </CardContent>
                   </Card>
-                </>
-              )}
-              {dashboardType === "sales" && (
-                <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Resumen de Ventas</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="font-bold">Total de Facturas: {invoiceItems.length}</p>
-                      <p className="font-bold">Ventas Totales: ${invoiceItems.reduce((total, item) => total + item.total, 0).toFixed(2)}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Productos Más Vendidos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Aquí podrías agregar un gráfico o una lista de los productos más vendidos */}
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-            </div>
+                </div>
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Tabla de Inventario</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <Label htmlFor="category-filter">Filtrar por categoría:</Label>
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger id="category-filter">
+                          <SelectValue placeholder="Todas las categorías" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas las categorías</SelectItem>
+                          {Array.from(new Set(inventoryItems.map(item => item.categoria))).map(category => (
+                            <SelectItem key={category} value={category}>{category}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Descripción</TableHead>
+                          <TableHead>Categoría</TableHead>
+                          <TableHead>Cantidad</TableHead>
+                          <TableHead>Precio de Compra</TableHead>
+                          <TableHead>Precio de Venta</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      {/*Filtrado de Inventario*/}
+                      <TableBody>
+                      {inventoryItems
+                        .filter(item => selectedCategory === "all" || item.categoria === selectedCategory)
+                        .map(item => (
+                            <TableRow key={item.id}>
+                              <TableCell>{item.id}</TableCell>
+                              <TableCell>{item.descripcion}</TableCell>
+                              <TableCell>{item.categoria}</TableCell>
+                              <TableCell>{item.cantidadDisponible}</TableCell>
+                              <TableCell>${item.precioCompra.toFixed(2)}</TableCell>
+                              <TableCell>${item.precioVenta.toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
         {activeTab === "inventario" && (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Registro de Inventario</h2>
-            <div className="mb-4 flex justify-between items-center">
-              <Button onClick={() => setIsCreatingInventoryItem(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Ítem
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="advanced-view-inventory">Vista avanzada</Label>
-                <Checkbox
-                  id="advanced-view-inventory"
-                  checked={advancedViewInventory}
-                  onCheckedChange={(checked) => setAdvancedViewInventory(checked as boolean)}
-                />
+            <div className="flex justify-between items-center mb-4 mr-10">
+              <h2 className="text-2xl font-bold">Registro de Inventario</h2>
+              <div className="flex space-x-2">
+                <Button onClick={() => setAdvancedViewInventory(!advancedViewInventory)} className="mr-2">
+                  {advancedViewInventory ? "Vista Simple" : "Vista Avanzada"}
+                </Button>
+                <Button onClick={() => setIsCreatingInventoryItem(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Ítem
+                </Button>
               </div>
             </div>
             {isCreatingInventoryItem && (
               <Card className="mb-4">
                 <CardHeader>
-                  <CardTitle>Nuevo Ítem de Inventario</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsCreatingInventoryItem(false)}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <CardTitle className="flex justify-between">Agregar Nuevo Ítem de Inventario</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {inventoryFields.map(field => (
                       <div key={field.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -1020,146 +1052,119 @@ export default function ContabilidadApp() {
                               setSelectedInventoryFields(selectedInventoryFields.filter(id => id !== field.id))
                             }
                           }}
-                          defaultChecked={['id', 'descripcion', 'cantidadDisponible', 'stockMinimo', 'precioCompra', 'precioVenta', 'fechaIngreso', 'proveedor'].includes(field.id)}
                         />
                         <Label htmlFor={`select-${field.id}`}>{field.label}</Label>
                       </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     {selectedInventoryFields.map(fieldId => {
                       const field = inventoryFields.find(f => f.id === fieldId)
                       if (!field) return null
                       return (
                         <div key={field.id}>
                           <Label htmlFor={field.id}>{field.label}</Label>
-                          {field.type === 'date' ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={`w-full justify-start text-left font-normal ${
-                                    !newInventoryItem[field.id as keyof InventoryItem] && "text-muted-foreground"
-                                  }`}
-                                >
-                                  <Calendar className="mr-2 h-4 w-4" />
-                                  {newInventoryItem[field.id as keyof InventoryItem] ? 
-                                    format(new Date(newInventoryItem[field.id as keyof InventoryItem] as string), "PPP", { locale: es }) 
-                                    : <span>Selecciona una fecha</span>
-                                  }
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={newInventoryItem[field.id as keyof InventoryItem] ? new Date(newInventoryItem[field.id as keyof InventoryItem] as string) : undefined}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      setNewInventoryItem({
-                                        ...newInventoryItem,
-                                        [field.id]: date.toISOString().split('T')[0]
-                                      })
-                                    }
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                          {field.type === 'textarea' ? (
+                            <textarea
+                              id={field.id}
+                              value={newInventoryItem[field.id as keyof InventoryItem] as string}
+                              onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
+                              className="w-full p-2 border rounded"
+                            />
                           ) : (
                             <Input
                               id={field.id}
                               type={field.type}
                               value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                              onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
+                              onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
                             />
                           )}
                         </div>
                       )
                     })}
                   </div>
-                  <Button className="mt-4" onClick={handleAddInventoryItem}>Agregar Ítem</Button>
+                  <div className="flex justify-start space-x-2 mt-4">
+                    <Button onClick={() => setIsCreatingInventoryItem(false)} variant="outline">Cancelar</Button>
+                    <Button onClick={handleAddInventoryItem}>Agregar Ítem</Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
             <Table>
               <TableHeader>
                 <TableRow>
-                  {selectedInventoryFields.map(fieldId => {
-                    const field = inventoryFields.find(f => f.id === fieldId)
-                    return field ? <TableHead key={field.id}>{field.label}</TableHead> : null
-                  })}
-                  <TableHead>Acciones</TableHead>
+                  {advancedViewInventory ? (
+                    inventoryFields.map(field => (
+                      <TableHead key={field.id}>{field.label}</TableHead>
+                    ))
+                  ) : (
+                    <>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Cantidad</TableHead>
+                      <TableHead>Precio de Compra</TableHead>
+                      <TableHead>Precio de Venta</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {inventoryItems.map((item) => (
                   <TableRow key={item.id}>
-                    {selectedInventoryFields.map(fieldId => {
-                      const field = inventoryFields.find(f => f.id === fieldId)
-                      if (!field) return null
-                      return (
+                    {advancedViewInventory ? (
+                      inventoryFields.map(field => (
                         <TableCell key={field.id}>
                           {editingInventoryId === item.id ? (
-                            field.type === 'date' ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant={"outline"}
-                                    className={`w-full justify-start text-left font-normal ${
-                                      !item[field.id as keyof InventoryItem] && "text-muted-foreground"
-                                    }`}
-                                  >
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    {item[field.id as keyof InventoryItem] ? 
-                                      format(new Date(item[field.id as keyof InventoryItem] as string), "PPP", { locale: es }) 
-                                      : <span>Selecciona una fecha</span>
-                                    }
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <CalendarComponent
-                                    mode="single"
-                                    selected={item[field.id as keyof InventoryItem] ? new Date(item[field.id as keyof InventoryItem] as string) : undefined}
-                                    onSelect={(date) => {
-                                      if (date) {
-                                        setNewInventoryItem({
-                                          ...newInventoryItem,
-                                          [field.id]: date.toISOString().split('T')[0]
-                                        })
-                                      }
-                                    }}
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
+                            field.type === 'textarea' ? (
+                              <textarea
+                                value={newInventoryItem[field.id as keyof InventoryItem] as string}
+                                onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
+                                className="w-full p-2 border rounded"
+                              />
                             ) : (
                               <Input
                                 type={field.type}
                                 value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                                onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
+                                onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
                               />
                             )
                           ) : (
-                            field.type === 'date' ? 
-                              format(new Date(item[field.id as keyof InventoryItem] as string), "PPP", { locale: es })
-                              : item[field.id as keyof InventoryItem]
+                            item[field.id as keyof InventoryItem]
                           )}
                         </TableCell>
-                      )
-                    })}
+                      ))
+                    ) : (
+                      <>
+                        <TableCell>{item.id}</TableCell>
+                        <TableCell>{item.descripcion}</TableCell>
+                        <TableCell>{item.categoria}</TableCell>
+                        <TableCell>{item.cantidadDisponible}</TableCell>
+                        <TableCell>${item.precioCompra.toFixed(2)}</TableCell>
+                        <TableCell>${item.precioVenta.toFixed(2)}</TableCell>
+                      </>
+                    )}
                     <TableCell>
                       {editingInventoryId === item.id ? (
-                        <Button onClick={handleSaveInventoryItem} size="sm">
-                          <Save className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button onClick={handleSaveInventoryItem} size="sm" className="mr-2">
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button onClick={() => setEditingInventoryId(null)} size="sm" variant="outline">
+                            Cancelar
+                          </Button>
+                        </>
                       ) : (
-                        <Button onClick={() => handleEditInventoryItem(item.id)} size="sm">
-                          Editar
-                        </Button>
+                        <>
+                          <Button onClick={() => handleEditInventoryItem(item.id)} size="sm" className="mr-2">
+                            Editar
+                          </Button>
+                          <Button onClick={() => handleDeleteInventoryItem(item.id)} size="sm" variant="destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
-                      <Button onClick={() => handleDeleteInventoryItem(item.id)} size="sm" variant="destructive" className="ml-2">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1167,39 +1172,28 @@ export default function ContabilidadApp() {
             </Table>
           </div>
         )}
-
+        {/*Facturacion*/}
         {activeTab === "facturacion" && (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Registro de Facturación</h2>
-            <div className="mb-4 flex justify-between items-center">
-              <Button onClick={() => setIsCreatingInvoiceItem(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Factura
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="advanced-view-invoice">Vista avanzada</Label>
-                <Checkbox
-                  id="advanced-view-invoice"
-                  checked={advancedViewInvoice}
-                  onCheckedChange={(checked) => setAdvancedViewInvoice(checked as boolean)}
-                />
+            <div className="flex justify-between items-center mb-4 mr-10">
+              <h2 className="text-2xl font-bold">Registro de Facturación</h2>
+              <div className="flex space-x-2">
+                <Button onClick={() => setAdvancedViewInvoice(!advancedViewInvoice)} className="mr-2">
+                  {advancedViewInvoice ? "Vista Simple" : "Vista Avanzada"}
+                </Button>
+                <Button onClick={() => setIsCreatingInvoiceItem(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Factura
+                </Button>
               </div>
             </div>
             {isCreatingInvoiceItem && (
               <Card className="mb-4">
                 <CardHeader>
-                  <CardTitle>Nueva Factura</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsCreatingInvoiceItem(false)}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <CardTitle className="flex justify-between">Agregar Nueva Factura</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {invoiceFields.map(field => (
                       <div key={field.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -1212,146 +1206,170 @@ export default function ContabilidadApp() {
                               setSelectedInvoiceFields(selectedInvoiceFields.filter(id => id !== field.id))
                             }
                           }}
-                          defaultChecked={['id', 'fechaEmision', 'nombreCliente', 'detallesProducto', 'cantidad', 'precioUnitario', 'subtotal', 'impuestos', 'total', 'metodoPago'].includes(field.id)}
                         />
                         <Label htmlFor={`select-${field.id}`}>{field.label}</Label>
                       </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     {selectedInvoiceFields.map(fieldId => {
                       const field = invoiceFields.find(f => f.id === fieldId)
                       if (!field) return null
                       return (
                         <div key={field.id}>
                           <Label htmlFor={field.id}>{field.label}</Label>
-                          {field.type === 'date' ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={`w-full justify-start text-left font-normal ${
-                                    !newInvoiceItem[field.id as keyof InvoiceItem] && "text-muted-foreground"
-                                  }`}
-                                >
-                                  <Calendar className="mr-2 h-4 w-4" />
-                                  {newInvoiceItem[field.id as keyof InvoiceItem] ? 
-                                    format(new Date(newInvoiceItem[field.id as keyof InvoiceItem] as string), "PPP", { locale: es }) 
-                                    : <span>Selecciona una fecha</span>
-                                  }
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={newInvoiceItem[field.id as keyof InvoiceItem] ? new Date(newInvoiceItem[field.id as keyof InvoiceItem] as string) : undefined}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      setNewInvoiceItem({
-                                        ...newInvoiceItem,
-                                        [field.id]: date.toISOString().split('T')[0]
-                                      })
-                                    }
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                          {field.type === 'textarea' ? (
+                            <textarea
+                              id={field.id}
+                              value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
+                              onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
+                              className="w-full p-2 border rounded"
+                            />
                           ) : (
                             <Input
                               id={field.id}
                               type={field.type}
                               value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                              onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
+                              onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
                             />
                           )}
                         </div>
                       )
                     })}
                   </div>
-                  <Button className="mt-4" onClick={handleAddInvoiceItem}>Agregar Factura</Button>
+                  <div className="flex justify-start space-x-2 mt-4">
+                    <Button onClick={() => setIsCreatingInvoiceItem(false)} variant="outline">Cancelar</Button>
+                    <Button onClick={handleAddInvoiceItem}>Agregar Factura</Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
+            <div className="mb-4 flex items-center space-x-4">
+              <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las facturas</SelectItem>
+                  <SelectItem value="day">Por día</SelectItem>
+                  <SelectItem value="month">Por mes</SelectItem>
+                  <SelectItem value="year">Por año</SelectItem>
+                </SelectContent>
+              </Select>
+              {invoiceFilterType === "day" && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={`w-[280px] justify-start text-left font-normal`}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {invoiceFilterDate ? format(new Date(invoiceFilterDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={new Date(invoiceFilterDate)}
+                      onSelect={(date) => date && setInvoiceFilterDate(date.toISOString().split('T')[0])}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+              {invoiceFilterType === "month" && (
+                <Input
+                  type="month"
+                  value={invoiceFilterMonth}
+                  onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                  className="w-[180px]"
+                />
+              )}
+              {invoiceFilterType === "year" && (
+                <Input
+                  type="number"
+                  value={invoiceFilterYear}
+                  onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                  min="1900"
+                  max="2099"
+                  step="1"
+                  className="w-[180px]"
+                />
+              )}
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
-                  {selectedInvoiceFields.map(fieldId => {
-                    const field = invoiceFields.find(f => f.id === fieldId)
-                    return field ? <TableHead key={field.id}>{field.label}</TableHead> : null
-                  })}
-                  <TableHead>Acciones</TableHead>
+                  {advancedViewInvoice ? (
+                    invoiceFields.map(field => (
+                      <TableHead key={field.id}>{field.label}</TableHead>
+                    ))
+                  ) : (
+                    <>
+                      <TableHead>Número de Factura</TableHead>
+                      <TableHead>Fecha de Emisión</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoiceItems.map((item) => (
+                {filteredInvoiceItems.map((item) => (
                   <TableRow key={item.id}>
-                    {selectedInvoiceFields.map(fieldId => {
-                      const field = invoiceFields.find(f => f.id === fieldId)
-                      if (!field) return null
-                      return (
+                    {advancedViewInvoice ? (
+                      invoiceFields.map(field => (
                         <TableCell key={field.id}>
                           {editingInvoiceId === item.id ? (
-                            field.type === 'date' ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant={"outline"}
-                                    className={`w-full justify-start text-left font-normal ${
-                                      !item[field.id as keyof InvoiceItem] && "text-muted-foreground"
-                                    }`}
-                                  >
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    {item[field.id as keyof InvoiceItem] ? 
-                                      format(new Date(item[field.id as keyof InvoiceItem] as string), "PPP", { locale: es }) 
-                                      : <span>Selecciona una fecha</span>
-                                    }
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <CalendarComponent
-                                    mode="single"
-                                    selected={item[field.id as keyof InvoiceItem] ? new Date(item[field.id as keyof InvoiceItem] as string) : undefined}
-                                    onSelect={(date) => {
-                                      if (date) {
-                                        setNewInvoiceItem({
-                                          ...newInvoiceItem,
-                                          [field.id]: date.toISOString().split('T')[0]
-                                        })
-                                      }
-                                    }}
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
+                            field.type === 'textarea' ? (
+                              <textarea
+                                value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
+                                onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
+                                className="w-full p-2 border rounded"
+                              />
                             ) : (
                               <Input
                                 type={field.type}
                                 value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                                onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
+                                onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
                               />
                             )
                           ) : (
-                            field.type === 'date' ? 
-                              format(new Date(item[field.id as keyof InvoiceItem] as string), "PPP", { locale: es })
-                              : item[field.id as keyof InvoiceItem]
+                            item[field.id as keyof InvoiceItem]
                           )}
                         </TableCell>
-                      )
-                    })}
+                      ))
+                    ) : (
+                      <>
+                        <TableCell>{item.id}</TableCell>
+                        <TableCell>{item.fechaEmision}</TableCell>
+                        <TableCell>{item.nombreCliente}</TableCell>
+                        <TableCell>${item.total.toFixed(2)}</TableCell>
+                        <TableCell>{item.estado}</TableCell>
+                      </>
+                    )}
                     <TableCell>
                       {editingInvoiceId === item.id ? (
-                        <Button onClick={handleSaveInvoiceItem} size="sm">
-                          <Save className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button onClick={handleSaveInvoiceItem} size="sm" className="mr-2">
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button onClick={() => setEditingInvoiceId(null)} size="sm" variant="outline">
+                            Cancelar
+                          </Button>
+                        </>
                       ) : (
-                        <Button onClick={() => handleEditInvoiceItem(item.id)} size="sm">
-                          Editar
-                        </Button>
+                        <>
+                          <Button onClick={() => handleEditInvoiceItem(item.id)} size="sm" className="mr-2">
+                            Editar
+                          </Button>
+                          <Button onClick={() => handleDeleteInvoiceItem(item.id)} size="sm" variant="destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
-                      <Button onClick={() => handleDeleteInvoiceItem(item.id)} size="sm" variant="destructive" className="ml-2">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1393,7 +1411,6 @@ export default function ContabilidadApp() {
                   onKeyDown={handleSendMessage}
                   className="flex-grow mr-2"
                 />
-                <Button onClick={() => handleSendMessage({ key: 'Enter', shiftKey: false } as React.KeyboardEvent<HTMLInputElement>)}>Enviar</Button>
               </div>
               <div className="flex justify-between">
                 <Button variant="outline" size="icon" onClick={() => document.getElementById('file-upload')?.click()}>
