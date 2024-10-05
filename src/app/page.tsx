@@ -33,6 +33,7 @@ import { es } from "date-fns/locale"
 import OpenAI from "openai"
 
 // Importaciones de Firebase
+import firebase from 'firebase/app';
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore"
@@ -49,6 +50,8 @@ const firebaseConfig = {
   measurementId: "G-Y6TF6TB2HJ"
 };
 
+
+
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -56,7 +59,20 @@ const db = getFirestore(app);
 
 // Nota: Se ha eliminado la inicialización de analytics para evitar el error en entornos sin soporte para cookies
 
+
 {/* Definicion de Tipos */}
+
+//Autenticacion de Inicio de Sesion
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    const uid = user.uid;
+    console.log("Usuario autenticado con UID:", uid);
+
+    // Aquí puedes llamar a las funciones para obtener o guardar datos
+  } else {
+    console.log("Ningún usuario autenticado.");
+  }
+});
 
 //Definicion de Libro Diario
 type RowData = {
@@ -170,7 +186,7 @@ const invoiceFields = [
 
 //Chatgpt IA
 const openai = new OpenAI({
-  apiKey: "",
+  apiKey: "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",
   dangerouslyAllowBrowser: true
 });
 
@@ -256,20 +272,28 @@ export default function ContabilidadApp() {
   // Función para cargar datos de Firebase
   const loadData = async () => {
     try {
-      // Cargar datos del libro diario
-      const libroSnapshot = await getDocs(collection(db, 'libroDiario'));
+      const user = auth.currentUser;  // Verificar si el usuario está autenticado
+      if (!user) {
+        throw new Error("No hay un usuario autenticado.");
+      }
+  
+      const uid = user.uid;  // Obtener el UID del usuario
+  
+      // Cargar datos del libro diario para el usuario autenticado
+      const libroSnapshot = await getDocs(collection(db, `users/${uid}/libroDiario`));
       const libroData = libroSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RowData));
       setData(libroData);
-
-      // Cargar datos de inventario
-      const inventorySnapshot = await getDocs(collection(db, 'inventario'));
+  
+      // Cargar datos de inventario para el usuario autenticado
+      const inventorySnapshot = await getDocs(collection(db, `users/${uid}/inventario`));
       const inventoryData = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
       setInventoryItems(inventoryData);
-
-      // Cargar datos de facturación
-      const invoiceSnapshot = await getDocs(collection(db, 'facturacion'));
+  
+      // Cargar datos de facturación para el usuario autenticado
+      const invoiceSnapshot = await getDocs(collection(db, `users/${uid}/facturacion`));
       const invoiceData = invoiceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InvoiceItem));
       setInvoiceItems(invoiceData);
+  
     } catch (error) {
       console.error("Error al cargar datos:", error);
       toast({
@@ -299,11 +323,29 @@ export default function ContabilidadApp() {
       });
       return;
     }
-
+  
     try {
-      const docRef = await addDoc(collection(db, 'libroDiario'), newRow);
+      const user = auth.currentUser;  // Verificar si el usuario está autenticado
+      if (!user) {
+        throw new Error("No hay un usuario autenticado.");
+      }
+  
+      const uid = user.uid;  // Obtener el UID del usuario
+  
+      // Agregar la nueva fila en la colección del usuario autenticado
+      const docRef = await addDoc(collection(db, `users/${uid}/libroDiario`), newRow);
+      
+      // Actualizar el estado con el nuevo dato
       setData([...data, { id: docRef.id, ...newRow }]);
-      setNewRow({ fecha: new Date().toISOString().split('T')[0], cuenta: "", descripcion: "", debe: 0, haber: 0 });
+      
+      // Resetear el formulario para agregar una nueva fila
+      setNewRow({
+        fecha: new Date().toISOString().split('T')[0],
+        cuenta: "",
+        descripcion: "",
+        debe: 0,
+        haber: 0,
+      });
     } catch (error) {
       console.error("Error al agregar fila:", error);
       toast({
@@ -322,6 +364,20 @@ export default function ContabilidadApp() {
   //Metodo Btn Guardar Cambios Items Libro Diario
   const handleSaveRow = async (id: string) => {
     const editedRow = data.find(row => row.id === id);
+    
+    // Verificar si hay un usuario autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const uid = user.uid;  // Obtener el UID del usuario
+    
     if (editedRow && Object.values(editedRow).some(value => value === "")) {
       toast({
         title: "Error",
@@ -330,9 +386,10 @@ export default function ContabilidadApp() {
       });
       return;
     }
-
+  
     try {
-      await updateDoc(doc(db, 'libroDiario', id), editedRow as RowData);
+      // Actualizar el documento en la colección del usuario autenticado
+      await updateDoc(doc(db, `users/${uid}/libroDiario`, id), editedRow as RowData);
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar cambios:", error);
@@ -343,11 +400,25 @@ export default function ContabilidadApp() {
       });
     }
   };
-
+  
   //Metodo Btn Borrar Item Libro Diario
   const handleDeleteRow = async (id: string) => {
+    // Verificar si el usuario está autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid;  // Obtener el UID del usuario
+  
     try {
-      await deleteDoc(doc(db, 'libroDiario', id));
+      // Eliminar el documento en la colección del usuario autenticado
+      await deleteDoc(doc(db, `users/${uid}/libroDiario`, id));
       setData(data.filter(row => row.id !== id));
     } catch (error) {
       console.error("Error al eliminar fila:", error);
@@ -358,6 +429,8 @@ export default function ContabilidadApp() {
       });
     }
   };
+  
+
 
   //Metodo Cargar Cambios Items Libro Diario
   const handleInputChange = (id: string, field: keyof RowData, value: string | number) => {
@@ -423,49 +496,55 @@ export default function ContabilidadApp() {
 
   {/* Mensajes IA */}
 
-  //Metodo Enter Enviar
+  //Metodo Enter Enviar Openai
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (inputMessage.trim()) {
-        const userMessage = { role: 'user' as const, content: inputMessage }
-        setMessages(prev => [...prev, userMessage])
-        setInputMessage("")
+        e.preventDefault();
+        if (inputMessage.trim()) {
+            const userMessage = { role: 'user' as const, content: inputMessage };
+            setMessages(prev => [...prev, userMessage]);
+            setInputMessage("");
 
-        try {
-          //Metodo Envio de Mensaje
-          const completion = await openai.chat.completions.create({
-            messages: [
-              {"role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas. Vas a utilizar términos simples y entendibles. Principalmente vas a funcionar para una aplicación de contabilidad la cual tiene los siguientes aspectos: 1. Libro Diario 2. Dashboards 3. Registro de Inventario 4. Registro de Facturación."},
-              ...messages,
-              userMessage
-            ],
-            model: "gpt-3.5-turbo",
-          });
-
-          //Metodo Error de Mensaje
-          const assistantMessage = { role: 'assistant' as const, content: completion.choices[0].message.content || "Lo siento, no pude generar una respuesta." }
-          setMessages(prev => [...prev, assistantMessage])
-
-          // Generar audio de la respuesta
-          const speech = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: "nova",
-            input: assistantMessage.content,
-          });
-
-          const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }));
-          const audio = new Audio(audioUrl);
-          audio.play();
-
-        } catch (error) {
-          console.error("Error al comunicarse con la IA:", error)
-          setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }])
+            try {
+              const completion = await openai.chat.completions.create({
+                  model: "gpt-3.5-turbo",
+                  messages: [
+                      { "role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas..." },
+                      ...messages,
+                      userMessage,
+                  ],
+              });
+          
+              const assistantMessage = {
+                  role: 'assistant' as const,
+                  content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta."
+              };
+              setMessages(prev => [...prev, assistantMessage]);
+          
+              // Generar audio de la respuesta
+              const speech = await openai.audio.speech.create({
+                  model: "tts-1",
+                  voice: "nova",
+                  input: assistantMessage.content,
+              });
+          
+              const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }));
+              const audio = new Audio(audioUrl);
+              audio.play();
+          
+          } catch (error) {
+              console.error("Error al comunicarse con la IA:", error);
+              console.error("Detalles del error:", error || error || error);
+              if (error === 429) {
+                setMessages(prev => [...prev, { role: 'assistant', content: "Has alcanzado el límite de uso de la API. Por favor, revisa tu plan y detalles de facturación." }]);
+              } else {
+                  setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }]);
+              }
+          }          
         }
-      }
     } else if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      setInputMessage(prev => prev + '\n');
+        e.preventDefault();
+        setInputMessage(prev => prev + '\n');
     }
   }
 
@@ -481,10 +560,22 @@ export default function ContabilidadApp() {
     console.log("Iniciando entrada de voz...")
   }
 
-  {/* Registros */}
+  {/* Registros Firebase */}
 
   //Metodo Error Registro De Inventario
   const handleAddInventoryItem = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     if (selectedInventoryFields.some(field => !newInventoryItem[field as keyof InventoryItem])) {
       toast({
         title: "Error",
@@ -493,9 +584,9 @@ export default function ContabilidadApp() {
       });
       return;
     }
-
+  
     try {
-      const docRef = await addDoc(collection(db, 'inventario'), newInventoryItem);
+      const docRef = await addDoc(collection(db, `users/${uid}/inventario`), newInventoryItem);
       setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);
       setNewInventoryItem({
         id: '',
@@ -518,9 +609,21 @@ export default function ContabilidadApp() {
       });
     }
   };
-
+  
   //Metodo Error Registro de Factura
   const handleAddInvoiceItem = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     if (selectedInvoiceFields.some(field => !newInvoiceItem[field as keyof InvoiceItem])) {
       toast({
         title: "Error",
@@ -529,9 +632,9 @@ export default function ContabilidadApp() {
       });
       return;
     }
-
+  
     try {
-      const docRef = await addDoc(collection(db, 'facturacion'), newInvoiceItem);
+      const docRef = await addDoc(collection(db, `users/${uid}/facturacion`), newInvoiceItem);
       setInvoiceItems([...invoiceItems, { ...newInvoiceItem, id: docRef.id }]);
       setNewInvoiceItem({
         id: '',
@@ -555,7 +658,7 @@ export default function ContabilidadApp() {
       });
     }
   };
-
+  
   //Metodo Carga de Item en ID
   const handleEditInventoryItem = (id: string) => {
     setEditingInventoryId(id)
@@ -566,12 +669,24 @@ export default function ContabilidadApp() {
     }
   }
 
-  //Metodo Almacenamiento de Item
+  //Metodo Almacenamiento de Item Firestore
   const handleSaveInventoryItem = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     try {
-      await updateDoc(doc(db, 'inventario', editingInventoryId!), newInventoryItem);
+      await updateDoc(doc(db, `users/${uid}/inventario`, editingInventoryId!), newInventoryItem);
       setInventoryItems(inventoryItems.map(item => 
-        item.id === editingInventoryId ? newInventoryItem : item
+        item.id === editingInventoryId ? { ...newInventoryItem, id: editingInventoryId } : item
       ));
       setEditingInventoryId(null);
       setNewInventoryItem({
@@ -594,11 +709,23 @@ export default function ContabilidadApp() {
       });
     }
   };
-
-  //Metodo Btn Borrar Item Registro De Inventario
+  
+  //Metodo Btn Borrar Item Registro De Inventario Firestore
   const handleDeleteInventoryItem = async (id: string) => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     try {
-      await deleteDoc(doc(db, 'inventario', id));
+      await deleteDoc(doc(db, `users/${uid}/inventario`, id));
       setInventoryItems(inventoryItems.filter(item => item.id !== id));
     } catch (error) {
       console.error("Error al eliminar ítem del inventario:", error);
@@ -609,7 +736,7 @@ export default function ContabilidadApp() {
       });
     }
   };
-
+  
   //Metodo Btn Editar Item Registro De Inventario
   const handleEditInvoiceItem = (id: string) => {
     setEditingInvoiceId(id)
@@ -620,14 +747,31 @@ export default function ContabilidadApp() {
     }
   }
 
-  //MetodoGuardar Cambios Item Registro De Inventario
+  //MetodoGuardar Cambios Item Registro De Inventario Firestore
   const handleSaveInvoiceItem = async () => {
+    // Verificar si el usuario está autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     try {
-      await updateDoc(doc(db, 'facturacion', editingInvoiceId!), newInvoiceItem);
+      // Actualizar el documento en la colección específica del usuario
+      await updateDoc(doc(db, `users/${uid}/facturacion`, editingInvoiceId!), newInvoiceItem);
+      
       setInvoiceItems(invoiceItems.map(item => 
         item.id === editingInvoiceId ? newInvoiceItem : item
       ));
+      
       setEditingInvoiceId(null);
+      
       setNewInvoiceItem({
         id: '',
         fechaEmision: new Date().toISOString().split('T')[0],
@@ -649,11 +793,26 @@ export default function ContabilidadApp() {
       });
     }
   };
+  
 
-  //Metodo Eliminar Item Registro De Inventario
+  //Metodo Eliminar Item Registro De Inventario Firestore
   const handleDeleteInvoiceItem = async (id: string) => {
+    // Verificar si el usuario está autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No hay un usuario autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const uid = user.uid; // Obtener el UID del usuario
+  
     try {
-      await deleteDoc(doc(db, 'facturacion', id));
+      // Eliminar el documento de la colección específica del usuario
+      await deleteDoc(doc(db, `users/${uid}/facturacion`, id));
       setInvoiceItems(invoiceItems.filter(item => item.id !== id));
     } catch (error) {
       console.error("Error al eliminar factura:", error);
@@ -664,6 +823,7 @@ export default function ContabilidadApp() {
       });
     }
   };
+  
 
   // Método para iniciar sesión con Google
   const handleGoogleLogin = async () => {

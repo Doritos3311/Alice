@@ -1,0 +1,342 @@
+[debug] [2024-10-05T03:43:01.765Z] ----------------------------------------------------------------------
+[debug] [2024-10-05T03:43:01.767Z] Command:       D:\Programas\node.exe C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start
+[debug] [2024-10-05T03:43:01.768Z] CLI Version:   13.20.2
+[debug] [2024-10-05T03:43:01.768Z] Platform:      win32
+[debug] [2024-10-05T03:43:01.768Z] Node Version:  v20.17.0
+[debug] [2024-10-05T03:43:01.768Z] Time:          Fri Oct 04 2024 22:43:01 GMT-0500 (hora de Ecuador)
+[debug] [2024-10-05T03:43:01.768Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-10-05T03:43:01.885Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-10-05T03:43:01.885Z] > authorizing via signed-in user (dorian.santamaria120@gmail.com)
+[info] i  emulators: Starting emulators: functions, hosting {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions, hosting"}}
+[debug] [2024-10-05T03:43:01.896Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2024-10-05T03:43:01.896Z] [hosting] Hosting Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2024-10-05T03:43:01.896Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"hosting":[{"address":"127.0.0.1","family":"IPv4","port":5000}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2024-10-05T03:43:01.900Z] [hub] writing locator at C:\Users\Dorian\AppData\Local\Temp\hub-alice-a2dc3.json
+[debug] [2024-10-05T03:43:01.921Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2024-10-05T03:43:01.921Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2024-10-05T03:43:01.921Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2024-10-05T03:43:01.921Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"hosting":[{"address":"127.0.0.1","family":"IPv4","port":5000}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: auth, firestore, database, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mauth, firestore, database, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2024-10-05T03:43:01.925Z] defaultcredentials: writing to file C:\Users\Dorian\AppData\Roaming\firebase\dorian_santamaria120_gmail.com_application_default_credentials.json
+[debug] [2024-10-05T03:43:01.929Z] Setting GAC to C:\Users\Dorian\AppData\Roaming\firebase\dorian_santamaria120_gmail.com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\Dorian\\AppData\\Roaming\\firebase\\dorian_santamaria120_gmail.com_application_default_credentials.json"}}
+[debug] [2024-10-05T03:43:01.930Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:01.930Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:01.931Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/adminSdkConfig [none]
+[debug] [2024-10-05T03:43:02.537Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/adminSdkConfig 200
+[debug] [2024-10-05T03:43:02.537Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/adminSdkConfig {"projectId":"alice-a2dc3","storageBucket":"alice-a2dc3.appspot.com"}
+[debug] [2024-10-05T03:43:02.552Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:02.552Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:02.552Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/alice-a2dc3/sites 
+[debug] [2024-10-05T03:43:03.386Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/alice-a2dc3/sites 200
+[debug] [2024-10-05T03:43:03.387Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/alice-a2dc3/sites {"sites":[{"name":"projects/alice-a2dc3/sites/alice-a2dc3","defaultUrl":"https://alice-a2dc3.web.app","appId":"1:543545407777:web:65ab15a1f7f48c92336660","type":"DEFAULT_SITE"}]}
+[debug] [2024-10-05T03:43:03.387Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:03.387Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:03.388Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/webApps/1:543545407777:web:65ab15a1f7f48c92336660/config [none]
+[debug] [2024-10-05T03:43:03.853Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/webApps/1:543545407777:web:65ab15a1f7f48c92336660/config 200
+[debug] [2024-10-05T03:43:03.853Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3/webApps/1:543545407777:web:65ab15a1f7f48c92336660/config {"projectId":"alice-a2dc3","appId":"1:543545407777:web:65ab15a1f7f48c92336660","storageBucket":"alice-a2dc3.appspot.com","apiKey":"AIzaSyBl1TjSQX82qh60XGIHEtp_i9RCoTTFv_w","authDomain":"alice-a2dc3.firebaseapp.com","messagingSenderId":"543545407777","measurementId":"G-Y6TF6TB2HJ"}
+[debug] [2024-10-05T03:43:03.860Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:03.860Z] Checked if tokens are valid: true, expires at: 1728102939238
+[debug] [2024-10-05T03:43:03.860Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3 [none]
+[debug] [2024-10-05T03:43:04.103Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3 200
+[debug] [2024-10-05T03:43:04.104Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alice-a2dc3 {"projectId":"alice-a2dc3","projectNumber":"543545407777","displayName":"Alice","name":"projects/alice-a2dc3","resources":{"hostingSite":"alice-a2dc3"},"state":"ACTIVE","etag":"1_4a58c15f-6824-47c8-80fc-d84d0353bef3"}
+[info] i  hosting[alice-a2dc3]: Serving hosting files from: .next {"metadata":{"emulator":{"name":"hosting"},"message":"Serving hosting files from: \u001b[1m.next\u001b[22m"}}
+[info] +  hosting[alice-a2dc3]: Local server: http://127.0.0.1:5000 {"metadata":{"emulator":{"name":"hosting"},"message":"Local server: \u001b[4m\u001b[1mhttp://127.0.0.1:5000\u001b[22m\u001b[24m"}}
+[info] i  ui: downloading ui-v1.13.0.zip... {"metadata":{"emulator":{"name":"ui"},"message":"downloading ui-v1.13.0.zip..."}}
+[debug] [2024-10-05T03:43:04.124Z] >>> [apiv2][query] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.13.0.zip 
+[debug] [2024-10-05T03:43:04.583Z] <<< [apiv2][status] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.13.0.zip 200
+[debug] [2024-10-05T03:43:04.584Z] <<< [apiv2][body] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.13.0.zip [stream]
+[debug] [2024-10-05T03:43:05.179Z] Data is 3605485
+[debug] [2024-10-05T03:43:05.180Z] [unzip] Entry: client/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.180Z] [unzip] Processing entry: client\
+[debug] [2024-10-05T03:43:05.180Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\
+[debug] [2024-10-05T03:43:05.181Z] [unzip] Entry: client/favicon-16x16.png (compressed_size=293 bytes, uncompressed_size=293 bytes)
+[debug] [2024-10-05T03:43:05.181Z] [unzip] Processing entry: client\favicon-16x16.png
+[debug] [2024-10-05T03:43:05.181Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.181Z] [unzip] Writing file: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\favicon-16x16.png
+[debug] [2024-10-05T03:43:05.183Z] [unzip] Entry: client/safari-pinned-tab.svg (compressed_size=1433 bytes, uncompressed_size=2611 bytes)
+[debug] [2024-10-05T03:43:05.183Z] [unzip] Processing entry: client\safari-pinned-tab.svg
+[debug] [2024-10-05T03:43:05.183Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.183Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\safari-pinned-tab.svg
+[debug] [2024-10-05T03:43:05.188Z] [unzip] Entry: client/favicon.ico (compressed_size=2933 bytes, uncompressed_size=13294 bytes)
+[debug] [2024-10-05T03:43:05.188Z] [unzip] Processing entry: client\favicon.ico
+[debug] [2024-10-05T03:43:05.188Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.188Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\favicon.ico
+[debug] [2024-10-05T03:43:05.191Z] [unzip] Entry: client/index.html (compressed_size=1361 bytes, uncompressed_size=3071 bytes)
+[debug] [2024-10-05T03:43:05.191Z] [unzip] Processing entry: client\index.html
+[debug] [2024-10-05T03:43:05.191Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.191Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\index.html
+[debug] [2024-10-05T03:43:05.196Z] [unzip] Entry: client/android-chrome-192x192.png (compressed_size=2684 bytes, uncompressed_size=2684 bytes)
+[debug] [2024-10-05T03:43:05.196Z] [unzip] Processing entry: client\android-chrome-192x192.png
+[debug] [2024-10-05T03:43:05.196Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.196Z] [unzip] Writing file: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\android-chrome-192x192.png
+[debug] [2024-10-05T03:43:05.197Z] [unzip] Entry: client/apple-touch-icon.png (compressed_size=2123 bytes, uncompressed_size=2152 bytes)
+[debug] [2024-10-05T03:43:05.197Z] [unzip] Processing entry: client\apple-touch-icon.png
+[debug] [2024-10-05T03:43:05.197Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.198Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\apple-touch-icon.png
+[debug] [2024-10-05T03:43:05.199Z] [unzip] Entry: client/android-chrome-512x512.png (compressed_size=5369 bytes, uncompressed_size=5411 bytes)
+[debug] [2024-10-05T03:43:05.199Z] [unzip] Processing entry: client\android-chrome-512x512.png
+[debug] [2024-10-05T03:43:05.199Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.200Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\android-chrome-512x512.png
+[debug] [2024-10-05T03:43:05.201Z] [unzip] Entry: client/manifest.json (compressed_size=245 bytes, uncompressed_size=551 bytes)
+[debug] [2024-10-05T03:43:05.201Z] [unzip] Processing entry: client\manifest.json
+[debug] [2024-10-05T03:43:05.201Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.202Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\manifest.json
+[debug] [2024-10-05T03:43:05.204Z] [unzip] Entry: client/robots.txt (compressed_size=26 bytes, uncompressed_size=26 bytes)
+[debug] [2024-10-05T03:43:05.204Z] [unzip] Processing entry: client\robots.txt
+[debug] [2024-10-05T03:43:05.204Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.205Z] [unzip] Writing file: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\robots.txt
+[debug] [2024-10-05T03:43:05.206Z] [unzip] Entry: client/mstile-150x150.png (compressed_size=2034 bytes, uncompressed_size=2034 bytes)
+[debug] [2024-10-05T03:43:05.206Z] [unzip] Processing entry: client\mstile-150x150.png
+[debug] [2024-10-05T03:43:05.206Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.207Z] [unzip] Writing file: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\mstile-150x150.png
+[debug] [2024-10-05T03:43:05.208Z] [unzip] Entry: client/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.208Z] [unzip] Processing entry: client\assets\
+[debug] [2024-10-05T03:43:05.208Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\
+[debug] [2024-10-05T03:43:05.208Z] [unzip] Entry: client/assets/index-I-mhtQda.js.map (compressed_size=2322562 bytes, uncompressed_size=9922747 bytes)
+[debug] [2024-10-05T03:43:05.209Z] [unzip] Processing entry: client\assets\index-I-mhtQda.js.map
+[debug] [2024-10-05T03:43:05.209Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets
+[debug] [2024-10-05T03:43:05.209Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\index-I-mhtQda.js.map
+[debug] [2024-10-05T03:43:05.281Z] [unzip] Entry: client/assets/index-BdgySamB.css (compressed_size=35979 bytes, uncompressed_size=298654 bytes)
+[debug] [2024-10-05T03:43:05.281Z] [unzip] Processing entry: client\assets\index-BdgySamB.css
+[debug] [2024-10-05T03:43:05.281Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets
+[debug] [2024-10-05T03:43:05.282Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\index-BdgySamB.css
+[debug] [2024-10-05T03:43:05.291Z] [unzip] Entry: client/assets/index-I-mhtQda.js (compressed_size=565968 bytes, uncompressed_size=2030855 bytes)
+[debug] [2024-10-05T03:43:05.292Z] [unzip] Processing entry: client\assets\index-I-mhtQda.js
+[debug] [2024-10-05T03:43:05.292Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets
+[debug] [2024-10-05T03:43:05.292Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\index-I-mhtQda.js
+[debug] [2024-10-05T03:43:05.309Z] [unzip] Entry: client/assets/extensions/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.309Z] [unzip] Processing entry: client\assets\extensions\
+[debug] [2024-10-05T03:43:05.309Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\extensions\
+[debug] [2024-10-05T03:43:05.309Z] [unzip] Entry: client/assets/extensions/default-extension.png (compressed_size=1646 bytes, uncompressed_size=1657 bytes)
+[debug] [2024-10-05T03:43:05.309Z] [unzip] Processing entry: client\assets\extensions\default-extension.png
+[debug] [2024-10-05T03:43:05.309Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\extensions
+[debug] [2024-10-05T03:43:05.309Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\extensions\default-extension.png
+[debug] [2024-10-05T03:43:05.311Z] [unzip] Entry: client/assets/img/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.311Z] [unzip] Processing entry: client\assets\img\
+[debug] [2024-10-05T03:43:05.311Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\img\
+[debug] [2024-10-05T03:43:05.312Z] [unzip] Entry: client/assets/img/database.png (compressed_size=29449 bytes, uncompressed_size=29988 bytes)
+[debug] [2024-10-05T03:43:05.312Z] [unzip] Processing entry: client\assets\img\database.png
+[debug] [2024-10-05T03:43:05.312Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\img
+[debug] [2024-10-05T03:43:05.312Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\img\database.png
+[debug] [2024-10-05T03:43:05.314Z] [unzip] Entry: client/assets/provider-icons/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.314Z] [unzip] Processing entry: client\assets\provider-icons\
+[debug] [2024-10-05T03:43:05.314Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\
+[debug] [2024-10-05T03:43:05.314Z] [unzip] Entry: client/assets/provider-icons/auth_service_saml.svg (compressed_size=575 bytes, uncompressed_size=1226 bytes)
+[debug] [2024-10-05T03:43:05.314Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_saml.svg
+[debug] [2024-10-05T03:43:05.314Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.314Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_saml.svg
+[debug] [2024-10-05T03:43:05.317Z] [unzip] Entry: client/assets/provider-icons/auth_service_phone.svg (compressed_size=261 bytes, uncompressed_size=414 bytes)
+[debug] [2024-10-05T03:43:05.317Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_phone.svg
+[debug] [2024-10-05T03:43:05.317Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.317Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_phone.svg
+[debug] [2024-10-05T03:43:05.319Z] [unzip] Entry: client/assets/provider-icons/auth_service_facebook.svg (compressed_size=289 bytes, uncompressed_size=457 bytes)
+[debug] [2024-10-05T03:43:05.319Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_facebook.svg
+[debug] [2024-10-05T03:43:05.320Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.320Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_facebook.svg
+[debug] [2024-10-05T03:43:05.322Z] [unzip] Entry: client/assets/provider-icons/auth_service_game_center.svg (compressed_size=991 bytes, uncompressed_size=3921 bytes)
+[debug] [2024-10-05T03:43:05.322Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_game_center.svg
+[debug] [2024-10-05T03:43:05.322Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.323Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_game_center.svg
+[debug] [2024-10-05T03:43:05.328Z] [unzip] Entry: client/assets/provider-icons/auth_service_apple.svg (compressed_size=230 bytes, uncompressed_size=334 bytes)
+[debug] [2024-10-05T03:43:05.328Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_apple.svg
+[debug] [2024-10-05T03:43:05.328Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.329Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_apple.svg
+[debug] [2024-10-05T03:43:05.331Z] [unzip] Entry: client/assets/provider-icons/auth_service_github.svg (compressed_size=466 bytes, uncompressed_size=838 bytes)
+[debug] [2024-10-05T03:43:05.331Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_github.svg
+[debug] [2024-10-05T03:43:05.331Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.331Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_github.svg
+[debug] [2024-10-05T03:43:05.334Z] [unzip] Entry: client/assets/provider-icons/auth_service_mslive.svg (compressed_size=203 bytes, uncompressed_size=378 bytes)
+[debug] [2024-10-05T03:43:05.334Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_mslive.svg
+[debug] [2024-10-05T03:43:05.334Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.334Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_mslive.svg
+[debug] [2024-10-05T03:43:05.336Z] [unzip] Entry: client/assets/provider-icons/auth_service_yahoo.svg (compressed_size=577 bytes, uncompressed_size=1182 bytes)
+[debug] [2024-10-05T03:43:05.336Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_yahoo.svg
+[debug] [2024-10-05T03:43:05.336Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.336Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_yahoo.svg
+[debug] [2024-10-05T03:43:05.339Z] [unzip] Entry: client/assets/provider-icons/auth_service_twitter.svg (compressed_size=444 bytes, uncompressed_size=751 bytes)
+[debug] [2024-10-05T03:43:05.339Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_twitter.svg
+[debug] [2024-10-05T03:43:05.339Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.339Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_twitter.svg
+[debug] [2024-10-05T03:43:05.341Z] [unzip] Entry: client/assets/provider-icons/auth_service_play_games.svg (compressed_size=565 bytes, uncompressed_size=1173 bytes)
+[debug] [2024-10-05T03:43:05.341Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_play_games.svg
+[debug] [2024-10-05T03:43:05.341Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.342Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_play_games.svg
+[debug] [2024-10-05T03:43:05.344Z] [unzip] Entry: client/assets/provider-icons/auth_service_email.svg (compressed_size=228 bytes, uncompressed_size=326 bytes)
+[debug] [2024-10-05T03:43:05.344Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_email.svg
+[debug] [2024-10-05T03:43:05.344Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.344Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_email.svg
+[debug] [2024-10-05T03:43:05.346Z] [unzip] Entry: client/assets/provider-icons/auth_service_google.svg (compressed_size=409 bytes, uncompressed_size=720 bytes)
+[debug] [2024-10-05T03:43:05.346Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_google.svg
+[debug] [2024-10-05T03:43:05.346Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.347Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_google.svg
+[debug] [2024-10-05T03:43:05.349Z] [unzip] Entry: client/assets/provider-icons/auth_service_oidc.svg (compressed_size=414 bytes, uncompressed_size=858 bytes)
+[debug] [2024-10-05T03:43:05.349Z] [unzip] Processing entry: client\assets\provider-icons\auth_service_oidc.svg
+[debug] [2024-10-05T03:43:05.349Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons
+[debug] [2024-10-05T03:43:05.349Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\assets\provider-icons\auth_service_oidc.svg
+[debug] [2024-10-05T03:43:05.351Z] [unzip] Entry: client/browserconfig.xml (compressed_size=491 bytes, uncompressed_size=822 bytes)
+[debug] [2024-10-05T03:43:05.351Z] [unzip] Processing entry: client\browserconfig.xml
+[debug] [2024-10-05T03:43:05.351Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.351Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\browserconfig.xml
+[debug] [2024-10-05T03:43:05.353Z] [unzip] Entry: client/favicon-32x32.png (compressed_size=475 bytes, uncompressed_size=475 bytes)
+[debug] [2024-10-05T03:43:05.353Z] [unzip] Processing entry: client\favicon-32x32.png
+[debug] [2024-10-05T03:43:05.353Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client
+[debug] [2024-10-05T03:43:05.353Z] [unzip] Writing file: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\client\favicon-32x32.png
+[debug] [2024-10-05T03:43:05.354Z] [unzip] Entry: server/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.354Z] [unzip] Processing entry: server\
+[debug] [2024-10-05T03:43:05.354Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\
+[debug] [2024-10-05T03:43:05.355Z] [unzip] Entry: server/server.mjs.map (compressed_size=294629 bytes, uncompressed_size=1346672 bytes)
+[debug] [2024-10-05T03:43:05.355Z] [unzip] Processing entry: server\server.mjs.map
+[debug] [2024-10-05T03:43:05.355Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server
+[debug] [2024-10-05T03:43:05.355Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\server.mjs.map
+[debug] [2024-10-05T03:43:05.369Z] [unzip] Entry: server/server.mjs (compressed_size=314679 bytes, uncompressed_size=1167517 bytes)
+[debug] [2024-10-05T03:43:05.369Z] [unzip] Processing entry: server\server.mjs
+[debug] [2024-10-05T03:43:05.369Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server
+[debug] [2024-10-05T03:43:05.370Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\server.mjs
+[debug] [2024-10-05T03:43:05.383Z] [unzip] Entry: server/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2024-10-05T03:43:05.383Z] [unzip] Processing entry: server\assets\
+[debug] [2024-10-05T03:43:05.383Z] [unzip] mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\assets\
+[debug] [2024-10-05T03:43:05.383Z] [unzip] Entry: server/assets/multipart-parser-DGCUZdXu.mjs.map (compressed_size=4791 bytes, uncompressed_size=17918 bytes)
+[debug] [2024-10-05T03:43:05.383Z] [unzip] Processing entry: server\assets\multipart-parser-DGCUZdXu.mjs.map
+[debug] [2024-10-05T03:43:05.383Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\assets
+[debug] [2024-10-05T03:43:05.383Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\assets\multipart-parser-DGCUZdXu.mjs.map
+[debug] [2024-10-05T03:43:05.388Z] [unzip] Entry: server/assets/multipart-parser-DGCUZdXu.mjs (compressed_size=2621 bytes, uncompressed_size=10390 bytes)
+[debug] [2024-10-05T03:43:05.388Z] [unzip] Processing entry: server\assets\multipart-parser-DGCUZdXu.mjs
+[debug] [2024-10-05T03:43:05.388Z] [unzip] else mkdir: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\assets
+[debug] [2024-10-05T03:43:05.388Z] [unzip] deflating: C:\Users\Dorian\.cache\firebase\emulators\ui-v1.13.0\server\assets\multipart-parser-DGCUZdXu.mjs
+[debug] [2024-10-05T03:43:05.392Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"ui"},"message":"Ignoring unsupported arg: auto_download"}}
+[debug] [2024-10-05T03:43:05.392Z] Ignoring unsupported arg: port {"metadata":{"emulator":{"name":"ui"},"message":"Ignoring unsupported arg: port"}}
+[debug] [2024-10-05T03:43:05.392Z] Starting Emulator UI with command {"binary":"node","args":["C:\\Users\\Dorian\\.cache\\firebase\\emulators\\ui-v1.13.0\\server\\server.mjs"],"optionalArgs":[],"joinArgs":false,"shell":false,"port":4000} {"metadata":{"emulator":{"name":"ui"},"message":"Starting Emulator UI with command {\"binary\":\"node\",\"args\":[\"C:\\\\Users\\\\Dorian\\\\.cache\\\\firebase\\\\emulators\\\\ui-v1.13.0\\\\server\\\\server.mjs\"],\"optionalArgs\":[],\"joinArgs\":false,\"shell\":false,\"port\":4000}"}}
+[info] i  ui: Emulator UI logging to ui-debug.log {"metadata":{"emulator":{"name":"ui"},"message":"Emulator UI logging to \u001b[1mui-debug.log\u001b[22m"}}
+[debug] [2024-10-05T03:43:05.529Z] Web / API server started at 127.0.0.1:4000
+ {"metadata":{"emulator":{"name":"ui"},"message":"Web / API server started at 127.0.0.1:4000\n"}}
+[debug] [2024-10-05T03:43:05.529Z] Web / API server started at ::1:4000
+ {"metadata":{"emulator":{"name":"ui"},"message":"Web / API server started at ::1:4000\n"}}
+[info] i  functions: Watching "D:\Documentos\Tesis\my-next-app" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"D:\\Documentos\\Tesis\\my-next-app\" for Cloud Functions..."}}
+[debug] [2024-10-05T03:43:05.610Z] Validating nodejs source
+[warn] !  functions: Couldn't find firebase-functions package in your source code. Have you run 'npm install'? 
+[debug] [2024-10-05T03:43:05.612Z] getFunctionsSDKVersion encountered error: Cannot find module 'firebase-functions'
+Require stack:
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\versioning.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\index.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\prepare.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\functionsEmulatorShared.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\functionsEmulator.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\controller.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\commandUtils.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\commands\database-get.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\commands\index.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\index.js
+- C:\Users\Dorian\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js {"code":"MODULE_NOT_FOUND","requireStack":["C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\node\\versioning.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\node\\index.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\deploy\\functions\\runtimes\\index.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\deploy\\functions\\prepare.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\emulator\\functionsEmulatorShared.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\emulator\\functionsEmulator.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\emulator\\controller.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\emulator\\commandUtils.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\commands\\database-get.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\commands\\index.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\index.js","C:\\Users\\Dorian\\AppData\\Roaming\\npm\\node_modules\\firebase-tools\\lib\\bin\\firebase.js"]}
+[debug] [2024-10-05T03:43:05.613Z] checkFunctionsSDKVersion encountered error: Invalid Version:  {}
+[debug] [2024-10-05T03:43:05.613Z] > [functions] package.json contents: {
+  "name": "my-next-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.0",
+    "@radix-ui/react-checkbox": "^1.1.1",
+    "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-icons": "^1.3.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-popover": "^1.1.1",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "firebase": "^10.14.0",
+    "lucide-react": "^0.446.0",
+    "next": "^14.2.13",
+    "next-themes": "^0.3.0",
+    "openai": "^4.65.0",
+    "react": "^18",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18",
+    "react-firebase-hooks": "^5.1.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.13",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
+[error] !!  functions: Failed to load function definition from source: FirebaseError: There was an error reading \package.json:
+
+ index.js does not exist, can't deploy Cloud Functions {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: There was an error reading \\package.json:\n\n index.js does not exist, can't deploy Cloud Functions"}}
+[info] i  functions: Watching "D:\Documentos\Tesis\my-next-app\alice-app-codebase" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"D:\\Documentos\\Tesis\\my-next-app\\alice-app-codebase\" for Cloud Functions..."}}
+[debug] [2024-10-05T03:43:05.619Z] Validating nodejs source
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2024-10-05T03:43:06.671Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "lint": "eslint --ext .js,.ts .",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "firebase-functions-test": "^3.1.0",
+    "typescript": "^4.9.0"
+  },
+  "private": true
+}
+[error] !!  functions: Failed to load function definition from source: FirebaseError: There was an error reading alice-app-codebase\package.json:
+
+ alice-app-codebase\lib\index.js does not exist, can't deploy Cloud Functions {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: There was an error reading alice-app-codebase\\package.json:\n\n alice-app-codebase\\lib\\index.js does not exist, can't deploy Cloud Functions"}}
+[debug] [2024-10-05T03:43:06.677Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: 
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Hosting   │ 127.0.0.1:5000 │ n/a                             │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub running at 127.0.0.1:4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
