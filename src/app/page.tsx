@@ -19,24 +19,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format, parse, isValid } from "date-fns"
+import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import OpenAI from "openai"
 
+//Diseño Iconos
+import { FcGoogle } from "react-icons/fc";
+import { TfiEmail } from "react-icons/tfi";
+import { RiEditLine } from "react-icons/ri";
+import { IoIosSave } from "react-icons/io";
+import { IoTrashBinSharp } from "react-icons/io5";
+
+
 // Importaciones de Firebase
-import firebase from 'firebase/app';
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore"
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
 // Configuración de Firebase
@@ -50,15 +56,11 @@ const firebaseConfig = {
   measurementId: "G-Y6TF6TB2HJ"
 };
 
-
-
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 // Nota: Se ha eliminado la inicialización de analytics para evitar el error en entornos sin soporte para cookies
-
 
 {/* Definicion de Tipos */}
 
@@ -74,66 +76,43 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-//Definicion de Libro Diario
+// Definición de Tipos
 type RowData = {
   id: string
-  fecha: string
-  cuenta: string
-  descripcion: string
-  debe: number
-  haber: number
+  [key: string]: any
 }
 
-//Definicion Mensajes Ia
+//Definicion Inventario
+type InventoryItem = {
+  id: string
+  [key: string]: any
+}
+
+//Definicion Factura
+type InvoiceItem = {
+  id: string
+  [key: string]: any
+}
+
+//Definicion Mensaje
 type Message = {
   role: 'user' | 'assistant'
   content: string
 }
 
-//Definicion Inventario 
-type InventoryItem = {
-  id: string
-  descripcion: string
-  categoria: string
-  codigoBarras: string
-  cantidadInicial: number
-  cantidadDisponible: number
-  unidadMedida: string
-  stockMinimo: number
-  stockMaximo: number
-  precioCompra: number
-  precioVenta: number
-  fechaIngreso: string
-  proveedor: string
-  ubicacion: string
-  fechaVencimiento: string
-  estado: string
-  valorTotal: number
-  responsable: string
-  notas: string
+type FieldConfig = {
+  name: string
+  type: string
 }
 
-//Definicion Facturacion
-type InvoiceItem = {
-  id: string
-  fechaEmision: string
-  nombreCliente: string
-  direccionCliente: string
-  rfc: string
-  detallesProducto: string
-  cantidad: number
-  precioUnitario: number
-  subtotal: number
-  impuestos: number
-  total: number
-  metodoPago: string
-  fechaVencimiento: string
-  estado: string
-  numeroOrdenCompra: string
-  descuentos: number
-  notas: string
-  detallesEmisor: string
-  firma: string
+type SectionConfig = {
+  [key: string]: FieldConfig
+}
+
+type AppConfig = {
+  libroDiario: SectionConfig
+  inventario: SectionConfig
+  facturacion: SectionConfig
 }
 
 {/* Configuracion de Items */}
@@ -184,7 +163,7 @@ const invoiceFields = [
   { id: 'firma', label: 'Firma', type: 'text' },
 ]
 
-//Chatgpt IA
+//Chatgpt IA Key
 const openai = new OpenAI({
   apiKey: "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",
   dangerouslyAllowBrowser: true
@@ -196,13 +175,7 @@ export default function ContabilidadApp() {
   const [activeTab, setActiveTab] = useState("libro-diario")
   const [data, setData] = useState<RowData[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [newRow, setNewRow] = useState<Omit<RowData, 'id'>>({
-    fecha: new Date().toISOString().split('T')[0],
-    cuenta: "",
-    descripcion: "",
-    debe: 0,
-    haber: 0
-  })
+  const [newRow, setNewRow] = useState<Omit<RowData, 'id'>>({})
   const [timeFrame, setTimeFrame] = useState("diario")
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -212,36 +185,9 @@ export default function ContabilidadApp() {
   const [inputMessage, setInputMessage] = useState("")
   const chatRef = useRef<HTMLDivElement>(null)
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
-  const [newInventoryItem, setNewInventoryItem] = useState<InventoryItem>({
-    id: '',
-    descripcion: '',
-    categoria: '',
-    cantidadDisponible: 0,
-    stockMinimo: 0,
-    precioCompra: 0,
-    precioVenta: 0,
-    fechaIngreso: new Date().toISOString().split('T')[0],
-    proveedor: '',
-  } as InventoryItem)
-  const [selectedInventoryFields, setSelectedInventoryFields] = useState<string[]>([
-    'id', 'descripcion', 'categoria', 'cantidadDisponible', 'stockMinimo', 'precioCompra', 'precioVenta', 'fechaIngreso', 'proveedor'
-  ])
+  const [newInventoryItem, setNewInventoryItem] = useState<InventoryItem>({} as InventoryItem)
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
-  const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({
-    id: '',
-    fechaEmision: new Date().toISOString().split('T')[0],
-    nombreCliente: '',
-    detallesProducto: '',
-    cantidad: 0,
-    precioUnitario: 0,
-    subtotal: 0,
-    impuestos: 0,
-    total: 0,
-    metodoPago: '',
-  } as InvoiceItem)
-  const [selectedInvoiceFields, setSelectedInvoiceFields] = useState<string[]>([
-    'id', 'fechaEmision', 'nombreCliente', 'detallesProducto', 'cantidad', 'precioUnitario', 'subtotal', 'impuestos', 'total', 'metodoPago'
-  ])
+  const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({} as InvoiceItem)
   const [dashboardType, setDashboardType] = useState("financial")
   const [isCreatingInventoryItem, setIsCreatingInventoryItem] = useState(false)
   const [isCreatingInvoiceItem, setIsCreatingInvoiceItem] = useState(false)
@@ -255,6 +201,15 @@ export default function ContabilidadApp() {
   const [invoiceFilterYear, setInvoiceFilterYear] = useState(new Date().getFullYear().toString())
   const [invoiceFilterType, setInvoiceFilterType] = useState("all")
 
+  // Nuevos estados para la edición de campos
+  const [isEditingFields, setIsEditingFields] = useState(false)
+  const [editingSection, setEditingSection] = useState<keyof AppConfig | ''>('')
+  const [appConfig, setAppConfig] = useState<AppConfig>({
+    libroDiario: {},
+    inventario: {},
+    facturacion: {}
+  })
+
   // Estado de autenticación
   const [user] = useAuthState(auth);
 
@@ -263,188 +218,228 @@ export default function ContabilidadApp() {
   const [password, setPassword] = useState("");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
+  const db = getFirestore()
 
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
-    loadData();
-  }, [user]);
+    if (user) {
+      loadUserConfig()
+      loadData()
+      setIsLoginModalOpen(false)
+    }else{
+      checkUserAuthentication();
+    }
+  }, [user])
 
-  // Función para cargar datos de Firebase
-  const loadData = async () => {
-    try {
-      const user = auth.currentUser;  // Verificar si el usuario está autenticado
-      if (!user) {
-        throw new Error("No hay un usuario autenticado.");
+  // Función para cargar la configuración del usuario desde Firestore
+  const loadUserConfig = async () => {
+    if (!user) return
+
+    const configDoc = await getDoc(doc(db, `users/${user.uid}/config`, 'fields'))
+    if (configDoc.exists()) {
+      setAppConfig(configDoc.data() as AppConfig)
+    } else {
+      // Funcion Datos Por Defecto
+      const defaultConfig: AppConfig = {
+        libroDiario: {
+          fecha: { name: 'Fecha' , type: 'date'},
+          nombreCuenta: { name: 'Nombre de Cuenta', type: 'text' },
+          descripcion: { name: 'Descripción', type: 'text' },
+          debe: { name: 'Debe', type: 'number' },
+          haber: { name: 'Haber', type: 'number' }
+        },
+        inventario: {
+          id: { name: 'Número de Ítem (ID)', type: 'text' },
+          descripcion: { name: 'Descripción del Producto', type: 'text' },
+          cantidadDisponible: { name: 'Cantidad Disponible', type: 'number' },
+          stockMinimo: { name: 'Stock Mínimo', type: 'number' },
+          precioCompra: { name: 'Precio de Compra Unitario', type: 'number' },
+          precioVenta: { name: 'Precio de Venta Unitario', type: 'number' },
+          fechaIngreso: { name: 'Fecha de Ingreso', type: 'date' },
+          proveedor: { name: 'Proveedor', type: 'text' }
+        },
+        facturacion: {
+          numeroFactura: { name: 'Número de Factura', type: 'text' },
+          fechaEmision: { name: 'Fecha de Emisión', type: 'date' },
+          nombreCliente: { name: 'Nombre del Cliente', type: 'text' },
+          detallesProducto: { name: 'Detalles del Producto/Servicio', type: 'text' },
+          cantidad: { name: 'Cantidad de Productos/Servicios', type: 'number' },
+          precioUnitario: { name: 'Precio Unitario', type: 'number' },
+          subtotal: { name: 'Subtotal', type: 'number' },
+          impuestos: { name: 'Impuestos Aplicables', type: 'number' },
+          total: { name: 'Total a Pagar', type: 'number' },
+          metodoPago: { name: 'Método de Pago', type: 'text' }
+        }
       }
-  
-      const uid = user.uid;  // Obtener el UID del usuario
-  
-      // Cargar datos del libro diario para el usuario autenticado
-      const libroSnapshot = await getDocs(collection(db, `users/${uid}/libroDiario`));
-      const libroData = libroSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RowData));
-      setData(libroData);
-  
-      // Cargar datos de inventario para el usuario autenticado
-      const inventorySnapshot = await getDocs(collection(db, `users/${uid}/inventario`));
-      const inventoryData = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
-      setInventoryItems(inventoryData);
-  
-      // Cargar datos de facturación para el usuario autenticado
-      const invoiceSnapshot = await getDocs(collection(db, `users/${uid}/facturacion`));
-      const invoiceData = invoiceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InvoiceItem));
-      setInvoiceItems(invoiceData);
-  
+      await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), defaultConfig)
+      setAppConfig(defaultConfig)
+    }
+  }
+
+  // Funcion Requerimiento Inicio de Sesion
+  const checkUserAuthentication = (): void => {
+    setIsLoginModalOpen(true);
+  };
+
+  // Función para cargar datos
+  const loadData = async () => {
+    if (!user) return
+
+    try {
+      // Cargar datos del libro diario
+      const libroDiarioSnapshot = await getDocs(collection(db, `users/${user.uid}/libroDiario`))
+      const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setData(libroDiarioData)
+
+      // Cargar datos de inventario
+      const inventarioSnapshot = await getDocs(collection(db, `users/${user.uid}/inventario`))
+      const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setInventoryItems(inventarioData)
+
+      // Cargar datos de facturación
+      const facturacionSnapshot = await getDocs(collection(db, `users/${user.uid}/facturacion`))
+      const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setInvoiceItems(facturacionData)
     } catch (error) {
-      console.error("Error al cargar datos:", error);
+      console.error("Error al cargar datos:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al cargar los datos. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  {/* Items Libro Diario */}
+  // Función para abrir el modal de edición de campos
+  const openFieldEditor = (section: keyof AppConfig) => {
+    setEditingSection(section)
+    setIsEditingFields(true)
+  }
 
-  //Metodo Retorno de listra libro diario
-  useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight
-    }
-  }, [messages])
+  // Función para guardar los cambios en la configuración de campos
+  const saveFieldChanges = async () => {
+    if (!user) return
 
-  //Metodo Configuracion de Errores
-  const handleAddRow = async () => {
-    if (Object.values(newRow).some(value => value === "")) {
+    try {
+      await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), appConfig)
+      setIsEditingFields(false)
+      loadData() // Recargar los datos con la nueva configuración
+    } catch (error) {
+      console.error("Error al guardar la configuración de campos:", error)
       toast({
         title: "Error",
-        description: "Por favor, complete todos los campos antes de agregar una nueva fila.",
+        description: "Hubo un problema al guardar la configuración. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
-      return;
+      })
     }
-  
-    try {
-      const user = auth.currentUser;  // Verificar si el usuario está autenticado
-      if (!user) {
-        throw new Error("No hay un usuario autenticado.");
+  }
+
+  // Función para agregar un nuevo campo
+  const addNewField = (section: keyof AppConfig) => {
+    const newFieldKey = `newField${Object.keys(appConfig[section]).length}`
+    setAppConfig(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [newFieldKey]: { name: 'Nuevo Campo', type: 'text' }
       }
-  
-      const uid = user.uid;  // Obtener el UID del usuario
-  
-      // Agregar la nueva fila en la colección del usuario autenticado
-      const docRef = await addDoc(collection(db, `users/${uid}/libroDiario`), newRow);
-      
-      // Actualizar el estado con el nuevo dato
-      setData([...data, { id: docRef.id, ...newRow }]);
-      
-      // Resetear el formulario para agregar una nueva fila
-      setNewRow({
-        fecha: new Date().toISOString().split('T')[0],
-        cuenta: "",
-        descripcion: "",
-        debe: 0,
-        haber: 0,
-      });
+    }))
+  }
+
+  // Función para eliminar un campo
+  const deleteField = (section: keyof AppConfig, fieldKey: string) => {
+    setAppConfig(prev => {
+      const newConfig = { ...prev }
+      delete newConfig[section][fieldKey]
+      return newConfig
+    })
+  }
+
+  // Función para actualizar un campo
+  const updateField = (section: keyof AppConfig, fieldKey: string, updates: Partial<FieldConfig>) => {
+    setAppConfig(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [fieldKey]: { ...prev[section][fieldKey], ...updates }
+      }
+    }))
+  }
+
+  // Función para agregar una nueva fila al libro diario
+  const handleAddRow = async () => {
+    if (!user) return
+
+    try {
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRow)
+      setData([...data, { id: docRef.id, ...newRow }])
+      setNewRow({})
     } catch (error) {
-      console.error("Error al agregar fila:", error);
+      console.error("Error al agregar fila:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al agregar la fila. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  //Metodo Editor de Items Libro Diario
+  // Función para editar una fila del libro diario
   const handleEditRow = (id: string) => {
     setEditingId(id)
   }
-  
-  //Metodo Btn Guardar Cambios Items Libro Diario
+
+  // Función para guardar los cambios de una fila del libro diario
   const handleSaveRow = async (id: string) => {
-    const editedRow = data.find(row => row.id === id);
-    
-    // Verificar si hay un usuario autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const uid = user.uid;  // Obtener el UID del usuario
-    
-    if (editedRow && Object.values(editedRow).some(value => value === "")) {
-      toast({
-        title: "Error",
-        description: "Por favor, complete todos los campos antes de guardar la fila.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
+    if (!user) return
+
+    const editedRow = data.find(row => row.id === id)
+    if (!editedRow) return
+
     try {
-      // Actualizar el documento en la colección del usuario autenticado
-      await updateDoc(doc(db, `users/${uid}/libroDiario`, id), editedRow as RowData);
-      setEditingId(null);
+      await updateDoc(doc(db, `users/${user.uid}/libroDiario`, id), editedRow)
+      setEditingId(null)
     } catch (error) {
-      console.error("Error al guardar cambios:", error);
+      console.error("Error al guardar cambios:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al guardar los cambios. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
-  //Metodo Btn Borrar Item Libro Diario
+  }
+
+  // Función para eliminar una fila del libro diario
   const handleDeleteRow = async (id: string) => {
-    // Verificar si el usuario está autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid;  // Obtener el UID del usuario
-  
+    if (!user) return
+
     try {
-      // Eliminar el documento en la colección del usuario autenticado
-      await deleteDoc(doc(db, `users/${uid}/libroDiario`, id));
-      setData(data.filter(row => row.id !== id));
+      await deleteDoc(doc(db, `users/${user.uid}/libroDiario`, id))
+      setData(data.filter(row => row.id !== id))
     } catch (error) {
-      console.error("Error al eliminar fila:", error);
+      console.error("Error al eliminar fila:", error)
       toast({
         title: "Error",
+        
         description: "Hubo un problema al eliminar la fila. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
+  }
 
-
-  //Metodo Cargar Cambios Items Libro Diario
-  const handleInputChange = (id: string, field: keyof RowData, value: string | number) => {
+  // Función para manejar cambios en los inputs
+  const handleInputChange = (id: string, field: string, value: any) => {
     setData(data.map(row => 
-      row.id === id ? { ...row, [field]: field === 'debe' || field === 'haber' ? Number(value) : value } : row
+      row.id === id ? { ...row, [field]: value } : row
     ))
   }
 
-  //Metodo Crear Items Libro Diario
-  const handleNewRowChange = (field: keyof Omit<RowData, 'id'>, value: string | number) => {
-    setNewRow({ ...newRow, [field]: field === 'debe' || field === 'haber' ? Number(value) : value })
+  // Función para manejar cambios en la nueva fila
+  const handleNewRowChange = (field: string, value: any) => {
+    setNewRow({ ...newRow, [field]: value })
   }
 
-  //Metodo Filtro por Fecha Items Libro Diario
+  // Filtrado de datos para el libro diario
   const filteredData = useMemo(() => {
     return data.filter(row => {
       const rowDate = new Date(row.fecha)
@@ -461,16 +456,16 @@ export default function ContabilidadApp() {
     })
   }, [data, timeFrame, selectedDate, selectedMonth, selectedYear])
 
-  //Metodo Calculo Libro Diario
+  // Cálculo de totales para el libro diario
   const totals = useMemo(() => {
     return filteredData.reduce((acc, row) => {
-      acc.debe += row.debe
-      acc.haber += row.haber
+      acc.debe += parseFloat(row.debe) || 0
+      acc.haber += parseFloat(row.haber) || 0
       return acc
     }, { debe: 0, haber: 0 })
   }, [filteredData])
 
-  //Metodo Resultado Libro Diario
+  // Datos para los gráficos
   const chartData = useMemo(() => {
     return [
       { name: 'Totales', Debe: totals.debe, Haber: totals.haber }
@@ -481,8 +476,8 @@ export default function ContabilidadApp() {
   const lineChartData = useMemo(() => {
     return filteredData.map(row => ({
       fecha: row.fecha,
-      Debe: row.debe,
-      Haber: row.haber
+      Debe: parseFloat(row.debe) || 0,
+      Haber: parseFloat(row.haber) || 0
     }))
   }, [filteredData])
 
@@ -494,415 +489,281 @@ export default function ContabilidadApp() {
     ]
   }, [totals])
 
-  {/* Mensajes IA */}
-
-  //Metodo Enter Enviar Openai
+  // Función para manejar el envío de mensajes al asistente IA
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (inputMessage.trim()) {
-            const userMessage = { role: 'user' as const, content: inputMessage };
-            setMessages(prev => [...prev, userMessage]);
-            setInputMessage("");
+      e.preventDefault()
+      if (inputMessage.trim()) {
+        const userMessage = { role: 'user' as const, content: inputMessage }
+        setMessages(prev => [...prev, userMessage])
+        setInputMessage("")
 
-            try {
-              const completion = await openai.chat.completions.create({
-                  model: "gpt-3.5-turbo",
-                  messages: [
-                      { "role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas..." },
-                      ...messages,
-                      userMessage,
-                  ],
-              });
-          
-              const assistantMessage = {
-                  role: 'assistant' as const,
-                  content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta."
-              };
-              setMessages(prev => [...prev, assistantMessage]);
-          
-              // Generar audio de la respuesta
-              const speech = await openai.audio.speech.create({
-                  model: "tts-1",
-                  voice: "nova",
-                  input: assistantMessage.content,
-              });
-          
-              const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }));
-              const audio = new Audio(audioUrl);
-              audio.play();
-          
-          } catch (error) {
-              console.error("Error al comunicarse con la IA:", error);
-              console.error("Detalles del error:", error || error || error);
-              if (error === 429) {
-                setMessages(prev => [...prev, { role: 'assistant', content: "Has alcanzado el límite de uso de la API. Por favor, revisa tu plan y detalles de facturación." }]);
-              } else {
-                  setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }]);
-              }
-          }          
-        }
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+              { "role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas..." },
+              ...messages,
+              userMessage,
+            ],
+          })
+      
+          const assistantMessage = {
+            role: 'assistant' as const,
+            content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta."
+          }
+          setMessages(prev => [...prev, assistantMessage])
+      
+          // Generar audio de la respuesta
+          const speech = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: "nova",
+            input: assistantMessage.content,
+          })
+      
+          const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }))
+          const audio = new Audio(audioUrl)
+          audio.play()
+      
+        } catch (error) {
+          console.error("Error al comunicarse con la IA:", error)
+          setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }])
+        }          
+      }
     } else if (e.key === 'Enter' && e.shiftKey) {
-        e.preventDefault();
-        setInputMessage(prev => prev + '\n');
+      e.preventDefault()
+      setInputMessage(prev => prev + '\n')
     }
   }
 
-  //Metodo Envio de Archivos IA
+  // Función para manejar la subida de archivos
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Aquí iría la lógica para manejar la subida de archivos
     console.log("Archivo seleccionado:", event.target.files?.[0])
   }
 
-  //Metodo Envio de Audio IA
+  // Función para manejar la entrada de voz
   const handleVoiceInput = () => {
     // Aquí iría la lógica para manejar la entrada de voz
     console.log("Iniciando entrada de voz...")
   }
 
-  {/* Registros Firebase */}
-
-  //Metodo Error Registro De Inventario
+  // Función para agregar un nuevo ítem al inventario
   const handleAddInventoryItem = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
-    if (selectedInventoryFields.some(field => !newInventoryItem[field as keyof InventoryItem])) {
-      toast({
-        title: "Error",
-        description: "Por favor, complete todos los campos seleccionados antes de agregar un nuevo ítem.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
+    if (!user) return
+
     try {
-      const docRef = await addDoc(collection(db, `users/${uid}/inventario`), newInventoryItem);
-      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);
-      setNewInventoryItem({
-        id: '',
-        descripcion: '',
-        categoria: '',
-        cantidadDisponible: 0,
-        stockMinimo: 0,
-        precioCompra: 0,
-        precioVenta: 0,
-        fechaIngreso: new Date().toISOString().split('T')[0],
-        proveedor: '',
-      } as InventoryItem);
-      setIsCreatingInventoryItem(false);
+      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem)
+      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }])
+      setNewInventoryItem({} as InventoryItem)
+      setIsCreatingInventoryItem(false)
     } catch (error) {
-      console.error("Error al agregar ítem al inventario:", error);
+      console.error("Error al agregar ítem al inventario:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al agregar el ítem al inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
-  //Metodo Error Registro de Factura
+  }
+
+  // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
-    if (selectedInvoiceFields.some(field => !newInvoiceItem[field as keyof InvoiceItem])) {
-      toast({
-        title: "Error",
-        description: "Por favor, complete todos los campos seleccionados antes de agregar una nueva factura.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
+    if (!user) return
+
     try {
-      const docRef = await addDoc(collection(db, `users/${uid}/facturacion`), newInvoiceItem);
-      setInvoiceItems([...invoiceItems, { ...newInvoiceItem, id: docRef.id }]);
-      setNewInvoiceItem({
-        id: '',
-        fechaEmision: new Date().toISOString().split('T')[0],
-        nombreCliente: '',
-        detallesProducto: '',
-        cantidad: 0,
-        precioUnitario: 0,
-        subtotal: 0,
-        impuestos: 0,
-        total: 0,
-        metodoPago: '',
-      } as InvoiceItem);
-      setIsCreatingInvoiceItem(false);
+      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItem)
+      setInvoiceItems([...invoiceItems, { ...newInvoiceItem, id: docRef.id }])
+      setNewInvoiceItem({} as InvoiceItem)
+      setIsCreatingInvoiceItem(false)
     } catch (error) {
-      console.error("Error al agregar factura:", error);
+      console.error("Error al agregar factura:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al agregar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
-  //Metodo Carga de Item en ID
+  }
+
+  // Función para editar un ítem del inventario
   const handleEditInventoryItem = (id: string) => {
     setEditingInventoryId(id)
     const itemToEdit = inventoryItems.find(item => item.id === id)
     if (itemToEdit) {
       setNewInventoryItem(itemToEdit)
-      setSelectedInventoryFields(Object.keys(itemToEdit))
     }
   }
 
-  //Metodo Almacenamiento de Item Firestore
+  // Función para guardar los cambios de un ítem del inventario
   const handleSaveInventoryItem = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
+    if (!user || !editingInventoryId) return
+
     try {
-      await updateDoc(doc(db, `users/${uid}/inventario`, editingInventoryId!), newInventoryItem);
+      await updateDoc(doc(db, `users/${user.uid}/inventario`, editingInventoryId), newInventoryItem)
       setInventoryItems(inventoryItems.map(item => 
         item.id === editingInventoryId ? { ...newInventoryItem, id: editingInventoryId } : item
-      ));
-      setEditingInventoryId(null);
-      setNewInventoryItem({
-        id: '',
-        descripcion: '',
-        categoria: '',
-        cantidadDisponible: 0,
-        stockMinimo: 0,
-        precioCompra: 0,
-        precioVenta: 0,
-        fechaIngreso: new Date().toISOString().split('T')[0],
-        proveedor: '',
-      } as InventoryItem);
+      ))
+      setEditingInventoryId(null)
+      setNewInventoryItem({} as InventoryItem)
     } catch (error) {
-      console.error("Error al guardar cambios en el inventario:", error);
+      console.error("Error al guardar cambios en el inventario:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al guardar los cambios en el inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
-  //Metodo Btn Borrar Item Registro De Inventario Firestore
+  }
+
+  // Función para eliminar un ítem del inventario
   const handleDeleteInventoryItem = async (id: string) => {
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
+    if (!user) return
+
     try {
-      await deleteDoc(doc(db, `users/${uid}/inventario`, id));
-      setInventoryItems(inventoryItems.filter(item => item.id !== id));
+      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id))
+      setInventoryItems(inventoryItems.filter(item => item.id !== id))
     } catch (error) {
-      console.error("Error al eliminar ítem del inventario:", error);
+      console.error("Error al eliminar ítem del inventario:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al eliminar el ítem del inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
-  //Metodo Btn Editar Item Registro De Inventario
+  }
+
+  // Función para editar una factura
   const handleEditInvoiceItem = (id: string) => {
     setEditingInvoiceId(id)
     const itemToEdit = invoiceItems.find(item => item.id === id)
     if (itemToEdit) {
       setNewInvoiceItem(itemToEdit)
-      setSelectedInvoiceFields(Object.keys(itemToEdit))
     }
   }
 
-  //MetodoGuardar Cambios Item Registro De Inventario Firestore
+  // Función para guardar los cambios de una factura
   const handleSaveInvoiceItem = async () => {
-    // Verificar si el usuario está autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
+    if (!user || !editingInvoiceId) return
+
     try {
-      // Actualizar el documento en la colección específica del usuario
-      await updateDoc(doc(db, `users/${uid}/facturacion`, editingInvoiceId!), newInvoiceItem);
-      
+      await updateDoc(doc(db, `users/${user.uid}/facturacion`, editingInvoiceId), newInvoiceItem)
       setInvoiceItems(invoiceItems.map(item => 
-        item.id === editingInvoiceId ? newInvoiceItem : item
-      ));
-      
-      setEditingInvoiceId(null);
-      
-      setNewInvoiceItem({
-        id: '',
-        fechaEmision: new Date().toISOString().split('T')[0],
-        nombreCliente: '',
-        detallesProducto: '',
-        cantidad: 0,
-        precioUnitario: 0,
-        subtotal: 0,
-        impuestos: 0,
-        total: 0,
-        metodoPago: '',
-      } as InvoiceItem);
+        item.id === editingInvoiceId ? { ...newInvoiceItem, id: editingInvoiceId } : item
+      ))
+      setEditingInvoiceId(null)
+      setNewInvoiceItem({} as InvoiceItem)
     } catch (error) {
-      console.error("Error al guardar cambios en la factura:", error);
+      console.error("Error al guardar cambios en la factura:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al guardar los cambios en la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
+  }
 
-  //Metodo Eliminar Item Registro De Inventario Firestore
+  // Función para eliminar una factura
   const handleDeleteInvoiceItem = async (id: string) => {
-    // Verificar si el usuario está autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "No hay un usuario autenticado.",
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    const uid = user.uid; // Obtener el UID del usuario
-  
+    if (!user) return
+
     try {
-      // Eliminar el documento de la colección específica del usuario
-      await deleteDoc(doc(db, `users/${uid}/facturacion`, id));
-      setInvoiceItems(invoiceItems.filter(item => item.id !== id));
+      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, id))
+      setInvoiceItems(invoiceItems.filter(item => item.id !== id))
     } catch (error) {
-      console.error("Error al eliminar factura:", error);
+      console.error("Error al eliminar factura:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al eliminar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
-  
+  }
 
-  // Método para iniciar sesión con Google
+  // Función para iniciar sesión con Google
   const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+    const provider = new GoogleAuthProvider()
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider)
       toast({
         title: "Inicio de sesión exitoso",
         description: "Has iniciado sesión con Google.",
-      });
+      })
     } catch (error) {
-      console.error("Error al iniciar sesión con Google:", error);
+      console.error("Error al iniciar sesión con Google:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al iniciar sesión con Google. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  // Método para iniciar sesión con correo electrónico
+  // Función para iniciar sesión con correo electrónico
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password)
       toast({
         title: "Inicio de sesión exitoso",
         description: "Has iniciado sesión con tu correo electrónico.",
-      });
-      setIsLoginModalOpen(false);
+      })
+      setIsLoginModalOpen(false)
     } catch (error) {
-      console.error("Error al iniciar sesión con correo electrónico:", error);
+      console.error("Error al iniciar sesión con correo electrónico:", error)
       toast({
         title: "Error",
         description: "Credenciales incorrectas. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  // Método para registrarse con correo electrónico
+  // Función para registrarse con correo electrónico
   const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password)
       toast({
         title: "Registro exitoso",
         description: "Tu cuenta ha sido creada. Has iniciado sesión automáticamente.",
-      });
-      setIsLoginModalOpen(false);
+      })
+      setIsLoginModalOpen(false)
     } catch (error) {
-      console.error("Error al registrarse:", error);
+      console.error("Error al registrarse:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al crear la cuenta. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  //Metodo Cerrar Sesion 
+  // Función para cerrar sesión
   const handleLogout = async () => {
     try {
-      await auth.signOut();
+      await auth.signOut()
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión exitosamente.",
-      });
+      })
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      console.error("Error al cerrar sesión:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al cerrar sesión. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
-  //Metodo Filtro Por Fecha Items Registro De Inventario
+  // Función para obtener categorías únicas
+  const getUniqueCategories = () => {
+    const categories = new Set(inventoryItems.map(item => item.categoria))
+    return Array.from(categories).filter(Boolean) // Filtra valores nulos o undefined
+  }
+
+  // Filtrado de facturas
   const filteredInvoiceItems = useMemo(() => {
     return invoiceItems.filter(item => {
       const itemDate = new Date(item.fechaEmision)
@@ -992,14 +853,22 @@ export default function ContabilidadApp() {
         </div>
       </div>
 
-      {/* Contenido Principal */}
-      <div className="flex-1 p-8 overflow-auto">
+      {/* Contenido principal */}
+      <div className="flex-1 p-8 overflow-auto mr-12">
+
+          {/* Libro Diario Interfaz Estilo */}
         {activeTab === "libro-diario" && (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Libro Diario</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Libro Diario</h2>
+            </div>
             <div className="mb-4 flex items-center space-x-4">
+              <Button onClick={() => openFieldEditor('libroDiario')}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Campos
+              </Button>
               <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] ml-4">
                   <SelectValue placeholder="Seleccionar período" />
                 </SelectTrigger>
 
@@ -1013,8 +882,6 @@ export default function ContabilidadApp() {
               {timeFrame === "diario" && (
                 <Popover>
                   <PopoverTrigger asChild>
-
-                    {/* Btn Seleccion De Fecha */}
                     <Button
                       variant={"outline"}
                       className={`w-[280px] justify-start text-left font-normal`}
@@ -1033,8 +900,6 @@ export default function ContabilidadApp() {
                   </PopoverContent>
                 </Popover>
               )}
-
-              {/* Activacion de Filtro Mensual */}
               {timeFrame === "mensual" && (
                 <Input
                   type="month"
@@ -1043,7 +908,6 @@ export default function ContabilidadApp() {
                   className="w-[180px]"
                 />
               )}
-              {/* Activacion de Filtro Anual */}
               {timeFrame === "anual" && (
                 <Input
                   type="number"
@@ -1056,143 +920,91 @@ export default function ContabilidadApp() {
                 />
               )}
             </div>
-
-            {/* Libro Diario Interfaz Estilo */}
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cuenta</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Debe</TableHead>
-                  <TableHead>Haber</TableHead>
-                  <TableHead>Acciones</TableHead>
+                  {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                    <TableHead key={key}>{field.name}</TableHead>
+                  ))}
+                    <TableHead>
+                      <span className="mr-4">Acciones</span>
+                    </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.map((row) => (
                   <TableRow key={row.id}>
+                    {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                      <TableCell key={key}>
+                        {editingId === row.id ? (
+                          <Input
+                            type={field.type}
+                            value={row[key] || ''}
+                            onChange={(e) => handleInputChange(row.id, key, e.target.value)}
+                          />
+                        ) : (
+                          row[key]
+                        )}
+                      </TableCell>
+                    ))}
                     <TableCell>
                       {editingId === row.id ? (
-                        <Input
-                          type="date"
-                          value={row.fecha}
-                          onChange={(e) => handleInputChange(row.id, 'fecha', e.target.value)}
-                        />
-                      ) : (
-                        row.fecha
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Input
-                          type="text"
-                          value={row.cuenta}
-                          onChange={(e) => handleInputChange(row.id, 'cuenta', e.target.value)}
-                        />
-                      ) : (
-                        row.cuenta
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Input
-                          type="text"
-                          value={row.descripcion}
-                          onChange={(e) => handleInputChange(row.id, 'descripcion', e.target.value)}
-                        />
-                      ) : (
-                        row.descripcion
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Input
-                          type="number"
-                          value={row.debe}
-                          onChange={(e) => handleInputChange(row.id, 'debe', e.target.value)}
-                        />
-                      ) : (
-                        `$${row.debe.toFixed(2)}`
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Input
-                          type="number"
-                          value={row.haber}
-                          onChange={(e) => handleInputChange(row.id, 'haber', e.target.value)}
-                        />
-                      ) : (
-                        `$${row.haber.toFixed(2)}`
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Button onClick={() => handleSaveRow(row.id)} size="sm">
-                          <Save className="h-4 w-4" />
+                        <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
+                          <IoIosSave size={20}/>
                         </Button>
                       ) : (
-                        <Button onClick={() => handleEditRow(row.id)} size="sm">
-                          Editar
+                        <Button onClick={() => handleEditRow(row.id)} className="mr-4">
+                          <RiEditLine size={20}/>
                         </Button>
                       )}
-                      <Button onClick={() => handleDeleteRow(row.id)} size="sm" variant="destructive" className="ml-2">
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
+                        <IoTrashBinSharp size={20}/>
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
-                <TableRow>
-                  <TableCell>
-                    <Input
-                      type="date"
-                      value={newRow.fecha}
-                      onChange={(e) => handleNewRowChange('fecha', e.target.value)}
-                      placeholder="Fecha"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="text"
-                      value={newRow.cuenta}
-                      onChange={(e) => handleNewRowChange('cuenta', e.target.value)}
-                      placeholder="Cuenta"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="text"
-                      value={newRow.descripcion}
-                      onChange={(e) => handleNewRowChange('descripcion', e.target.value)}
-                      placeholder="Descripción"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={newRow.debe}
-                      onChange={(e) => handleNewRowChange('debe', e.target.value)}
-                      placeholder="Debe"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={newRow.haber}
-                      onChange={(e) => handleNewRowChange('haber', e.target.value)}
-                      placeholder="Haber"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={handleAddRow} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agregar
-                    </Button>
-                  </TableCell>
-                </TableRow>
               </TableBody>
             </Table>
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">Agregar nueva fila</h3>
+              <div className="flex space-x-2">
+                {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                  <Input
+                    key={key}
+                    type={field.type}
+                    placeholder={field.name}
+                    value={newRow[key] || ''}
+                    onChange={(e) => handleNewRowChange(key, e.target.value)}
+                  />
+                ))}
+                <Button onClick={handleAddRow}>Agregar</Button>
+              </div>
+            </div>
+            
+            <div className="mt-4">
+            <Card className="col-span-2">
+            {/*Libro Diario Resumen Financiaero*/}
+            <CardHeader>
+              <div className="text-center">
+                <CardTitle>Resumen Financiero</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="flex justify-around items-center">
+              <div className="text-center">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+              </div>
+            </CardContent>
+            </Card>
+            </div>
           </div>
         )}
 
@@ -1202,7 +1014,7 @@ export default function ContabilidadApp() {
             <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
             <div className="mb-4 flex items-center space-x-4">
               <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] ml-4">
                   <SelectValue placeholder="Seleccionar período" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1280,6 +1092,8 @@ export default function ContabilidadApp() {
                     </div>
                   </CardContent>
                 </Card>
+
+                  {/* Grafico de Barras */}
                   <Card>
                     <CardHeader>
                       <CardTitle>Gráfico de Barras</CardTitle>
@@ -1298,6 +1112,8 @@ export default function ContabilidadApp() {
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
+
+                  {/* Grafico de Lineas */}
                   <Card>
                     <CardHeader>
                       <CardTitle>Gráfico de Líneas</CardTitle>
@@ -1316,6 +1132,8 @@ export default function ContabilidadApp() {
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
+
+                  {/* Grafico de Pastel */}
                   <Card>
                     <CardHeader>
                       <CardTitle>Gráfico Circular</CardTitle>
@@ -1351,8 +1169,14 @@ export default function ContabilidadApp() {
                       <CardTitle>Resumen de Inventario</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p>Total de ítems: {inventoryItems.length}</p>
-                      <p>Valor total del inventario: ${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
+                      <div>
+                        <p>Total de ítems:</p>
+                        <p className="text-2xl font-bold">{inventoryItems.length}</p>
+                      </div>
+                      <div>
+                        <p>Valor total del inventario:</p>
+                        <p className="text-2xl font-bold text-green-600">${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
+                      </div>
                     </CardContent>
                   </Card>
                   <Card>
@@ -1438,370 +1262,210 @@ export default function ContabilidadApp() {
           </div>
         )}
 
+        {/* Inventario Interfaz Estilo */}
         {activeTab === "inventario" && (
           <div>
             <div className="flex justify-between items-center mb-4 mr-10">
               <h2 className="text-2xl font-bold">Registro de Inventario</h2>
-              <div className="flex space-x-2">
-                <Button onClick={() => setAdvancedViewInventory(!advancedViewInventory)} className="mr-2">
-                  {advancedViewInventory ? "Vista Simple" : "Vista Avanzada"}
-                </Button>
-                <Button onClick={() => setIsCreatingInventoryItem(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Ítem
-                </Button>
-              </div>
             </div>
-            {isCreatingInventoryItem && (
-              <Card className="mb-4">
-                <CardHeader>
-                  <CardTitle className="flex justify-between">Agregar Nuevo Ítem de Inventario</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {inventoryFields.map(field => (
-                      <div key={field.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`select-${field.id}`}
-                          checked={selectedInventoryFields.includes(field.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedInventoryFields([...selectedInventoryFields, field.id])
-                            } else {
-                              setSelectedInventoryFields(selectedInventoryFields.filter(id => id !== field.id))
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`select-${field.id}`}>{field.label}</Label>
-                      </div>
+
+            <div className="flex space-x-2">
+                <Button onClick={() => openFieldEditor('inventario')}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Campos
+                </Button>
+                <Button onClick={() => setIsCreatingInventoryItem(true)}>Agregar Ítem</Button>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[180px] ml-4">
+                    <SelectValue placeholder="Filtrar por categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    {getUniqueCategories().map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
                     ))}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    {selectedInventoryFields.map(fieldId => {
-                      const field = inventoryFields.find(f => f.id === fieldId)
-                      if (!field) return null
-                      return (
-                        <div key={field.id}>
-                          <Label htmlFor={field.id}>{field.label}</Label>
-                          {field.type === 'textarea' ? (
-                            <textarea
-                              id={field.id}
-                              value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                              onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
-                              className="w-full p-2 border rounded"
-                            />
-                          ) : (
-                            <Input
-                              id={field.id}
-                              type={field.type}
-                              value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                              onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
-                            />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div className="flex justify-start space-x-2 mt-4">
-                    <Button onClick={() => setIsCreatingInventoryItem(false)} variant="outline">Cancelar</Button>
-                    <Button onClick={handleAddInventoryItem}>Agregar Ítem</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </SelectContent>
+                </Select>
+              </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
-                  {advancedViewInventory ? (
-                    inventoryFields.map(field => (
-                      <TableHead key={field.id}>{field.label}</TableHead>
-                    ))
-                  ) : (
-                    <>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Cantidad</TableHead>
-                      <TableHead>Precio de Compra</TableHead>
-                      <TableHead>Precio de Venta</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </>
-                  )}
+                  {Object.entries(appConfig.inventario).map(([key, field]) => (
+                    <TableHead key={key}>{field.name}</TableHead>
+                  ))}
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {inventoryItems.map((item) => (
-                  <TableRow key={item.id}>
-                    {advancedViewInventory ? (
-                      inventoryFields.map(field => (
-                        <TableCell key={field.id}>
+                {inventoryItems
+                  .filter(item => selectedCategory === "all" || item.categoria === selectedCategory)
+                  .map((item) => (
+                    <TableRow key={item.id}>
+                      {Object.entries(appConfig.inventario).map(([key, field]) => (
+                        <TableCell key={key}>
                           {editingInventoryId === item.id ? (
-                            field.type === 'textarea' ? (
-                              <textarea
-                                value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                                onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: e.target.value})}
-                                className="w-full p-2 border rounded"
-                              />
-                            ) : (
-                              <Input
-                                type={field.type}
-                                value={newInventoryItem[field.id as keyof InventoryItem] as string}
-                                onChange={(e) => setNewInventoryItem({...newInventoryItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
-                              />
-                            )
+                            <Input
+                              type={field.type}
+                              value={newInventoryItem[key] || ''}
+                              onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
+                            />
                           ) : (
-                            item[field.id as keyof InventoryItem]
+                            advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
                           )}
                         </TableCell>
-                      ))
-                    ) : (
-                      <>
-                        <TableCell>{item.id}</TableCell>
-                        <TableCell>{item.descripcion}</TableCell>
-                        <TableCell>{item.categoria}</TableCell>
-                        <TableCell>{item.cantidadDisponible}</TableCell>
-                        <TableCell>${item.precioCompra.toFixed(2)}</TableCell>
-                        <TableCell>${item.precioVenta.toFixed(2)}</TableCell>
-                      </>
-                    )}
-                    <TableCell>
-                      {editingInventoryId === item.id ? (
-                        <>
-                          <Button onClick={handleSaveInventoryItem} size="sm" className="mr-2">
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button onClick={() => setEditingInventoryId(null)} size="sm" variant="outline">
-                            Cancelar
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button onClick={() => handleEditInventoryItem(item.id)} size="sm" className="mr-2">
-                            Editar
-                          </Button>
-                          <Button onClick={() => handleDeleteInventoryItem(item.id)} size="sm" variant="destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      ))}
+                      <TableCell>
+                        {editingInventoryId === item.id ? (
+                          <Button onClick={handleSaveInventoryItem}>Guardar</Button>
+                        ) : (
+                          <Button onClick={() => handleEditInventoryItem(item.id)}>Editar</Button>
+                        )}
+                        <Button variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>Eliminar</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
+            {isCreatingInventoryItem && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Agregar nuevo ítem</h3>
+                <div className="flex space-x-2">
+                  {Object.entries(appConfig.inventario).map(([key, field]) => (
+                    <Input
+                      key={key}
+                      type={field.type}
+                      placeholder={field.name}
+                      value={newInventoryItem[key] || ''}
+                      onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
+                    />
+                  ))}
+                  <Button onClick={handleAddInventoryItem}>Agregar</Button>
+                  <Button variant="secondary" onClick={() => setIsCreatingInventoryItem(false)}>Cancelar</Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
-        {/*Facturacion*/}
+
+        {/* Facturacion Interfaz Estilo */}
         {activeTab === "facturacion" && (
           <div>
             <div className="flex justify-between items-center mb-4 mr-10">
               <h2 className="text-2xl font-bold">Registro de Facturación</h2>
-              <div className="flex space-x-2">
-                <Button onClick={() => setAdvancedViewInvoice(!advancedViewInvoice)} className="mr-2">
-                  {advancedViewInvoice ? "Vista Simple" : "Vista Avanzada"}
-                </Button>
-                <Button onClick={() => setIsCreatingInvoiceItem(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Factura
-                </Button>
+            </div>
+
+            <div className="flex justify-between items-center mb-4 mr-10">
+            <div className="flex space-x-2">
+                  {/* Btn Editar Campos */}
+                  <Button onClick={() => openFieldEditor('facturacion')}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Campos
+                  </Button>
+                  {/* Crear Factura */}
+                  <Button onClick={() => setIsCreatingInvoiceItem(true)}>Crear Factura</Button>
+
+                  {/* Seleccionar Fecha */}
+                  <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                    <SelectTrigger className="w-[180px] ml-4">
+                      <SelectValue placeholder="Filtrar por fecha" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las fechas</SelectItem>
+                      <SelectItem value="day">Por día</SelectItem>
+                      <SelectItem value="month">Por mes</SelectItem>
+                      <SelectItem value="year">Por año</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {invoiceFilterType === "day" && (
+                    <Input
+                      type="date"
+                      value={invoiceFilterDate}
+                      onChange={(e) => setInvoiceFilterDate(e.target.value)}
+                      className="ml-4"
+                    />
+                  )}
+                  {invoiceFilterType === "month" && (
+                    <Input
+                      type="month"
+                      value={invoiceFilterMonth}
+                      onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                      className="ml-4"
+                    />
+                  )}
+                  {invoiceFilterType === "year" && (
+                    <Input
+                      type="number"
+                      value={invoiceFilterYear}
+                      onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                      min="1900"
+                      max="2099"
+                      step="1"
+                      className="ml-4"
+                    />
+                  )}
+                  
               </div>
             </div>
-            {isCreatingInvoiceItem && (
-              <Card className="mb-4">
-                <CardHeader>
-                  <CardTitle className="flex justify-between">Agregar Nueva Factura</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {invoiceFields.map(field => (
-                      <div key={field.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`select-${field.id}`}
-                          checked={selectedInvoiceFields.includes(field.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedInvoiceFields([...selectedInvoiceFields, field.id])
-                            } else {
-                              setSelectedInvoiceFields(selectedInvoiceFields.filter(id => id !== field.id))
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`select-${field.id}`}>{field.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    {selectedInvoiceFields.map(fieldId => {
-                      const field = invoiceFields.find(f => f.id === fieldId)
-                      if (!field) return null
-                      return (
-                        <div key={field.id}>
-                          <Label htmlFor={field.id}>{field.label}</Label>
-                          {field.type === 'textarea' ? (
-                            <textarea
-                              id={field.id}
-                              value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                              onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
-                              className="w-full p-2 border rounded"
-                            />
-                          ) : (
-                            <Input
-                              id={field.id}
-                              type={field.type}
-                              value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                              onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
-                            />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div className="flex justify-start space-x-2 mt-4">
-                    <Button onClick={() => setIsCreatingInvoiceItem(false)} variant="outline">Cancelar</Button>
-                    <Button onClick={handleAddInvoiceItem}>Agregar Factura</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            <div className="mb-4 flex items-center space-x-4">
-              <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las facturas</SelectItem>
-                  <SelectItem value="day">Por día</SelectItem>
-                  <SelectItem value="month">Por mes</SelectItem>
-                  <SelectItem value="year">Por año</SelectItem>
-                </SelectContent>
-              </Select>
-              {invoiceFilterType === "day" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={`w-[280px] justify-start text-left font-normal`}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {invoiceFilterDate ? format(new Date(invoiceFilterDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={new Date(invoiceFilterDate)}
-                      onSelect={(date) => date && setInvoiceFilterDate(date.toISOString().split('T')[0])}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-              {invoiceFilterType === "month" && (
-                <Input
-                  type="month"
-                  value={invoiceFilterMonth}
-                  onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                  className="w-[180px]"
-                />
-              )}
-              {invoiceFilterType === "year" && (
-                <Input
-                  type="number"
-                  value={invoiceFilterYear}
-                  onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                  min="1900"
-                  max="2099"
-                  step="1"
-                  className="w-[180px]"
-                />
-              )}
-            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
-                  {advancedViewInvoice ? (
-                    invoiceFields.map(field => (
-                      <TableHead key={field.id}>{field.label}</TableHead>
-                    ))
-                  ) : (
-                    <>
-                      <TableHead>Número de Factura</TableHead>
-                      <TableHead>Fecha de Emisión</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </>
-                  )}
+                  {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                    <TableHead key={key}>{field.name}</TableHead>
+                  ))}
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoiceItems.map((item) => (
                   <TableRow key={item.id}>
-                    {advancedViewInvoice ? (
-                      invoiceFields.map(field => (
-                        <TableCell key={field.id}>
-                          {editingInvoiceId === item.id ? (
-                            field.type === 'textarea' ? (
-                              <textarea
-                                value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                                onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: e.target.value})}
-                                className="w-full p-2 border rounded"
-                              />
-                            ) : (
-                              <Input
-                                type={field.type}
-                                value={newInvoiceItem[field.id as keyof InvoiceItem] as string}
-                                onChange={(e) => setNewInvoiceItem({...newInvoiceItem, [field.id]: field.type === 'number' ? Number(e.target.value) : e.target.value})}
-                              />
-                            )
-                          ) : (
-                            item[field.id as keyof InvoiceItem]
-                          )}
-                        </TableCell>
-                      ))
-                    ) : (
-                      <>
-                        <TableCell>{item.id}</TableCell>
-                        <TableCell>{item.fechaEmision}</TableCell>
-                        <TableCell>{item.nombreCliente}</TableCell>
-                        <TableCell>${item.total.toFixed(2)}</TableCell>
-                        <TableCell>{item.estado}</TableCell>
-                      </>
-                    )}
+                    {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                      <TableCell key={key}>
+                        {editingInvoiceId === item.id ? (
+                          <Input
+                            type={field.type}
+                            value={newInvoiceItem[key] || ''}
+                            onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
+                          />
+                        ) : (
+                          advancedViewInvoice ? item[key] : (key === 'numeroFactura' || key === 'cliente' ? item[key] : '•••')
+                        )}
+                      </TableCell>
+                    ))}
                     <TableCell>
                       {editingInvoiceId === item.id ? (
-                        <>
-                        {/* Btn Guardar Nuevo Item Registro De Factura */}
-                          <Button onClick={handleSaveInvoiceItem} size="sm" className="mr-2">
-                            <Save className="h-4 w-4" />
-                          </Button>
-
-                          {/* Btn Cancelar Nuevo Item Registro De Factura */}
-                          <Button onClick={() => setEditingInvoiceId(null)} size="sm" variant="outline">
-                            Cancelar
-                          </Button>
-                        </>
+                        <Button onClick={handleSaveInvoiceItem}>Guardar</Button>
                       ) : (
-                        <>
-                          {/* Btn Editar Item Registro De Factura */}
-                          <Button onClick={() => handleEditInvoiceItem(item.id)} size="sm" className="mr-2">
-                            Editar
-                          </Button>
-
-                          {/* Btn Borrar Item Registro De Factura */}
-                          <Button onClick={() => handleDeleteInvoiceItem(item.id)} size="sm" variant="destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
+                        <Button onClick={() => handleEditInvoiceItem(item.id)}>Editar</Button>
                       )}
+                      <Button variant="destructive" onClick={() => handleDeleteInvoiceItem(item.id)}>Eliminar</Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            {isCreatingInvoiceItem && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Crear nueva factura</h3>
+                <div className="flex space-x-2">
+                  {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                    <Input
+                      key={key}
+                      type={field.type}
+                      placeholder={field.name}
+                      value={newInvoiceItem[key] || ''}
+                      onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
+                    />
+                  ))}
+                  <Button onClick={handleAddInvoiceItem}>Crear</Button>
+                  <Button variant="secondary" onClick={() => setIsCreatingInvoiceItem(false)}>Cancelar</Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
+        
       </div>
 
       {/* Panel de IA desplegable */}
@@ -1850,6 +1514,7 @@ export default function ContabilidadApp() {
                   <Upload className="h-4 w-4" />
                   <span className="sr-only">Subir archivo</span>
                 </Button>
+                
                 <input
                   id="file-upload"
                   type="file"
@@ -1868,24 +1533,73 @@ export default function ContabilidadApp() {
         )}
       </div>
 
+      {/* Modal para editar campos */}
+      <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
+              <div key={key} className="flex items-center space-x-2">
+                <Input
+                  value={field.name}
+                  onChange={(e) => updateField(editingSection, key, { name: e.target.value })}
+                />
+                <Select
+                  value={field.type}
+                  onValueChange={(value) => updateField(editingSection, key, { type: value })}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Tipo de campo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Texto</SelectItem>
+                    <SelectItem value="number">Número</SelectItem>
+                    <SelectItem value="date">Fecha</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="destructive" size="icon" onClick={() => deleteField(editingSection, key)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button onClick={() => addNewField(editingSection as keyof AppConfig)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Campo
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={saveFieldChanges}>
+              <Save className="h-4 w-4 mr-2" />
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de inicio de sesión */}
       <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Iniciar sesión</DialogTitle>
+            <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+              <DialogTitle>Iniciar sesión</DialogTitle>
+            </div>
             <DialogDescription>
-              Elige cómo quieres iniciar sesión en tu cuenta.
+              Inicia Sesión para poder utilizar utilizar las funciones.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col space-y-4">
-            <Button onClick={handleGoogleLogin}>
-              Iniciar sesión con Google
+          <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+            <Button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-3 w-full">
+                <FcGoogle size={25} />
+              <span>Iniciar sesión con Google</span>
             </Button>
             <Button onClick={() => {
               setIsLoginModalOpen(false);
-              setIsEmailLoginModalOpen(true);
-            }}>
-              Iniciar sesión con correo electrónico
+              setIsEmailLoginModalOpen(true);}}
+            className="flex items-center justify-center space-x-3 w-full">
+              <TfiEmail size={25}/>
+              <span>Iniciar sesión con correo electrónico</span>
             </Button>
           </div>
         </DialogContent>
@@ -1934,4 +1648,8 @@ export default function ContabilidadApp() {
       </Dialog>
     </div>
   )
+}
+
+function loadUserConfig() {
+  throw new Error("Function not implemented.")
 }
