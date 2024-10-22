@@ -6,13 +6,20 @@
     Descargar libreria de OpenAI, unicamente si es descargado de GitHub
     Firebase instalado
 
+  Iniciar Host Local
   Abrir Terminal: Crl+ñ
+  Comando ejecutar: npm run dev
+  Generar carpeta ejecutable(Despues de la finalizacion del proyecto): npm run build
+
+  Descarga Openai:
   Comando ejecutable en Carpeta Main: npm install openai
   Reiniciar "Entorno de desarrollo integrado (IDE)"
 */}
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import LandingPage from '@/components/LandingPage';
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -60,7 +67,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Nota: Se ha eliminado la inicialización de analytics para evitar el error en entornos sin soporte para cookies
+// Nota: Elimine la inicialización de analytics para evitar el error en entornos sin soporte para cookies
 
 {/* Definicion de Tipos */}
 
@@ -170,7 +177,7 @@ const openai = new OpenAI({
 });
 
 export default function ContabilidadApp() {
-  
+
   //Configuracion de Cabeceras
   const [activeTab, setActiveTab] = useState("libro-diario")
   const [data, setData] = useState<RowData[]>([])
@@ -194,8 +201,8 @@ export default function ContabilidadApp() {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null)
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
-  const [advancedViewInventory, setAdvancedViewInventory] = useState(false)
-  const [advancedViewInvoice, setAdvancedViewInvoice] = useState(false)
+  const [advancedViewInventory, setAdvancedViewInventory] = useState(true)
+  const [advancedViewInvoice, setAdvancedViewInvoice] = useState(true)
   const [invoiceFilterDate, setInvoiceFilterDate] = useState(new Date().toISOString().split('T')[0])
   const [invoiceFilterMonth, setInvoiceFilterMonth] = useState(new Date().toISOString().slice(0, 7))
   const [invoiceFilterYear, setInvoiceFilterYear] = useState(new Date().getFullYear().toString())
@@ -217,15 +224,18 @@ export default function ContabilidadApp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
   const db = getFirestore()
+
+  const [showLandingPage, setShowLandingPage] = useState<boolean>(true);
 
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
     if (user) {
       loadUserConfig()
       loadData()
-      setIsLoginModalOpen(false)
+      setShowLandingPage(false); // Oculta la landing page cuando el usuario está autenticado
     }else{
       checkUserAuthentication();
     }
@@ -250,6 +260,7 @@ export default function ContabilidadApp() {
         },
         inventario: {
           id: { name: 'Número de Ítem (ID)', type: 'text' },
+          category: { name: 'Categoría', type: 'text'},
           descripcion: { name: 'Descripción del Producto', type: 'text' },
           cantidadDisponible: { name: 'Cantidad Disponible', type: 'number' },
           stockMinimo: { name: 'Stock Mínimo', type: 'number' },
@@ -278,7 +289,7 @@ export default function ContabilidadApp() {
 
   // Funcion Requerimiento Inicio de Sesion
   const checkUserAuthentication = (): void => {
-    setIsLoginModalOpen(true);
+    setShowLandingPage(true);
   };
 
   // Función para cargar datos
@@ -739,6 +750,11 @@ export default function ContabilidadApp() {
     }
   }
 
+  //Funcion btn para cerrar sesion
+  const handleLogoutConfirm = async () => {
+    setIsLogOutModalOpen(true)
+  }
+
   // Función para cerrar sesión
   const handleLogout = async () => {
     try {
@@ -759,7 +775,7 @@ export default function ContabilidadApp() {
 
   // Función para obtener categorías únicas
   const getUniqueCategories = () => {
-    const categories = new Set(inventoryItems.map(item => item.categoria))
+    const categories = new Set(inventoryItems.map(item => item.category))
     return Array.from(categories).filter(Boolean) // Filtra valores nulos o undefined
   }
 
@@ -781,301 +797,212 @@ export default function ContabilidadApp() {
   }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <>
+    {user ? (
+      // Mostrar la aplicación si el usuario ha iniciado sesión
+      <div className="flex h-screen bg-gray-100">
 
-      {/* Menu Izquierda*/}
+        {/* Menu Izquierda*/}
+        <div className="w-64 bg-white shadow-md">
+          <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4">Alice</h1>
 
-      <div className="w-64 bg-white shadow-md">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4">Alice</h1>
-          {user ? (
-            <div className="mb-4 flex items-center">
-              <Avatar className="h-10 w-10 mr-2">
-                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{user.displayName || user.email}</p>
+            {user ? (
 
-                {/* Btn Cerrar Sesion */}
-                <Button variant="ghost" size="sm" onClick={handleLogout}>Cerrar sesión</Button>
+              <div className="mb-4 flex items-center">
+                <Avatar className="h-10 w-10 mr-2">
+                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                  <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{user.displayName || user.email}</p>
+
+                  {/* Btn Cerrar Sesion */}
+                  <Button variant="ghost" size="sm" onClick={() => setIsLogOutModalOpen(true)}>Cerrar sesión</Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
-                Iniciar sesión
+            ) : (
+              <>
+                <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
+                  Iniciar sesión
+                </Button>
+              </>
+            )}
+            <nav>
+
+              {/* Btn Libro Diario */}
+              <Button
+                variant={activeTab === "libro-diario" ? "default" : "ghost"}
+                className="w-full justify-start mb-2"
+                onClick={() => setActiveTab("libro-diario")}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Libro Diario
               </Button>
-            </>
-          )}
-          <nav>
 
-            {/* Btn Libro Diario */}
-            <Button
-              variant={activeTab === "libro-diario" ? "default" : "ghost"}
-              className="w-full justify-start mb-2"
-              onClick={() => setActiveTab("libro-diario")}
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Libro Diario
-            </Button>
+              {/* Btn Dashboard */}
+              <Button
+                variant={activeTab === "dashboard" ? "default" : "ghost"}
+                className="w-full justify-start mb-2"
+                onClick={() => setActiveTab("dashboard")}
+              >
+                <BarChart2 className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
 
-            {/* Btn Dashboard */}
-            <Button
-              variant={activeTab === "dashboard" ? "default" : "ghost"}
-              className="w-full justify-start mb-2"
-              onClick={() => setActiveTab("dashboard")}
-            >
-              <BarChart2 className="mr-2 h-4 w-4" />
-              Dashboard
-            </Button>
+              {/* Btn Registro de Inventario */}
+              <Button
+                variant={activeTab === "inventario" ? "default" : "ghost"}
+                className="w-full justify-start mb-2"
+                onClick={() => setActiveTab("inventario")}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Registro de Inventario
+              </Button>
 
-            {/* Btn Registro de Inventario */}
-            <Button
-              variant={activeTab === "inventario" ? "default" : "ghost"}
-              className="w-full justify-start mb-2"
-              onClick={() => setActiveTab("inventario")}
-            >
-              <Package className="mr-2 h-4 w-4" />
-              Registro de Inventario
-            </Button>
-
-            {/* Btn Registro De Facturacion */}
-            <Button
-              variant={activeTab === "facturacion" ? "default" : "ghost"}
-              className="w-full justify-start mb-2"
-              onClick={() => setActiveTab("facturacion")}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Registro de Facturación
-            </Button>
-          </nav>
+              {/* Btn Registro De Facturacion */}
+              <Button
+                variant={activeTab === "facturacion" ? "default" : "ghost"}
+                className="w-full justify-start mb-2"
+                onClick={() => setActiveTab("facturacion")}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Registro de Facturación
+              </Button>
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Contenido principal */}
-      <div className="flex-1 p-8 overflow-auto mr-12">
+        {/* Contenido principal */}
+        <div className="flex-1 p-8 overflow-auto mr-12">
 
           {/* Libro Diario Interfaz Estilo */}
-        {activeTab === "libro-diario" && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Libro Diario</h2>
-            </div>
-            <div className="mb-4 flex items-center space-x-4">
-              <Button onClick={() => openFieldEditor('libroDiario')}>
-                <Edit className="h-4 w-4 mr-2" />
-                Editar Campos
-              </Button>
-              <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className="w-[180px] ml-4">
-                  <SelectValue placeholder="Seleccionar período" />
-                </SelectTrigger>
+          {activeTab === "libro-diario" && (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Libro Diario</h2>
+              </div>
+              <div className="mb-4 flex items-center space-x-4">
+                <Button onClick={() => openFieldEditor('libroDiario')}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Campos
+                </Button>
+                <Select value={timeFrame} onValueChange={setTimeFrame}>
+                  <SelectTrigger className="w-[180px] ml-4">
+                    <SelectValue placeholder="Seleccionar período" />
+                  </SelectTrigger>
 
-                {/* Seleccion De Fecha */}
-                <SelectContent>
-                  <SelectItem value="diario">Diario</SelectItem>
-                  <SelectItem value="mensual">Mensual</SelectItem>
-                  <SelectItem value="anual">Anual</SelectItem>
-                </SelectContent>
-              </Select>
-              {timeFrame === "diario" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={`w-[280px] justify-start text-left font-normal`}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={new Date(selectedDate)}
-                      onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-              {timeFrame === "mensual" && (
-                <Input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="w-[180px]"
-                />
-              )}
-              {timeFrame === "anual" && (
-                <Input
-                  type="number"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  min="1900"
-                  max="2099"
-                  step="1"
-                  className="w-[180px]"
-                />
-              )}
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                    <TableHead key={key}>{field.name}</TableHead>
-                  ))}
+                  {/* Seleccion De Fecha */}
+                  <SelectContent>
+                    <SelectItem value="diario">Diario</SelectItem>
+                    <SelectItem value="mensual">Mensual</SelectItem>
+                    <SelectItem value="anual">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+                {timeFrame === "diario" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={`w-[280px] justify-start text-left font-normal`}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={new Date(selectedDate)}
+                        onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
+                        initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {timeFrame === "mensual" && (
+                  <Input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-[180px]" />
+                )}
+                {timeFrame === "anual" && (
+                  <Input
+                    type="number"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    min="1900"
+                    max="2099"
+                    step="1"
+                    className="w-[180px]" />
+                )}
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                      <TableHead key={key}>{field.name}</TableHead>
+                    ))}
                     <TableHead>
                       <span className="mr-4">Acciones</span>
                     </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredData.map((row) => (
-                  <TableRow key={row.id}>
-                    {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                      <TableCell key={key}>
-                        {editingId === row.id ? (
-                          <Input
-                            type={field.type}
-                            value={row[key] || ''}
-                            onChange={(e) => handleInputChange(row.id, key, e.target.value)}
-                          />
-                        ) : (
-                          row[key]
-                        )}
-                      </TableCell>
-                    ))}
-                    <TableCell>
-                      {editingId === row.id ? (
-                        <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
-                          <IoIosSave size={20}/>
-                        </Button>
-                      ) : (
-                        <Button onClick={() => handleEditRow(row.id)} className="mr-4">
-                          <RiEditLine size={20}/>
-                        </Button>
-                      )}
-                      <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
-                        <IoTrashBinSharp size={20}/>
-                      </Button>
-                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Agregar nueva fila</h3>
-              <div className="flex space-x-2">
-                {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                  <Input
-                    key={key}
-                    type={field.type}
-                    placeholder={field.name}
-                    value={newRow[key] || ''}
-                    onChange={(e) => handleNewRowChange(key, e.target.value)}
-                  />
-                ))}
-                <Button onClick={handleAddRow}>Agregar</Button>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((row) => (
+                    <TableRow key={row.id}>
+                      {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                        <TableCell key={key}>
+                          {editingId === row.id ? (
+                            <Input
+                              type={field.type}
+                              value={row[key] || ''}
+                              onChange={(e) => handleInputChange(row.id, key, e.target.value)} />
+                          ) : (
+                            row[key]
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        {editingId === row.id ? (
+                          <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
+                            <IoIosSave size={20} />
+                          </Button>
+                        ) : (
+                          <Button onClick={() => handleEditRow(row.id)} className="mr-4">
+                            <RiEditLine size={20} />
+                          </Button>
+                        )}
+                        <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
+                          <IoTrashBinSharp size={20} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Agregar nueva fila</h3>
+                <div className="flex space-x-2">
+                  {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                    <Input
+                      key={key}
+                      type={field.type}
+                      placeholder={field.name}
+                      value={newRow[key] || ''}
+                      onChange={(e) => handleNewRowChange(key, e.target.value)} />
+                  ))}
+                  <Button onClick={handleAddRow}>Agregar</Button>
+                </div>
               </div>
-            </div>
-            
-            <div className="mt-4">
-            <Card className="col-span-2">
-            {/*Libro Diario Resumen Financiaero*/}
-            <CardHeader>
-              <div className="text-center">
-                <CardTitle>Resumen Financiero</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="flex justify-around items-center">
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
-                <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
-                <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
-                <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
-              </div>
-            </CardContent>
-            </Card>
-            </div>
-          </div>
-        )}
 
-        {/* Dashboard Interfaz Estilo */}
-        {activeTab === "dashboard" && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-            <div className="mb-4 flex items-center space-x-4">
-              <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className="w-[180px] ml-4">
-                  <SelectValue placeholder="Seleccionar período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="diario">Diario</SelectItem>
-                  <SelectItem value="mensual">Mensual</SelectItem>
-                  <SelectItem value="anual">Anual</SelectItem>
-                </SelectContent>
-              </Select>
-              {timeFrame === "diario" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={`w-[280px] justify-start text-left font-normal`}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={new Date(selectedDate)}
-                      onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-              {timeFrame === "mensual" && (
-                <Input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="w-[180px]"
-                />
-              )}
-              {timeFrame === "anual" && (
-                <Input
-                  type="number"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  min="1900"
-                  max="2099"
-                  step="1"
-                  className="w-[180px]"
-                />
-              )}
-            </div>
-            <Tabs defaultValue="financial" className="w-full">
-              <TabsList>
-                <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
-                <TabsTrigger value="inventory" onClick={() => setDashboardType("inventory")}>Inventario</TabsTrigger>
-              </TabsList>
-              <TabsContent value="financial">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mt-4">
                 <Card className="col-span-2">
-
-                  {/*Dashboard Resumen Financiaero*/}
+                  {/*Libro Diario Resumen Financiaero*/}
                   <CardHeader>
-                    <CardTitle>Resumen Financiero</CardTitle>
+                    <div className="text-center">
+                      <CardTitle>Resumen Financiero</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="flex justify-around items-center">
                     <div className="text-center">
@@ -1092,184 +1019,280 @@ export default function ContabilidadApp() {
                     </div>
                   </CardContent>
                 </Card>
-
-                  {/* Grafico de Barras */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gráfico de Barras</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="Debe" fill="#4ade80" />
-                          <Bar dataKey="Haber" fill="#f87171" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  {/* Grafico de Lineas */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gráfico de Líneas</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={lineChartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="fecha" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="Debe" stroke="#4ade80" />
-                          <Line type="monotone" dataKey="Haber" stroke="#f87171" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  {/* Grafico de Pastel */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gráfico Circular</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={pieChartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? "#4ade80" : "#f87171"} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              <TabsContent value="inventory">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Resumen de Inventario</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div>
-                        <p>Total de ítems:</p>
-                        <p className="text-2xl font-bold">{inventoryItems.length}</p>
-                      </div>
-                      <div>
-                        <p>Valor total del inventario:</p>
-                        <p className="text-2xl font-bold text-green-600">${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Ítems por Categoría</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={Object.entries(inventoryItems.reduce((acc, item) => {
-                              acc[item.categoria] = (acc[item.categoria] || 0) + 1
-                              return acc
-                            }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle>Tabla de Inventario</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <Label htmlFor="category-filter">Filtrar por categoría:</Label>
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger id="category-filter">
-                          <SelectValue placeholder="Todas las categorías" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas las categorías</SelectItem>
-                          {Array.from(new Set(inventoryItems.map(item => item.categoria))).map(category => (
-                            <SelectItem key={category} value={category}>{category}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Descripción</TableHead>
-                          <TableHead>Categoría</TableHead>
-                          <TableHead>Cantidad</TableHead>
-                          <TableHead>Precio de Compra</TableHead>
-                          <TableHead>Precio de Venta</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      {/*Filtrado de Inventario*/}
-                      <TableBody>
-                      {inventoryItems
-                        .filter(item => selectedCategory === "all" || item.categoria === selectedCategory)
-                        .map(item => (
-                            <TableRow key={item.id}>
-                              <TableCell>{item.id}</TableCell>
-                              <TableCell>{item.descripcion}</TableCell>
-                              <TableCell>{item.categoria}</TableCell>
-                              <TableCell>{item.cantidadDisponible}</TableCell>
-                              <TableCell>${item.precioCompra.toFixed(2)}</TableCell>
-                              <TableCell>${item.precioVenta.toFixed(2)}</TableCell>
-                            </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-
-        {/* Inventario Interfaz Estilo */}
-        {activeTab === "inventario" && (
-          <div>
-            <div className="flex justify-between items-center mb-4 mr-10">
-              <h2 className="text-2xl font-bold">Registro de Inventario</h2>
+              </div>
             </div>
+          )}
 
-            <div className="flex space-x-2">
+          {/* Dashboard Interfaz Estilo */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+              <div className="mb-4 flex items-center space-x-4">
+                <Select value={timeFrame} onValueChange={setTimeFrame}>
+                  <SelectTrigger className="w-[180px] ml-4">
+                    <SelectValue placeholder="Seleccionar período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diario">Diario</SelectItem>
+                    <SelectItem value="mensual">Mensual</SelectItem>
+                    <SelectItem value="anual">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+                {timeFrame === "diario" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={`w-[280px] justify-start text-left font-normal`}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={new Date(selectedDate)}
+                        onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
+                        initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {timeFrame === "mensual" && (
+                  <Input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-[180px]" />
+                )}
+                {timeFrame === "anual" && (
+                  <Input
+                    type="number"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    min="1900"
+                    max="2099"
+                    step="1"
+                    className="w-[180px]" />
+                )}
+              </div>
+              <Tabs defaultValue="financial" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
+                  <TabsTrigger value="inventory" onClick={() => setDashboardType("inventory")}>Inventario</TabsTrigger>
+                </TabsList>
+                <TabsContent value="financial">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/*Dashboard Resumen Financiaero*/}
+                    <Card className="col-span-2">
+                      <CardHeader>
+                        <CardTitle>Resumen Financiero</CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex justify-around items-center">
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                          <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                          <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                          <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Grafico de Barras */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Gráfico de Barras</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="Debe" fill="#4ade80" />
+                            <Bar dataKey="Haber" fill="#f87171" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    {/* Grafico de Lineas */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Gráfico de Líneas</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={lineChartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="fecha" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="Debe" stroke="#4ade80" />
+                            <Line type="monotone" dataKey="Haber" stroke="#f87171" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    {/* Grafico de Pastel */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Gráfico Circular</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={pieChartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={index === 0 ? "#4ade80" : "#f87171"} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                  </div>
+                </TabsContent>
+                <TabsContent value="inventory">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Resumen de Inventario</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div>
+                          <p>Total de ítems:</p>
+                          <p className="text-2xl font-bold">{inventoryItems.length}</p>
+                        </div>
+                        <div>
+                          <p>Valor total del inventario:</p>
+                          <p className="text-2xl font-bold text-green-600">${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ítems por Categoría</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={Object.entries(inventoryItems.reduce((acc, item) => {
+                                acc[item.category] = (acc[item.category] || 0) + 1;
+                                return acc;
+                              }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random() * 16777215).toString(16)}`} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle>Tabla de Inventario</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <Label htmlFor="category-filter">Filtrar por categoría:</Label>
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger id="category-filter">
+                            <SelectValue placeholder="Todas las categorías" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todas las categorías</SelectItem>
+                            {Array.from(new Set(inventoryItems.map(item => item.category))).map(category => (
+                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Table className="table-auto w-full">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Descripción</TableHead>
+                            <TableHead>Categoría</TableHead>
+                            <TableHead>Cantidad</TableHead>
+                            <TableHead>Precio de Compra</TableHead>
+                            <TableHead>Precio de Venta</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        {/*Filtrado de Inventario*/}
+                        <TableBody>
+                          {inventoryItems
+                            .filter(item => selectedCategory === "all" || item.category === selectedCategory)
+                            .map(item => (
+                              <TableRow key={item.id}>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                  {item.id}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px]">
+                                  {item.descripcion}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                  {item.category}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">
+                                  {item.cantidadDisponible}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                                  ${parseFloat(item.precioCompra).toFixed(2)}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                                  ${parseFloat(item.precioVenta).toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Inventario Interfaz Estilo */}
+          {activeTab === "inventario" && (
+            <div>
+              <div className="flex justify-between items-center mb-4 mr-10">
+                <h2 className="text-2xl font-bold">Registro de Inventario</h2>
+              </div>
+              <div className="mb-4 flex items-center space-x-4">
                 <Button onClick={() => openFieldEditor('inventario')}>
                   <Edit className="h-4 w-4 mr-2" />
                   Editar Campos
@@ -1288,75 +1311,79 @@ export default function ContabilidadApp() {
                 </Select>
               </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {Object.entries(appConfig.inventario).map(([key, field]) => (
-                    <TableHead key={key}>{field.name}</TableHead>
-                  ))}
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventoryItems
-                  .filter(item => selectedCategory === "all" || item.categoria === selectedCategory)
-                  .map((item) => (
-                    <TableRow key={item.id}>
-                      {Object.entries(appConfig.inventario).map(([key, field]) => (
-                        <TableCell key={key}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Object.entries(appConfig.inventario).map(([key, field]) => (
+                      <TableHead key={key}>{field.name}</TableHead>
+                    ))}
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventoryItems
+                    .filter(item => selectedCategory === "all" || item.category === selectedCategory)
+                    .map((item) => (
+                      <TableRow key={item.id}>
+                        {Object.entries(appConfig.inventario).map(([key, field]) => (
+                          <TableCell key={key}>
+                            {editingInventoryId === item.id ? (
+                              <Input
+                                type={field.type}
+                                value={newInventoryItem[key] || ''}
+                                onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
+                            ) : (
+                              advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
+                            )}
+                          </TableCell>
+                        ))}
+                        <TableCell>
                           {editingInventoryId === item.id ? (
-                            <Input
-                              type={field.type}
-                              value={newInventoryItem[key] || ''}
-                              onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
-                            />
+                            <Button className="m-1" onClick={handleSaveInventoryItem}>
+                              <IoIosSave size={20} />
+                            </Button>
                           ) : (
-                            advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
+                            <Button className="m-1" onClick={() => handleEditInventoryItem(item.id)}>
+                              <RiEditLine size={20} />
+                            </Button>
                           )}
+                          <Button className="m-1" variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>
+                              <IoTrashBinSharp size={20} />
+                          </Button>
                         </TableCell>
-                      ))}
-                      <TableCell>
-                        {editingInventoryId === item.id ? (
-                          <Button onClick={handleSaveInventoryItem}>Guardar</Button>
-                        ) : (
-                          <Button onClick={() => handleEditInventoryItem(item.id)}>Editar</Button>
-                        )}
-                        <Button variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>Eliminar</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-            {isCreatingInventoryItem && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Agregar nuevo ítem</h3>
-                <div className="flex space-x-2">
-                  {Object.entries(appConfig.inventario).map(([key, field]) => (
-                    <Input
-                      key={key}
-                      type={field.type}
-                      placeholder={field.name}
-                      value={newInventoryItem[key] || ''}
-                      onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
-                    />
-                  ))}
-                  <Button onClick={handleAddInventoryItem}>Agregar</Button>
-                  <Button variant="secondary" onClick={() => setIsCreatingInventoryItem(false)}>Cancelar</Button>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+              {isCreatingInventoryItem && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold mb-2">Agregar nuevo ítem</h3>
+                  <div className="flex space-x-2">
+                    {Object.entries(appConfig.inventario).map(([key, field]) => (
+                      <Input
+                        key={key}
+                        type={field.type}
+                        placeholder={field.name}
+                        value={newInventoryItem[key] || ''}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
+                    ))}
+                    <Button onClick={handleAddInventoryItem}>Agregar</Button>
+                    <Button variant="secondary" onClick={() => setIsCreatingInventoryItem(false)}>Cancelar</Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Facturacion Interfaz Estilo */}
-        {activeTab === "facturacion" && (
-          <div>
-            <div className="flex justify-between items-center mb-4 mr-10">
-              <h2 className="text-2xl font-bold">Registro de Facturación</h2>
+              )}
             </div>
+          )}
 
-            <div className="flex justify-between items-center mb-4 mr-10">
-            <div className="flex space-x-2">
+          {/* Facturacion Interfaz Estilo */}
+          {activeTab === "facturacion" && (
+            <div>
+              <div className="flex justify-between items-center mb-4 mr-10">
+                <h2 className="text-2xl font-bold">Registro de Facturación</h2>
+              </div>
+
+              <div className="flex justify-between items-center mb-4 mr-10">
+                <div className="mb-4 flex items-center space-x-4">
                   {/* Btn Editar Campos */}
                   <Button onClick={() => openFieldEditor('facturacion')}>
                     <Edit className="h-4 w-4 mr-2" />
@@ -1382,16 +1409,14 @@ export default function ContabilidadApp() {
                       type="date"
                       value={invoiceFilterDate}
                       onChange={(e) => setInvoiceFilterDate(e.target.value)}
-                      className="ml-4"
-                    />
+                      className="ml-4" />
                   )}
                   {invoiceFilterType === "month" && (
                     <Input
                       type="month"
                       value={invoiceFilterMonth}
                       onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                      className="ml-4"
-                    />
+                      className="ml-4" />
                   )}
                   {invoiceFilterType === "year" && (
                     <Input
@@ -1401,255 +1426,283 @@ export default function ContabilidadApp() {
                       min="1900"
                       max="2099"
                       step="1"
-                      className="ml-4"
-                    />
+                      className="ml-4" />
                   )}
-                  
-              </div>
-            </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                    <TableHead key={key}>{field.name}</TableHead>
-                  ))}
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoiceItems.map((item) => (
-                  <TableRow key={item.id}>
-                    {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                      <TableCell key={key}>
-                        {editingInvoiceId === item.id ? (
-                          <Input
-                            type={field.type}
-                            value={newInvoiceItem[key] || ''}
-                            onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
-                          />
-                        ) : (
-                          advancedViewInvoice ? item[key] : (key === 'numeroFactura' || key === 'cliente' ? item[key] : '•••')
-                        )}
-                      </TableCell>
-                    ))}
-                    <TableCell>
-                      {editingInvoiceId === item.id ? (
-                        <Button onClick={handleSaveInvoiceItem}>Guardar</Button>
-                      ) : (
-                        <Button onClick={() => handleEditInvoiceItem(item.id)}>Editar</Button>
-                      )}
-                      <Button variant="destructive" onClick={() => handleDeleteInvoiceItem(item.id)}>Eliminar</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {isCreatingInvoiceItem && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Crear nueva factura</h3>
-                <div className="flex space-x-2">
-                  {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                    <Input
-                      key={key}
-                      type={field.type}
-                      placeholder={field.name}
-                      value={newInvoiceItem[key] || ''}
-                      onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
-                    />
-                  ))}
-                  <Button onClick={handleAddInvoiceItem}>Crear</Button>
-                  <Button variant="secondary" onClick={() => setIsCreatingInvoiceItem(false)}>Cancelar</Button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-        
-      </div>
 
-      {/* Panel de IA desplegable */}
-      <div className={`fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col`}>
-        
-        {/* Btn Desplegar Panel */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 left-4"
-          onClick={() => setIsIAOpen(!isIAOpen)}
-          aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
-        >
-          {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
-        </Button>
-
-        {/* Interfaz Panel IA */}
-        {isIAOpen && (
-          <>
-            <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
-              {messages.map((message, index) => (
-                <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
-                    {message.content}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                      <TableHead key={key}>{field.name}</TableHead>
+                    ))}
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoiceItems.map((item) => (
+                    <TableRow key={item.id}>
+                      {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                        <TableCell key={key}>
+                          {editingInvoiceId === item.id ? (
+                            <Input
+                              type={field.type}
+                              value={newInvoiceItem[key] || ''}
+                              onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })} />
+                          ) : (
+                            advancedViewInvoice ? item[key] : (key === 'numeroFactura' || key === 'cliente' ? item[key] : '•••')
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        {editingInvoiceId === item.id ? (
+                          <Button className="m-1" onClick={handleSaveInvoiceItem}>
+                            <IoIosSave size={20} />
+                          </Button>
+                        ) : (
+                          <Button className="m-1" onClick={() => handleEditInvoiceItem(item.id)}>
+                            <RiEditLine size={20} />
+                          </Button>
+                        )}
+                        <Button className="m-1" variant="destructive" onClick={() => handleDeleteInvoiceItem(item.id)}>
+                          <IoTrashBinSharp size={20} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {isCreatingInvoiceItem && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold mb-2">Crear nueva factura</h3>
+                  <div className="flex space-x-2">
+                    {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                      <Input
+                        key={key}
+                        type={field.type}
+                        placeholder={field.name}
+                        value={newInvoiceItem[key] || ''}
+                        onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })} />
+                    ))}
+                    <Button onClick={handleAddInvoiceItem}>Crear</Button>
+                    <Button variant="secondary" onClick={() => setIsCreatingInvoiceItem(false)}>Cancelar</Button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-            <div className="p-4 border-t">
-              <div className="flex mb-2">
+          )}
 
-                {/* Barra de Texto */}
-                <Input
-                  type="text"
-                  placeholder="Escribe tu mensaje..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={handleSendMessage}
-                  className="flex-grow mr-2"
-                />
+        </div>
+
+        {/* Panel de IA desplegable */}
+        <div className={`fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col`}>
+
+          {/* Btn Desplegar Panel */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 left-4"
+            onClick={() => setIsIAOpen(!isIAOpen)}
+            aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
+          >
+            {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+          </Button>
+
+          {/* Interfaz Panel IA */}
+          {isIAOpen && (
+            <>
+              <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
+                {messages.map((message, index) => (
+                  <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                    <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between">
+              <div className="p-4 border-t">
+                <div className="flex mb-2">
 
-                {/* Btn Subir Archivo */}
-                <Button variant="outline" size="icon" onClick={() => document.getElementById('file-upload')?.click()}>
-                  <Upload className="h-4 w-4" />
-                  <span className="sr-only">Subir archivo</span>
-                </Button>
-                
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
+                  {/* Barra de Texto */}
+                  <Input
+                    type="text"
+                    placeholder="Escribe tu mensaje..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={handleSendMessage}
+                    className="flex-grow mr-2" />
+                </div>
+                <div className="flex justify-between">
 
-                {/* Btn Hablar Para Escuchar */}
-                <Button variant="outline" size="icon" onClick={handleVoiceInput}>
-                  <Mic className="h-4 w-4" />
-                  <span className="sr-only">Entrada de voz</span>
-                </Button>
+                  {/* Btn Subir Archivo */}
+                  <Button variant="outline" size="icon" onClick={() => document.getElementById('file-upload')?.click()}>
+                    <Upload className="h-4 w-4" />
+                    <span className="sr-only">Subir archivo</span>
+                  </Button>
+
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileUpload} />
+
+                  {/* Btn Hablar Para Escuchar */}
+                  <Button variant="outline" size="icon" onClick={handleVoiceInput}>
+                    <Mic className="h-4 w-4" />
+                    <span className="sr-only">Entrada de voz</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
 
-      {/* Modal para editar campos */}
-      <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
-              <div key={key} className="flex items-center space-x-2">
-                <Input
-                  value={field.name}
-                  onChange={(e) => updateField(editingSection, key, { name: e.target.value })}
-                />
-                <Select
-                  value={field.type}
-                  onValueChange={(value) => updateField(editingSection, key, { type: value })}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Tipo de campo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Texto</SelectItem>
-                    <SelectItem value="number">Número</SelectItem>
-                    <SelectItem value="date">Fecha</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="destructive" size="icon" onClick={() => deleteField(editingSection, key)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button onClick={() => addNewField(editingSection as keyof AppConfig)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Campo
-            </Button>
-          </div>
-          <DialogFooter>
-            <Button onClick={saveFieldChanges}>
-              <Save className="h-4 w-4 mr-2" />
-              Guardar Cambios
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de inicio de sesión */}
-      <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
-              <DialogTitle>Iniciar sesión</DialogTitle>
-            </div>
-            <DialogDescription>
-              Inicia Sesión para poder utilizar utilizar las funciones.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
-            <Button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-3 w-full">
-                <FcGoogle size={25} />
-              <span>Iniciar sesión con Google</span>
-            </Button>
-            <Button onClick={() => {
-              setIsLoginModalOpen(false);
-              setIsEmailLoginModalOpen(true);}}
-            className="flex items-center justify-center space-x-3 w-full">
-              <TfiEmail size={25}/>
-              <span>Iniciar sesión con correo electrónico</span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de inicio de sesión con correo electrónico */}
-      <Dialog open={isEmailLoginModalOpen} onOpenChange={setIsEmailLoginModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Iniciar sesión con correo electrónico</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEmailLogin}>
+        {/* Modal para editar campos */}
+        <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+              {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
+                <div key={key} className="flex items-center space-x-2">
+                  <Input
+                    value={field.name}
+                    onChange={(e) => updateField(editingSection, key, { name: e.target.value })} />
+                  <Select
+                    value={field.type}
+                    onValueChange={(value) => updateField(editingSection, key, { type: value })}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Tipo de campo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Texto</SelectItem>
+                      <SelectItem value="number">Número</SelectItem>
+                      <SelectItem value="date">Fecha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="destructive" size="icon" onClick={() => deleteField(editingSection, key)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button onClick={() => addNewField(editingSection as keyof AppConfig)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Campo
+              </Button>
             </div>
-            <DialogFooter className="mt-4">
-              <Button type="submit">Iniciar sesión</Button>
+            <DialogFooter>
+              <Button onClick={saveFieldChanges}>
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Cambios
+              </Button>
             </DialogFooter>
-          </form>
-          <div className="mt-4 text-center">
-            <p>¿No tienes una cuenta?</p>
-            <Button variant="link" onClick={handleEmailSignUp}>
-              Registrarse
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+          </DialogContent>
+        </Dialog>
 
-function loadUserConfig() {
-  throw new Error("Function not implemented.")
+        {/* Modal de inicio de sesión */}
+        <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+                <DialogTitle>Iniciar sesión</DialogTitle>
+              </div>
+              <DialogDescription>
+                Inicia Sesión para poder utilizar utilizar las funciones.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+              <Button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-3 w-full">
+                <FcGoogle size={25} />
+                <span>Iniciar sesión con Google</span>
+              </Button>
+              <Button onClick={() => {
+                setIsLoginModalOpen(false);
+                setIsEmailLoginModalOpen(true);
+              } }
+                className="flex items-center justify-center space-x-3 w-full">
+                <TfiEmail size={25} />
+                <span>Iniciar sesión con correo electrónico</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de inicio de sesión con correo electrónico */}
+        <Dialog open={isEmailLoginModalOpen} onOpenChange={setIsEmailLoginModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Iniciar sesión con correo electrónico</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEmailLogin}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo electrónico</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required />
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <Button type="submit">Iniciar sesión</Button>
+              </DialogFooter>
+            </form>
+            <div className="mt-4 text-center">
+              <p>¿No tienes una cuenta?</p>
+              <Button variant="link" onClick={handleEmailSignUp}>
+                Registrarse
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de confirmacion de cierre */}
+        <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+                <DialogTitle>¿Cerrar Secion?</DialogTitle>
+              </div>
+              <DialogDescription>
+                Confirma el cierre de la secion actual
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+              <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
+              onClick={()=> {
+                handleLogout()
+                setIsLogOutModalOpen(false)}}>
+                Confirmar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+      </div>
+    ) : (
+
+      // Mostrar la landing page si el usuario no ha iniciado sesión
+      <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+        {/* Contenido de la landing page */}
+        <LandingPage />
+      </div>
+    )}
+    
+    </>
+  )
 }
