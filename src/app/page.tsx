@@ -124,52 +124,6 @@ type AppConfig = {
 
 {/* Configuracion de Items */}
 
-//Items Inventario
-const inventoryFields = [
-  { id: 'id', label: 'Número de Ítem (ID)', type: 'text' },
-  { id: 'descripcion', label: 'Descripción del Producto', type: 'text' },
-  { id: 'categoria', label: 'Categoría', type: 'text' },
-  { id: 'codigoBarras', label: 'Código de Barras/SKU', type: 'text' },
-  { id: 'cantidadInicial', label: 'Cantidad Inicial', type: 'number' },
-  { id: 'cantidadDisponible', label: 'Cantidad Disponible', type: 'number' },
-  { id: 'unidadMedida', label: 'Unidades de Medida', type: 'text' },
-  { id: 'stockMinimo', label: 'Stock Mínimo', type: 'number' },
-  { id: 'stockMaximo', label: 'Stock Máximo', type: 'number' },
-  { id: 'precioCompra', label: 'Precio de Compra Unitario', type: 'number' },
-  { id: 'precioVenta', label: 'Precio de Venta Unitario', type: 'number' },
-  { id: 'fechaIngreso', label: 'Fecha de Ingreso', type: 'date' },
-  { id: 'proveedor', label: 'Proveedor', type: 'text' },
-  { id: 'ubicacion', label: 'Ubicación en el Almacén', type: 'text' },
-  { id: 'fechaVencimiento', label: 'Fecha de Vencimiento', type: 'date' },
-  { id: 'estado', label: 'Estado del Producto', type: 'text' },
-  { id: 'valorTotal', label: 'Valor Total', type: 'number' },
-  { id: 'responsable', label: 'Responsable del Registro', type: 'text' },
-  { id: 'notas', label: 'Notas o Comentarios', type: 'textarea' },
-]
-
-//Items Facturacion
-const invoiceFields = [
-  { id: 'id', label: 'Número de Factura', type: 'text' },
-  { id: 'fechaEmision', label: 'Fecha de Emisión', type: 'date' },
-  { id: 'nombreCliente', label: 'Nombre del Cliente', type: 'text' },
-  { id: 'direccionCliente', label: 'Dirección del Cliente', type: 'text' },
-  { id: 'rfc', label: 'RFC/NIF', type: 'text' },
-  { id: 'detallesProducto', label: 'Detalles del Producto/Servicio', type: 'text' },
-  { id: 'cantidad', label: 'Cantidad de Productos/Servicios', type: 'number' },
-  { id: 'precioUnitario', label: 'Precio Unitario', type: 'number' },
-  { id: 'subtotal', label: 'Subtotal', type: 'number' },
-  { id: 'impuestos', label: 'Impuestos Aplicables', type: 'number' },
-  { id: 'total', label: 'Total a Pagar', type: 'number' },
-  { id: 'metodoPago', label: 'Método de Pago', type: 'text' },
-  { id: 'fechaVencimiento', label: 'Fecha de Vencimiento del Pago', type: 'date' },
-  { id: 'estado', label: 'Estado de la Factura', type: 'text' },
-  { id: 'numeroOrdenCompra', label: 'Número de Orden de Compra', type: 'text' },
-  { id: 'descuentos', label: 'Descuentos Aplicados', type: 'number' },
-  { id: 'notas', label: 'Observaciones o Notas', type: 'textarea' },
-  { id: 'detallesEmisor', label: 'Datos del Emisor', type: 'text' },
-  { id: 'firma', label: 'Firma', type: 'text' },
-]
-
 //Chatgpt IA Key
 const openai = new OpenAI({
   apiKey: "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",
@@ -217,7 +171,7 @@ export default function ContabilidadApp() {
     facturacion: {}
   })
 
-  // Estado de autenticación
+  // Estado de autenticación Landing Page
   const [user] = useAuthState(auth);
 
   // Estados para el inicio de sesión
@@ -228,14 +182,14 @@ export default function ContabilidadApp() {
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
   const db = getFirestore()
 
-  const [showLandingPage, setShowLandingPage] = useState<boolean>(true);
+  const [showLandingPage, setShowLandingPage] = useState<boolean>(true); // Estado que controla la app o la landing page
 
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
     if (user) {
       loadUserConfig()
       loadData()
-      setShowLandingPage(false); // Oculta la landing page cuando el usuario está autenticado
+      setShowLandingPage(true); // Oculta la landing page cuando el usuario está autenticado
     }else{
       checkUserAuthentication();
     }
@@ -289,7 +243,7 @@ export default function ContabilidadApp() {
 
   // Funcion Requerimiento Inicio de Sesion
   const checkUserAuthentication = (): void => {
-    setShowLandingPage(true);
+    setShowLandingPage(false);
   };
 
   // Función para cargar datos
@@ -453,19 +407,27 @@ export default function ContabilidadApp() {
   // Filtrado de datos para el libro diario
   const filteredData = useMemo(() => {
     return data.filter(row => {
-      const rowDate = new Date(row.fecha)
+      // Verificar si row.fecha está definido y es una cadena
+      if (!row || !row.fecha) {
+        return false; // O cualquier valor predeterminado que desees
+      }
+  
+      const rowDate = new Date(row.fecha); // Asegúrate de que esto no cause problemas
+  
       switch (timeFrame) {
         case "diario":
-          return row.fecha === selectedDate
+          return row.fecha === selectedDate;
         case "mensual":
-          return row.fecha.startsWith(selectedMonth)
+          // Asegúrate de que selectedMonth es una cadena y row.fecha también
+          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedMonth);
         case "anual":
-          return row.fecha.startsWith(selectedYear)
+          // Asegúrate de que selectedYear es una cadena y row.fecha también
+          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedYear);
         default:
-          return true
+          return true;
       }
-    })
-  }, [data, timeFrame, selectedDate, selectedMonth, selectedYear])
+    });
+  }, [data, timeFrame, selectedDate, selectedMonth, selectedYear]);
 
   // Cálculo de totales para el libro diario
   const totals = useMemo(() => {
@@ -750,11 +712,6 @@ export default function ContabilidadApp() {
     }
   }
 
-  //Funcion btn para cerrar sesion
-  const handleLogoutConfirm = async () => {
-    setIsLogOutModalOpen(true)
-  }
-
   // Función para cerrar sesión
   const handleLogout = async () => {
     try {
@@ -798,7 +755,7 @@ export default function ContabilidadApp() {
 
   return (
     <>
-    {user ? (
+    {showLandingPage ? (
       // Mostrar la aplicación si el usuario ha iniciado sesión
       <div className="flex h-screen bg-gray-100">
 
@@ -913,9 +870,20 @@ export default function ContabilidadApp() {
                     <PopoverContent className="w-auto p-0">
                       <CalendarComponent
                         mode="single"
-                        selected={new Date(selectedDate)}
-                        onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
-                        initialFocus />
+                        selected={selectedDate ? new Date(selectedDate) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Sumar un día a la fecha seleccionada
+                            const adjustedDate = new Date(date);
+                            adjustedDate.setDate(adjustedDate.getDate() + 1); // Sumar un día
+
+                            // Formatear la fecha ajustada a 'YYYY-MM-DD'
+                            const localDate = adjustedDate.toLocaleDateString('en-CA'); 
+                            setSelectedDate(localDate);
+                          }
+                        }}
+                        initialFocus
+                      />
                     </PopoverContent>
                   </Popover>
                 )}
@@ -925,6 +893,7 @@ export default function ContabilidadApp() {
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
                     className="w-[180px]" />
+                    
                 )}
                 {timeFrame === "anual" && (
                   <Input

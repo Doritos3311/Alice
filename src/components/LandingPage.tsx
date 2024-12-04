@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Precios from '@/components/LandingPage'
 
 import { toast } from "@/hooks/use-toast"
 import { initializeApp } from "firebase/app"
