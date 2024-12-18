@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -48,7 +48,7 @@ import { IoTrashBinSharp } from "react-icons/io5";
 
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
-import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
+import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
@@ -174,12 +174,20 @@ export default function ContabilidadApp() {
   // Estado de autenticación Landing Page
   const [user] = useAuthState(auth);
 
+  const [,setUser] = useState(null);
+  
+  const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
+  const [joinGroupUID, setJoinGroupUID] = useState('');
+  const [viewingUID, setViewingUID] = useState<string | null>(null);
+  const [groupData, setGroupData] = useState<any | null>(null);
+
   // Estados para el inicio de sesión
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
+
   const db = getFirestore()
 
   const [showLandingPage, setShowLandingPage] = useState<boolean>(true); // Estado que controla la app o la landing page
@@ -193,7 +201,18 @@ export default function ContabilidadApp() {
     }else{
       checkUserAuthentication();
     }
+
+    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
   }, [user])
+
 
   // Función para cargar la configuración del usuario desde Firestore
   const loadUserConfig = async () => {
@@ -241,6 +260,80 @@ export default function ContabilidadApp() {
     }
   }
 
+  const handleJoinGroup = async () => {
+    if (!user || !joinGroupUID) return;
+  
+    try {
+      // Verificar si el grupo existe
+      const groupDoc = await getDoc(doc(db, `users/${joinGroupUID}/config`, 'fields'));
+      if (!groupDoc.exists()) {
+        console.log("Documento de configuración no encontrado para:", joinGroupUID);
+        throw new Error("El grupo no existe o no tienes permisos para acceder a él.");
+      }
+  
+      const groupData = groupDoc.data();
+      if (!groupData) {
+        console.log("Datos de configuración del grupo inválidos:", groupData);
+        throw new Error("La configuración del grupo no es válida.");
+      }
+  
+      // Cargar la configuración del usuario
+      const userConfigDoc = await getDoc(doc(db, `users/${user.uid}/config`, 'fields'));
+      if (userConfigDoc.exists()) {
+        const userConfig = userConfigDoc.data();
+        // Aquí puedes hacer algo con la configuración del usuario si es necesario
+      }
+  
+      // Establecer el UID del grupo que se está visualizando
+      setViewingUID(joinGroupUID);
+  
+      // Cargar los datos del grupo
+      await loadGroupData(joinGroupUID);
+  
+      setShowJoinGroupModal(false);
+      setJoinGroupUID("");
+      toast({
+        title: "Éxito",
+        description: "Te has unido al grupo de trabajo.",
+      });
+    } catch (error) {
+      console.error("Error al unirse al grupo:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Hubo un problema al unirse al grupo. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadGroupData = async (groupUID: string | null = null) => {
+    if (!user) return;
+  
+    try {
+      // Cargar datos del libro diario
+      const libroDiarioSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/libroDiario`));
+      const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setData(libroDiarioData); // Reemplaza los datos existentes
+  
+      // Cargar datos de inventario
+      const inventarioSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/inventario`));
+      const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setInventoryItems(inventarioData); // Reemplaza los datos existentes
+  
+      // Cargar datos de facturación
+      const facturacionSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/facturacion`));
+      const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setInvoiceItems(facturacionData); // Reemplaza los datos existentes
+    } catch (error) {
+      console.error("Error al cargar datos:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los datos. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Funcion Requerimiento Inicio de Sesion
   const checkUserAuthentication = (): void => {
     setShowLandingPage(false);
@@ -248,6 +341,38 @@ export default function ContabilidadApp() {
 
   // Función para cargar datos
   const loadData = async () => {
+    const uidToLoad = viewingUID || (user ? user.uid : null); // Use viewingUID if available, otherwise use user.uid
+
+    if (!uidToLoad) return;
+
+    try {
+      const userDoc = await getDoc(doc(db, `users/${uidToLoad}/config`));
+      const userData = userDoc.data();
+      const groupUID = userData?.groupUID || uidToLoad;
+
+      // Load data for libro diario
+      const libroDiarioSnapshot = await getDocs(collection(db, `users/${groupUID}/libroDiario`));
+      const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setData(libroDiarioData);
+
+      // Load data for inventario
+      const inventarioSnapshot = await getDocs(collection(db, `users/${groupUID}/inventario`));
+      const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setInventoryItems(inventarioData);
+
+      // Load data for facturación
+      const facturacionSnapshot = await getDocs(collection(db, `users/${groupUID}/facturacion`));
+      const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setInvoiceItems(facturacionData);
+    } catch (error) {
+      console.error("Error al cargar datos:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los datos. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+
     if (!user) return
 
     try {
@@ -826,12 +951,33 @@ export default function ContabilidadApp() {
                 <FileText className="mr-2 h-4 w-4" />
                 Registro de Facturación
               </Button>
+
+              {/* Btn Registro De Facturacion */}
+              <Button
+                variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
+                className="w-full justify-start mb-2"
+                onClick={() => setActiveTab("grupos-trabajo")}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Grupos de Trabajo
+              </Button>
             </nav>
           </div>
         </div>
 
         {/* Contenido principal */}
         <div className="flex-1 p-8 overflow-auto mr-12">
+
+          {/* Grupos de Trabajo Interfaz Estilo */}
+          {activeTab === "grupos-trabajo" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
+              <div className="mb-4 flex items-center space-x-4">
+                <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
+                <Button>Administrar Grupos de Trabajo</Button>
+              </div>
+            </div>
+          )}
 
           {/* Libro Diario Interfaz Estilo */}
           {activeTab === "libro-diario" && (
@@ -1662,6 +1808,28 @@ export default function ContabilidadApp() {
           </DialogContent>
         </Dialog>
 
+        {/* Modal para unirse a un grupo */}
+        <Dialog open={showJoinGroupModal} onOpenChange={setShowJoinGroupModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Unirse a Grupo Empresarial</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Label htmlFor="group-uid">UID de Empresa</Label>
+              <Input
+                id="group-uid"
+                value={joinGroupUID}
+                onChange={(e) => setJoinGroupUID(e.target.value)}
+                placeholder="Ingrese el UID del grupo"
+              />
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowJoinGroupModal(true)}>Cancelar</Button>
+              <Button onClick={handleJoinGroup}>Unirse</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     ) : (
 
@@ -1675,3 +1843,4 @@ export default function ContabilidadApp() {
     </>
   )
 }
+
