@@ -980,9 +980,9 @@ export default function ContabilidadApp() {
 
           {/* Grupos de Trabajo Interfaz Estilo */}
           {activeTab === "grupos-trabajo" && (
-          <div>
+          <div >
             <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
-            <div className="space-y-4 mt-8">
+            <div className="mb-4 flex items-center space-x-4">
               <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
               <Button>Administrar Grupos de Trabajo</Button>
             </div>
