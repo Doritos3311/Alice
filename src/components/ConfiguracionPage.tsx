@@ -6,12 +6,6 @@ import { Label } from "@/components/ui/label"
 const ConfiguracionPage: React.FC = () => {
   const { theme, setTheme } = useTheme()
 
-  useEffect(() => {
-    if (theme === undefined) {
-      setTheme("dark");
-    }
-  }, [theme, setTheme])
-
   return (
   <div className="p-8 bg-gray-100 dark:bg-black dark:text-white min-h-screen">
     <h1 className="text-2xl font-bold mb-4">Configuración</h1>

@@ -22,6 +22,9 @@ import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
 import UserProfile from '@/components/UserProfile';
 
+//Importaciones de Tipos
+
+//Componentes Shadcn
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -104,6 +107,7 @@ type InventoryItem = {
 //Definicion Factura
 type InvoiceItem = {
   id: string
+  fechaEmision?: any;
   [key: string]: any
 }
 
@@ -177,6 +181,11 @@ export default function ContabilidadApp() {
     facturacion: {}
   })
 
+  //Estados para Autocompletar Campos
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
+  const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
+  const [lastCreatedInvoice, setLastCreatedInvoice] = useState<InvoiceItem | null>(null);
+
   // Estado de autenticación Landing Page
   const [user] = useAuthState(auth);
 
@@ -193,13 +202,13 @@ export default function ContabilidadApp() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
-
-  const { setTheme, theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
   const db = getFirestore()
 
-  const [showLandingPage, setShowLandingPage] = useState<boolean>(true); // Estado que controla la app o la landing page
+  //Estado para Modo Nocturno
+  const { setTheme, theme } = useTheme()
+
+  // Estado que controla la app o la landing page
+  const [showLandingPage, setShowLandingPage] = useState<boolean>(true); 
 
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
@@ -222,9 +231,7 @@ export default function ContabilidadApp() {
     return () => unsubscribe();
   }, [user, viewingUID])
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
-  }
+  {/* Funciones */}
 
   // Función para cargar la configuración del usuario desde Firestore
   const loadUserConfig = async () => {
@@ -236,13 +243,16 @@ export default function ContabilidadApp() {
     } else {
       // Funcion Datos Por Defecto
       const defaultConfig: AppConfig = {
+        //Datos por defecto libro diario
         libroDiario: {
           fecha: { name: 'Fecha' , type: 'date'},
           nombreCuenta: { name: 'Nombre de Cuenta', type: 'text' },
           descripcion: { name: 'Descripción', type: 'text' },
+          id: { name: 'Número de Ítem (ID)', type: 'text' },
           debe: { name: 'Debe', type: 'number' },
           haber: { name: 'Haber', type: 'number' }
         },
+        //Datos por defecto inventario
         inventario: {
           id: { name: 'Número de Ítem (ID)', type: 'text' },
           category: { name: 'Categoría', type: 'text'},
@@ -254,7 +264,9 @@ export default function ContabilidadApp() {
           fechaIngreso: { name: 'Fecha de Ingreso', type: 'date' },
           proveedor: { name: 'Proveedor', type: 'text' }
         },
+        //Datos por defecto facturacion
         facturacion: {
+          id: { name: 'Número de Ítem (ID)', type: 'text' },
           numeroFactura: { name: 'Número de Factura', type: 'text' },
           fechaEmision: { name: 'Fecha de Emisión', type: 'date' },
           nombreCliente: { name: 'Nombre del Cliente', type: 'text' },
@@ -272,6 +284,7 @@ export default function ContabilidadApp() {
     }
   }
 
+  //Funcion Unirce a Grupo
   const handleJoinGroup = async () => {
     if (!user || !joinGroupUID) return;
 
@@ -324,6 +337,7 @@ export default function ContabilidadApp() {
     }
   };
 
+  //Funcion Cargar Datos de Grupo
   const loadGroupData = async (groupUID: string | null = null) => {
     if (!user) return;
 
@@ -658,14 +672,18 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    if (!user) return;
-
+    if (!user || !db) return; // Added null check for user and db
+  
     try {
       const newInvoiceItemWithId = { ...newInvoiceItem, id: Date.now().toString() };
       const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItemWithId);
-      setInvoiceItems([...invoiceItems, { ...newInvoiceItemWithId, id: docRef.id }]);
+      const createdInvoice = { ...newInvoiceItemWithId, id: docRef.id };
+      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);
+      setLastCreatedInvoice(createdInvoice);
+  
       setNewInvoiceItem({} as InvoiceItem);
       setIsCreatingInvoiceItem(false);
+      setShowAutoCompleteModal(true);
     } catch (error) {
       console.error("Error al agregar factura:", error);
       toast({
@@ -874,6 +892,96 @@ export default function ContabilidadApp() {
     })
   }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])
 
+  const handleInventoryItemSelect = (itemId: string) => {
+    const selectedItem = inventoryItems.find(item => item.id === itemId);
+    if (selectedItem) {
+      setSelectedInventoryItem(selectedItem);
+      setNewInvoiceItem(prev => ({
+        ...prev,
+        id: selectedItem.id,
+        detallesProducto: selectedItem.descripcion,
+        precioUnitario: selectedItem.precioVenta
+      }));
+    }
+  };
+
+  const handleAutoCompleteLibroDiario = async () => {
+    console.log("Iniciando handleAutoCompleteLibroDiario");
+    console.log("user:", user);
+    console.log("selectedInventoryItem:", selectedInventoryItem);
+    console.log("lastCreatedInvoice:", lastCreatedInvoice);
+  
+    if (!user) {
+      console.error("Usuario no autenticado");
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para realizar esta acción.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!selectedInventoryItem) {
+      console.error("No se ha seleccionado un ítem del inventario");
+      toast({
+        title: "Error",
+        description: "Por favor, selecciona un ítem del inventario.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!lastCreatedInvoice) {
+      console.error("No hay factura creada recientemente");
+      toast({
+        title: "Error",
+        description: "No hay factura reciente para autocompletar en el libro diario.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    try {
+      const newLibroDiarioItem = {
+        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0],
+        descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion,
+        id: selectedInventoryItem.id,
+        debe: lastCreatedInvoice.total || 0,
+        haber: 0
+      };
+  
+      console.log("Nuevo ítem para el libro diario:", newLibroDiarioItem);
+  
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);
+      console.log("Documento agregado con ID:", docRef.id);
+  
+      setData(prevData => [...prevData, { ...newLibroDiarioItem, id: docRef.id }]); // Assuming setData function exists
+  
+      toast({
+        title: "Éxito",
+        description: "Se ha agregado el ítem al libro diario.",
+      });
+  
+      setShowAutoCompleteModal(false);
+      setSelectedInventoryItem(null);
+      setLastCreatedInvoice(null);
+    } catch (error) {
+      console.error("Error al agregar ítem al libro diario:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el ítem al libro diario. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== "facturacion") {
+      setSelectedInventoryItem(null);
+      setLastCreatedInvoice(null);
+    }
+  }, [activeTab]);
+
   return (
     <>
     {showLandingPage ? (
@@ -883,15 +991,15 @@ export default function ContabilidadApp() {
         {/* Menu Izquierda*/}
         <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-white text-gray-900"}`}>
           <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Alice</h1>
-            <div className="flex items-center space-x-2">
-            <Button
-              variant={activeTab === "configuracion" ? "default" : "ghost"}
-              className="w-15 justify-end mb-2"
-              onClick={() => setActiveTab("configuracion")}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-            </Button>
+            <div className="flex items-center justify-between space-x-2">
+              <h1 className="text-2xl font-bold mb-4 mt-2">Alice</h1>
+              <Button
+                variant={activeTab === "configuracion" ? "default" : "ghost"}
+                className="ml-10 w-15 justify-end mb-2"
+                onClick={() => setActiveTab("configuracion")}
+              >
+                <Settings className=" h-5 w-5" />
+              </Button>
             </div>
             {user ? (
 
@@ -1603,13 +1711,25 @@ export default function ContabilidadApp() {
               {isCreatingInvoiceItem && (
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold mb-2">Crear nueva factura</h3>
+                  <div className="flex space-x-2 mb-4">
+                    <Select onValueChange={handleInventoryItemSelect}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Seleccionar ítem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {inventoryItems.map(item => (
+                          <SelectItem key={item.id} value={item.id}>{item.descripcion}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex space-x-2">
                     {Object.entries(appConfig.facturacion).map(([key, field]) => (
                       <Input
                         key={key}
                         type={field.type}
                         placeholder={field.name}
-                        value={newInvoiceItem[key] || ''}
+                        value={newInvoiceItem[key as keyof InvoiceItem] || ''}
                         onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })} />
                     ))}
                     <Button onClick={handleAddInvoiceItem}>Crear</Button>
@@ -1623,7 +1743,7 @@ export default function ContabilidadApp() {
         </div>
 
         {/* Panel de IA desplegable */}
-        <div className={`fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-white text-gray-900"}`}>
+        <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
 
           {/* Btn Desplegar Panel */}
           <Button
@@ -1837,6 +1957,20 @@ export default function ContabilidadApp() {
             <DialogFooter>
               <Button onClick={() => setShowJoinGroupModal(true)}>Cancelar</Button>
               <Button onClick={handleJoinGroup}>Unirse</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Autocompletar */}
+        <Dialog open={showAutoCompleteModal} onOpenChange={setShowAutoCompleteModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Autocompletar Libro Diario</DialogTitle>
+            </DialogHeader>
+            <p>¿Desea autocompletar este ítem en el libro diario?</p>
+            <DialogFooter>
+              <Button onClick={() => setShowAutoCompleteModal(false)}>Cancelar</Button>
+              <Button onClick={handleAutoCompleteLibroDiario}>Aceptar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

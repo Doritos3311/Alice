@@ -1,17 +1,17 @@
-export interface InventoryItem {
+export type InventoryItem = {
   id: string;
   descripcion: string;
   cantidadDisponible: number;
   precioVenta: number;
-  // Agrega aquí cualquier otra propiedad necesaria
-}
+  // Añade aquí otros campos que pueda tener un ítem de inventario
+};
 
-export interface InvoiceItem {
+export type InvoiceItem = {
   id: string;
-  numeroFactura: string;
-  fechaEmision: string;
-  nombreCliente: string;
+  detallesProducto: string;
+  cantidad: number;
+  precioUnitario: number;
   total: number;
-  // Agrega aquí cualquier otra propiedad necesaria
-}
+  // Añade aquí otros campos que pueda tener un ítem de factura
+};
 
