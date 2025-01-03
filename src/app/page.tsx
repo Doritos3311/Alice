@@ -18,7 +18,9 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
+import UserProfile from '@/components/UserProfile';
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,7 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -36,6 +38,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+
+// Importacion de OpenAI
 import OpenAI from "openai"
 
 //Diseño Iconos
@@ -49,8 +53,10 @@ import { IoTrashBinSharp } from "react-icons/io5";
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore"
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
+
+import { useTheme } from "next-themes"
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -188,6 +194,9 @@ export default function ContabilidadApp() {
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
   const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
 
+  const { setTheme, theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
   const db = getFirestore()
 
   const [showLandingPage, setShowLandingPage] = useState<boolean>(true); // Estado que controla la app o la landing page
@@ -196,7 +205,7 @@ export default function ContabilidadApp() {
   useEffect(() => {
     if (user) {
       loadUserConfig()
-      loadData()
+      loadData(viewingUID)
       setShowLandingPage(true); // Oculta la landing page cuando el usuario está autenticado
     }else{
       checkUserAuthentication();
@@ -211,8 +220,11 @@ export default function ContabilidadApp() {
     });
 
     return () => unsubscribe();
-  }, [user])
+  }, [user, viewingUID])
 
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light")
+  }
 
   // Función para cargar la configuración del usuario desde Firestore
   const loadUserConfig = async () => {
@@ -262,7 +274,7 @@ export default function ContabilidadApp() {
 
   const handleJoinGroup = async () => {
     if (!user || !joinGroupUID) return;
-  
+
     try {
       // Verificar si el grupo existe
       const groupDoc = await getDoc(doc(db, `users/${joinGroupUID}/config`, 'fields'));
@@ -270,26 +282,32 @@ export default function ContabilidadApp() {
         console.log("Documento de configuración no encontrado para:", joinGroupUID);
         throw new Error("El grupo no existe o no tienes permisos para acceder a él.");
       }
-  
+
       const groupData = groupDoc.data();
       if (!groupData) {
         console.log("Datos de configuración del grupo inválidos:", groupData);
         throw new Error("La configuración del grupo no es válida.");
       }
-  
-      // Cargar la configuración del usuario
-      const userConfigDoc = await getDoc(doc(db, `users/${user.uid}/config`, 'fields'));
-      if (userConfigDoc.exists()) {
-        const userConfig = userConfigDoc.data();
-        // Aquí puedes hacer algo con la configuración del usuario si es necesario
-      }
-  
+
+      // Obtener los datos del usuario actual
+      const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
+      const userData = userDoc.exists() ? userDoc.data() : { displayName: user.displayName, type: 'personal' };
+
+      // Añadir el usuario actual al grupo
+      await updateDoc(doc(db, `users/${joinGroupUID}/Usuario`, 'datos'), {
+        loggedUsers: arrayUnion({
+          name: userData.type === 'empresa' ? userData.companyName : userData.displayName,
+          type: userData.type,
+          uid: user.uid
+        })
+      });
+
       // Establecer el UID del grupo que se está visualizando
       setViewingUID(joinGroupUID);
-  
+
       // Cargar los datos del grupo
       await loadGroupData(joinGroupUID);
-  
+
       setShowJoinGroupModal(false);
       setJoinGroupUID("");
       toast({
@@ -308,22 +326,24 @@ export default function ContabilidadApp() {
 
   const loadGroupData = async (groupUID: string | null = null) => {
     if (!user) return;
-  
+
+    const uidToUse = groupUID || user.uid;
+
     try {
       // Cargar datos del libro diario
-      const libroDiarioSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/libroDiario`));
+      const libroDiarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/libroDiario`));
       const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setData(libroDiarioData); // Reemplaza los datos existentes
-  
+      setData(libroDiarioData);
+
       // Cargar datos de inventario
-      const inventarioSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/inventario`));
+      const inventarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/inventario`));
       const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInventoryItems(inventarioData); // Reemplaza los datos existentes
-  
+      setInventoryItems(inventarioData);
+
       // Cargar datos de facturación
-      const facturacionSnapshot = await getDocs(collection(db, `users/${joinGroupUID}/facturacion`));
+      const facturacionSnapshot = await getDocs(collection(db, `users/${uidToUse}/facturacion`));
       const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInvoiceItems(facturacionData); // Reemplaza los datos existentes
+      setInvoiceItems(facturacionData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       toast({
@@ -340,28 +360,24 @@ export default function ContabilidadApp() {
   };
 
   // Función para cargar datos
-  const loadData = async () => {
-    const uidToLoad = viewingUID || (user ? user.uid : null); // Use viewingUID if available, otherwise use user.uid
+  const loadData = async (groupUID: string | null = null) => {
+    if (!user) return;
 
-    if (!uidToLoad) return;
+    const uidToUse = groupUID || user.uid;
 
     try {
-      const userDoc = await getDoc(doc(db, `users/${uidToLoad}/config`));
-      const userData = userDoc.data();
-      const groupUID = userData?.groupUID || uidToLoad;
-
-      // Load data for libro diario
-      const libroDiarioSnapshot = await getDocs(collection(db, `users/${groupUID}/libroDiario`));
+      // Cargar datos del libro diario
+      const libroDiarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/libroDiario`));
       const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setData(libroDiarioData);
 
-      // Load data for inventario
-      const inventarioSnapshot = await getDocs(collection(db, `users/${groupUID}/inventario`));
+      // Cargar datos de inventario
+      const inventarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/inventario`));
       const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setInventoryItems(inventarioData);
 
-      // Load data for facturación
-      const facturacionSnapshot = await getDocs(collection(db, `users/${groupUID}/facturacion`));
+      // Cargar datos de facturación
+      const facturacionSnapshot = await getDocs(collection(db, `users/${uidToUse}/facturacion`));
       const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setInvoiceItems(facturacionData);
     } catch (error) {
@@ -372,33 +388,7 @@ export default function ContabilidadApp() {
         variant: "destructive",
       });
     }
-
-    if (!user) return
-
-    try {
-      // Cargar datos del libro diario
-      const libroDiarioSnapshot = await getDocs(collection(db, `users/${user.uid}/libroDiario`))
-      const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setData(libroDiarioData)
-
-      // Cargar datos de inventario
-      const inventarioSnapshot = await getDocs(collection(db, `users/${user.uid}/inventario`))
-      const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setInventoryItems(inventarioData)
-
-      // Cargar datos de facturación
-      const facturacionSnapshot = await getDocs(collection(db, `users/${user.uid}/facturacion`))
-      const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setInvoiceItems(facturacionData)
-    } catch (error) {
-      console.error("Error al cargar datos:", error)
-      toast({
-        title: "Error",
-        description: "Hubo un problema al cargar los datos. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      })
-    }
-  }
+  };
 
   // Función para abrir el modal de edición de campos
   const openFieldEditor = (section: keyof AppConfig) => {
@@ -413,7 +403,7 @@ export default function ContabilidadApp() {
     try {
       await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), appConfig)
       setIsEditingFields(false)
-      loadData() // Recargar los datos con la nueva configuración
+      loadData(viewingUID) // Recargar los datos con la nueva configuración
     } catch (error) {
       console.error("Error al guardar la configuración de campos:", error)
       toast({
@@ -458,21 +448,22 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva fila al libro diario
   const handleAddRow = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRow)
-      setData([...data, { id: docRef.id, ...newRow }])
-      setNewRow({})
+      const newRowWithId = { ...newRow, id: Date.now().toString() };
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRowWithId);
+      setData([...data, { ...newRowWithId, id: docRef.id }]);
+      setNewRow({});
     } catch (error) {
-      console.error("Error al agregar fila:", error)
+      console.error("Error al agregar fila:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al agregar la fila. Por favor, intenta de nuevo.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Función para editar una fila del libro diario
   const handleEditRow = (id: string) => {
@@ -667,22 +658,23 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItem)
-      setInvoiceItems([...invoiceItems, { ...newInvoiceItem, id: docRef.id }])
-      setNewInvoiceItem({} as InvoiceItem)
-      setIsCreatingInvoiceItem(false)
+      const newInvoiceItemWithId = { ...newInvoiceItem, id: Date.now().toString() };
+      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItemWithId);
+      setInvoiceItems([...invoiceItems, { ...newInvoiceItemWithId, id: docRef.id }]);
+      setNewInvoiceItem({} as InvoiceItem);
+      setIsCreatingInvoiceItem(false);
     } catch (error) {
-      console.error("Error al agregar factura:", error)
+      console.error("Error al agregar factura:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al agregar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Función para editar un ítem del inventario
   const handleEditInventoryItem = (id: string) => {
@@ -716,20 +708,24 @@ export default function ContabilidadApp() {
 
   // Función para eliminar un ítem del inventario
   const handleDeleteInventoryItem = async (id: string) => {
-    if (!user) return
-
+    if (!user) return;
+  
     try {
-      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id))
-      setInventoryItems(inventoryItems.filter(item => item.id !== id))
+      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id));
+      setInventoryItems(inventoryItems.filter(item => item.id !== id));
+      toast({
+        title: "Éxito",
+        description: "Ítem eliminado correctamente.",
+      });
     } catch (error) {
-      console.error("Error al eliminar ítem del inventario:", error)
+      console.error("Error al eliminar ítem del inventario:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al eliminar el ítem del inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Función para editar una factura
   const handleEditInvoiceItem = (id: string) => {
@@ -882,13 +878,21 @@ export default function ContabilidadApp() {
     <>
     {showLandingPage ? (
       // Mostrar la aplicación si el usuario ha iniciado sesión
-      <div className="flex h-screen bg-gray-100">
+      <div className={`flex h-screen ${theme === 'dark' ? 'bg-black text-gray-200' : 'bg-gray-100 text-gray-900'}`}>
 
         {/* Menu Izquierda*/}
-        <div className="w-64 bg-white shadow-md">
+        <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-white text-gray-900"}`}>
           <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">Alice</h1>
-
+            <div className="flex items-center space-x-2">
+            <Button
+              variant={activeTab === "configuracion" ? "default" : "ghost"}
+              className="w-15 justify-end mb-2"
+              onClick={() => setActiveTab("configuracion")}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+            </Button>
+            </div>
             {user ? (
 
               <div className="mb-4 flex items-center">
@@ -905,6 +909,7 @@ export default function ContabilidadApp() {
               </div>
             ) : (
               <>
+                {/* Btn Iniciar Sesíon */}
                 <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
                   Iniciar sesión
                 </Button>
@@ -966,17 +971,23 @@ export default function ContabilidadApp() {
         </div>
 
         {/* Contenido principal */}
-        <div className="flex-1 p-8 overflow-auto mr-12">
+        <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-black text-gray-300" : "bg-gray-100 text-gray-900"}`}>
+
+          {/* Configuracion Interfaz Estilo */}
+          {activeTab === "configuracion" && (
+            <ConfiguracionPage />
+          )}
 
           {/* Grupos de Trabajo Interfaz Estilo */}
           {activeTab === "grupos-trabajo" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
-              <div className="mb-4 flex items-center space-x-4">
-                <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
-                <Button>Administrar Grupos de Trabajo</Button>
-              </div>
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
+            <div className="space-y-4 mt-8">
+              <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
+              <Button>Administrar Grupos de Trabajo</Button>
             </div>
+            {user && <UserProfile user={user} />}
+          </div>
           )}
 
           {/* Libro Diario Interfaz Estilo */}
@@ -1612,7 +1623,7 @@ export default function ContabilidadApp() {
         </div>
 
         {/* Panel de IA desplegable */}
-        <div className={`fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col`}>
+        <div className={`fixed right-0 top-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-white text-gray-900"}`}>
 
           {/* Btn Desplegar Panel */}
           <Button

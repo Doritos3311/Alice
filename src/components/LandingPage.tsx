@@ -143,33 +143,6 @@ export default function LandingPage() {
     setShowInice(false);
   };
 
-  const features = [
-    {
-      title: "Acceso Seguro",
-      description: "Inicia sesión de manera fácil y segura utilizando Firebase. Tu información está protegida y puedes acceder con tu cuenta de Google o correo electrónico."
-    },
-    {
-      title: "Dashboard Intuitivo",
-      description: "Visualiza todas tus métricas clave en un solo lugar. Nuestro dashboard te permite gestionar tus finanzas, inventario y facturación con facilidad."
-    },
-    {
-      title: "Inteligencia Artificial Integrada",
-      description: "Aprovecha la IA para recibir recomendaciones personalizadas que optimizan la administración de tu negocio, ayudándote a tomar decisiones más informadas."
-    },
-    {
-      title: "Personalización Completa",
-      description: "Adapta la aplicación a tus necesidades específicas. Crea apartados personalizables que reflejen la esencia de tu microempresa."
-    },
-    {
-      title: "Informes Detallados",
-      description: "Genera informes financieros y de inventario en tiempo real. Obtén análisis claros que te ayuden a comprender mejor la salud de tu negocio."
-    },
-    {
-      title: "Soporte Técnico Dedicado",
-      description: "Accede a soporte técnico prioritario para resolver tus dudas y problemas rápidamente, asegurando que tu experiencia sea siempre fluida y satisfactoria."
-    }
-  ]
-
   const handleShowLogIn = () => {
     setShowLogIn(true);
   }
