@@ -21,7 +21,8 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react"
 import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
 import UserProfile from '@/components/UserProfile';
-
+import UsuariosRegistrados from '@/components/UsuariosRegistrados';
+//import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 //Importaciones de Tipos
 
 //Componentes Shadcn
@@ -172,7 +173,10 @@ export default function ContabilidadApp() {
   const [invoiceFilterYear, setInvoiceFilterYear] = useState(new Date().getFullYear().toString())
   const [invoiceFilterType, setInvoiceFilterType] = useState("all")
 
-  // Nuevos estados para la edición de campos
+  // Estados para visualizacion de cuentas
+  const [isCreatingAccountingEntry, setIsCreatingAccountingEntry] = useState(false);
+
+  // Estados para la edición de campos
   const [isEditingFields, setIsEditingFields] = useState(false)
   const [editingSection, setEditingSection] = useState<keyof AppConfig | ''>('')
   const [appConfig, setAppConfig] = useState<AppConfig>({
@@ -181,7 +185,7 @@ export default function ContabilidadApp() {
     facturacion: {}
   })
 
-  //Estados para Autocompletar Campos
+  // Estados para Autocompletar Campos
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
   const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
   const [lastCreatedInvoice, setLastCreatedInvoice] = useState<InvoiceItem | null>(null);
@@ -373,6 +377,8 @@ export default function ContabilidadApp() {
     setShowLandingPage(false);
   };
 
+  {/* Carga de Datos */}
+
   // Función para cargar datos
   const loadData = async (groupUID: string | null = null) => {
     if (!user) return;
@@ -394,6 +400,8 @@ export default function ContabilidadApp() {
       const facturacionSnapshot = await getDocs(collection(db, `users/${uidToUse}/facturacion`));
       const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setInvoiceItems(facturacionData);
+
+      setViewingUID(uidToUse);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       toast({
@@ -403,6 +411,13 @@ export default function ContabilidadApp() {
       });
     }
   };
+
+  // Funcion  para cargar datos de Grupos de Empresas
+  const handleCargarEmpresa = (empresaId: string) => {
+    loadData(empresaId);
+  };
+
+  {/* Modales */}
 
   // Función para abrir el modal de edición de campos
   const openFieldEditor = (section: keyof AppConfig) => {
@@ -1092,9 +1107,12 @@ export default function ContabilidadApp() {
             <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
             <div className="mb-4 flex items-center space-x-4">
               <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
-              <Button>Administrar Grupos de Trabajo</Button>
             </div>
-            {user && <UserProfile user={user} />}
+            {user && <UserProfile user={user} onCargarEmpresa={handleCargarEmpresa} />}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Usuarios Registrados</h2>
+              {user &&<UsuariosRegistrados user={user} />}
+            </div>
           </div>
           )}
 

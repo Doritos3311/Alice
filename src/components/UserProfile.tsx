@@ -3,18 +3,20 @@ import { User } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Check, Copy, Edit, Trash2 } from 'lucide-react';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { Check, Copy, Edit } from 'lucide-react';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/hooks/use-toast"
-
 import { useTheme } from "next-themes"
+import UsuariosRegistrados from './UsuariosRegistrados';
+import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 
 interface UserProfileProps {
   user: User;
+  onCargarEmpresa: (empresaId: string) => void;
 }
 
 interface UserData {
@@ -23,24 +25,18 @@ interface UserData {
   companyName?: string;
 }
 
-interface LoggedUser {
-  name: string;
-  type: 'personal' | 'empresa';
-  uid: string;
-}
-
 const db = getFirestore();
 
-const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, onCargarEmpresa }) => {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState<UserData>({
     displayName: user.displayName || '',
     type: 'personal',
   });
-  const [loggedUsers, setLoggedUsers] = useState<LoggedUser[]>([]);
+  const [viewingData, setViewingData] = useState<'personal' | 'empresa'>(userData.type);
 
-  const { setTheme, theme } = useTheme()
+  const { theme } = useTheme()
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -48,25 +44,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
       if (userDoc.exists()) {
         const data = userDoc.data() as UserData;
         setUserData(data);
-        
-        // Agregar el usuario actual a la lista de usuarios registrados
-        const newLoggedUser: LoggedUser = {
-          name: data.type === 'empresa' ? data.companyName || '' : data.displayName,
-          type: data.type,
-          uid: ''
-        };
-        
-        await updateDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), {
-          loggedUsers: arrayUnion(newLoggedUser)
-        });
       }
-
-        // Obtener la lista de usuarios registrados en el grupo
-        const groupUsersDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
-        if (groupUsersDoc.exists()) {
-          const data = groupUsersDoc.data();
-          setLoggedUsers(data.loggedUsers || []);
-        }
     };
     fetchUserData();
   }, [user.uid]);
@@ -79,14 +57,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), {
-        ...userData,
-        loggedUsers: arrayUnion({
-          name: userData.type === 'empresa' ? userData.companyName : userData.displayName,
-          type: userData.type,
-          uid: user.uid
-        })
-      });
+      await setDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), userData);
       setIsEditing(false);
       toast({
         title: "Éxito",
@@ -102,29 +73,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
     }
   };
 
-  const handleDeleteUser = async (userToDelete: LoggedUser) => {
-    try {
-      const userGroupDoc = await getDoc(doc(db, `users/${user.uid}`));
-      const groupUID = userGroupDoc.data()?.groupUID;
-      
-      if (groupUID) {
-        await updateDoc(doc(db, `users/${groupUID}/Usuario`, 'datos'), {
-          loggedUsers: arrayRemove(userToDelete)
-        });
-        setLoggedUsers(loggedUsers.filter(u => u.uid !== userToDelete.uid));
-        toast({
-          title: "Éxito",
-          description: "Usuario eliminado del grupo correctamente.",
-        });
-      }
-    } catch (error) {
-      console.error("Error al eliminar usuario:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al eliminar el usuario. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      });
-    }
+  const handleCargarEmpresa = (empresaId: string) => {
+    onCargarEmpresa(empresaId);
+    setViewingData('empresa');
   };
 
   return (
@@ -177,30 +128,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
             Editar Perfil
           </Button>
         </div>
-        
-        <div className="mt-8 w-full">
-          <h3 className="text-lg font-semibold mb-4">Usuarios del Grupo</h3>
-          <div className="space-y-2">
-            {loggedUsers.filter(loggedUser => loggedUser.uid !== user.uid).map((loggedUser, index) => (
-              <Card key={index} className="p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{loggedUser.name}</p>
-                    <p className="text-sm text-gray-500">{loggedUser.type === 'personal' ? 'Personal' : 'Empresa'}</p>
-                  </div>
-                  <div>
-                    <Button variant="outline" size="sm" className="mr-2">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteUser(loggedUser)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+
+        {userData.type === 'personal' ? (
+          <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+        ) : (
+          viewingData === 'personal' ? (
+            <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+          ) : (
+            <UsuariosRegistrados user={user} />
+          )
+        )}
       </CardContent>
 
       {/* Modal Editar Perfil */}

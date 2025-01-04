@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTheme } from "next-themes"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -7,8 +7,8 @@ const ConfiguracionPage: React.FC = () => {
   const { theme, setTheme } = useTheme()
 
   return (
-  <div className="p-8 bg-gray-100 dark:bg-black dark:text-white min-h-screen">
-    <h1 className="text-2xl font-bold mb-4">Configuración</h1>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">Configuración</h1>
       <div className="flex items-center space-x-2">
         <Switch
           id="dark-mode"
