@@ -1,5 +1,7 @@
 'use client'
 
+//my-next-app\src\components\LandingPage.tsx
+
 import { useState } from 'react'
 
 import { toast } from "@/hooks/use-toast"
@@ -166,7 +168,7 @@ export default function LandingPage() {
             </DialogTrigger>
             
             {showLogIn && (
-              <DialogContent className="sm:max-w-[425px] bg-gray-200">
+              <DialogContent className="sm:max-w-[425px] bg-gray-200" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold text-center text-black">Iniciar Sesión</DialogTitle>
                 </DialogHeader>

@@ -17,7 +17,7 @@
 */}
 
 {/* Importacion de Librerias */}
-import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
 import UserProfile from '@/components/UserProfile';
@@ -62,6 +62,7 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPas
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
+// Modo Obscuro
 import { useTheme } from "next-themes"
 
 // Configuración de Firebase
@@ -1199,6 +1200,10 @@ export default function ContabilidadApp() {
                   <Edit className="h-4 w-4 mr-2" />
                   Editar Campos
                 </Button>
+                <Button onClick={() => setIsCreatingAccountingEntry(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Asiento Contable
+                </Button>
                 <Select value={timeFrame} onValueChange={setTimeFrame}>
                   <SelectTrigger className="w-[180px] ml-4">
                     <SelectValue placeholder="Seleccionar período" />
@@ -1626,7 +1631,7 @@ export default function ContabilidadApp() {
                 </Button>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-[180px] ml-4">
-                    <SelectValue placeholder="Filtrar por categoría" />
+                    <SelectValue placeholder="Seleccionar por categoría" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas las categorías</SelectItem>
@@ -1852,7 +1857,7 @@ export default function ContabilidadApp() {
 
         {/* Modal para editar campos */}
         <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
             </DialogHeader>
@@ -1896,7 +1901,7 @@ export default function ContabilidadApp() {
 
         {/* Modal de inicio de sesión */}
         <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
                 <DialogTitle>Iniciar sesión</DialogTitle>
@@ -1924,7 +1929,7 @@ export default function ContabilidadApp() {
 
         {/* Modal de inicio de sesión con correo electrónico */}
         <Dialog open={isEmailLoginModalOpen} onOpenChange={setIsEmailLoginModalOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Iniciar sesión con correo electrónico</DialogTitle>
             </DialogHeader>
@@ -1964,7 +1969,7 @@ export default function ContabilidadApp() {
 
         {/* Modal de confirmacion de cierre */}
         <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
                 <DialogTitle>¿Cerrar Secion?</DialogTitle>
@@ -1986,7 +1991,7 @@ export default function ContabilidadApp() {
 
         {/* Modal para unirse a un grupo */}
         <Dialog open={showJoinGroupModal} onOpenChange={setShowJoinGroupModal}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Unirse a Grupo Empresarial</DialogTitle>
             </DialogHeader>
@@ -2008,7 +2013,7 @@ export default function ContabilidadApp() {
 
         {/* Modal de Autocompletar */}
         <Dialog open={showAutoCompleteModal} onOpenChange={setShowAutoCompleteModal}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Autocompletar Libro Diario</DialogTitle>
             </DialogHeader>
@@ -2022,7 +2027,7 @@ export default function ContabilidadApp() {
 
         {/* Modal para agregar una nueva factura */}
         <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Crear nueva factura</DialogTitle>
             </DialogHeader>
@@ -2060,7 +2065,7 @@ export default function ContabilidadApp() {
 
         {/* Modal para agregar nuevo ítem al inventario */}
         <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Agregar Nuevo Ítem al Inventario</DialogTitle>
             </DialogHeader>
@@ -2086,6 +2091,38 @@ export default function ContabilidadApp() {
           </DialogContent>
         </Dialog>
 
+        {/* Modal para crear asiento contable */}
+        <Dialog open={isCreatingAccountingEntry} onOpenChange={setIsCreatingAccountingEntry}>
+          <DialogContent aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle>Crear Asiento Contable</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4">
+                {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{field.name}</Label>
+                    <Input
+                      id={key}
+                      type={field.type}
+                      value={newRow[key] || ''}
+                      onChange={(e) => handleNewRowChange(key, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button onClick={() => setIsCreatingAccountingEntry(false)}>Cancelar</Button>
+              <Button onClick={() => {
+                handleAddRow();
+                setIsCreatingAccountingEntry(false);
+              }}>Crear</Button>
+              
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     ) : (
 
@@ -2099,4 +2136,3 @@ export default function ContabilidadApp() {
     </>
   )
 }
-

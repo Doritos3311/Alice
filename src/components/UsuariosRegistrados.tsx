@@ -1,3 +1,6 @@
+
+//my-next-app\src\components\UsuariosRegistrados.tsx
+
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { Button } from "@/components/ui/button"

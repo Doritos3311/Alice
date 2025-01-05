@@ -1,3 +1,6 @@
+
+//my-next-app\src\components\UserProfile.tsx
+
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -130,7 +133,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUserType  }) =>
 
       {/* Modal Editar Perfil */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
           </DialogHeader>

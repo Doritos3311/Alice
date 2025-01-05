@@ -1,3 +1,4 @@
+//my-next-app\src\components\EmpresasRegistradas.tsx
 
 {/* Importacion de Librerias */}
 
@@ -124,7 +125,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
       {/* Modal de Confirmacion de Carga */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Confirmar carga de datos</DialogTitle>
           </DialogHeader>
