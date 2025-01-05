@@ -43,6 +43,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { ScrollArea } from "@/components/ui/react-scroll-area"
 
 // Importacion de OpenAI
 import OpenAI from "openai"
@@ -94,40 +95,45 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
+{/* Declaracion de Tipados */}
+
 // Definición de Tipos
 type RowData = {
   id: string
   [key: string]: any
 }
 
-//Definicion Inventario
+// Definicion Inventario
 type InventoryItem = {
   id: string
   [key: string]: any
 }
 
-//Definicion Factura
+// Definicion Factura
 type InvoiceItem = {
   id: string
   fechaEmision?: any;
   [key: string]: any
 }
 
-//Definicion Mensaje
+// Definicion Mensaje
 type Message = {
   role: 'user' | 'assistant'
   content: string
 }
 
+// Definicion de Campos
 type FieldConfig = {
   name: string
   type: string
 }
 
+// Definicion por Defecto
 type SectionConfig = {
   [key: string]: FieldConfig
 }
 
+// Definicion de funciones
 type AppConfig = {
   libroDiario: SectionConfig
   inventario: SectionConfig
@@ -144,7 +150,7 @@ const openai = new OpenAI({
 
 export default function ContabilidadApp() {
 
-  //Configuracion de Cabeceras
+  {/* Declaracion de Funciones */}
   const [activeTab, setActiveTab] = useState("libro-diario")
   const [data, setData] = useState<RowData[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -174,9 +180,14 @@ export default function ContabilidadApp() {
   const [invoiceFilterYear, setInvoiceFilterYear] = useState(new Date().getFullYear().toString())
   const [invoiceFilterType, setInvoiceFilterType] = useState("all")
 
+  // Estados para agregar nuevos items
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+
   // Estados para visualizacion de cuentas
   const [isCreatingAccountingEntry, setIsCreatingAccountingEntry] = useState(false);
   const [userData, setUserData] = useState<{ type: 'personal' | 'empresa' }>({ type: 'personal' });
+  const [empresasRegistradas, setEmpresasRegistradas] = useState([]);
 
   // Estados para la edición de campos
   const [isEditingFields, setIsEditingFields] = useState(false)
@@ -194,7 +205,6 @@ export default function ContabilidadApp() {
 
   // Estado de autenticación Landing Page
   const [user] = useAuthState(auth);
-
   const [,setUser] = useState(null);
   
   const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
@@ -291,46 +301,47 @@ export default function ContabilidadApp() {
     }
   }
 
-  const NecesitoVerQuePtoUsuarioSoy = async () => {
-    console.log(userData.type);
-  }
+  // Funcion para cargar las Empresas Registradas
+  const cargarEmpresasRegistradas = async () => {
+    if (!user) return;
+    const userEmpresasCargadasRef = doc(db, `users/${user.uid}/Usuario/EmpresasCargadas`);
+    const userEmpresasCargadasDoc = await getDoc(userEmpresasCargadasRef);
+    if (userEmpresasCargadasDoc.exists()) {
+      setEmpresasRegistradas(userEmpresasCargadasDoc.data().empresas || []);
+    } else {
+      setEmpresasRegistradas([]);
+    }
+  };
 
   //Funcion Unirce a Grupo
   const handleJoinGroup = async () => {
     if (!user || !joinGroupUID) return;
 
     try {
-      // Verificar si el grupo existe
-      const groupDoc = await getDoc(doc(db, `users/${joinGroupUID}/config`, 'fields'));
+      // Verificar si el grupo existe y obtener sus datos
+      const groupDoc = await getDoc(doc(db, `users/${joinGroupUID}/Usuario/datos`));
       if (!groupDoc.exists()) {
-        console.log("Documento de configuración no encontrado para:", joinGroupUID);
         throw new Error("El grupo no existe o no tienes permisos para acceder a él.");
       }
 
       const groupData = groupDoc.data();
       if (!groupData) {
-        console.log("Datos de configuración del grupo inválidos:", groupData);
-        throw new Error("La configuración del grupo no es válida.");
+        throw new Error("Los datos del grupo no son válidos.");
       }
 
-      // Obtener los datos del usuario actual
-      const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
-      const userData = userDoc.exists() ? userDoc.data() : { displayName: user.displayName, type: 'personal' };
+      // Extraer el nombre de la empresa y el tipo
+      const companyName = groupData.companyName || 'Empresa sin nombre';
+      const companyType = groupData.type || 'empresa';
 
-      // Añadir el usuario actual al grupo
-      await updateDoc(doc(db, `users/${joinGroupUID}/Usuario`, 'datos'), {
-        loggedUsers: arrayUnion({
-          name: userData.type === 'empresa' ? userData.companyName : userData.displayName,
-          type: userData.type,
-          uid: user.uid
+      // Añadir la empresa a la colección EmpresasCargadas del usuario actual
+      const userEmpresasCargadasRef = doc(db, `users/${user.uid}/Usuario/EmpresasCargadas`);
+      await setDoc(userEmpresasCargadasRef, {
+        empresas: arrayUnion({
+          id: joinGroupUID,
+          nombre: companyName,
+          tipo: companyType
         })
-      });
-
-      // Establecer el UID del grupo que se está visualizando
-      setViewingUID(joinGroupUID);
-
-      // Cargar los datos del grupo
-      await loadGroupData(joinGroupUID);
+      }, { merge: true });
 
       setShowJoinGroupModal(false);
       setJoinGroupUID("");
@@ -338,6 +349,9 @@ export default function ContabilidadApp() {
         title: "Éxito",
         description: "Te has unido al grupo de trabajo.",
       });
+
+      // Recargar las empresas registradas
+      cargarEmpresasRegistradas();
     } catch (error) {
       console.error("Error al unirse al grupo:", error);
       toast({
@@ -395,9 +409,10 @@ export default function ContabilidadApp() {
     }
   };
 
+  // Funcion para Analizar el tipo de Usuario
   const handleUpdateUserType = (newType: 'personal' | 'empresa') => {
     setUserData({ type: newType });
-    console.log('User type updated to:', newType);
+    console.log('Usuario registrado como:', newType);
   };
 
   // Funcion Requerimiento Inicio de Sesion
@@ -711,26 +726,30 @@ export default function ContabilidadApp() {
 
   // Función para agregar un nuevo ítem al inventario
   const handleAddInventoryItem = async () => {
-    if (!user) return
+    if (!user) return;
 
     try {
-      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem)
-      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }])
-      setNewInventoryItem({} as InventoryItem)
-      setIsCreatingInventoryItem(false)
+      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem);
+      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);
+      setNewInventoryItem({} as InventoryItem);
+      setIsInventoryModalOpen(false); // Cerrar el modal después de agregar
+      toast({
+        title: "Éxito",
+        description: "Nuevo ítem agregado al inventario.",
+      });
     } catch (error) {
-      console.error("Error al agregar ítem al inventario:", error)
+      console.error("Error al agregar ítem al inventario:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al agregar el ítem al inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    if (!user || !db) return; // Added null check for user and db
+    if (!user || !db) return;
   
     try {
       const newInvoiceItemWithId = { ...newInvoiceItem, id: Date.now().toString() };
@@ -740,7 +759,7 @@ export default function ContabilidadApp() {
       setLastCreatedInvoice(createdInvoice);
   
       setNewInvoiceItem({} as InvoiceItem);
-      setIsCreatingInvoiceItem(false);
+      setIsInvoiceModalOpen(false);
       setShowAutoCompleteModal(true);
     } catch (error) {
       console.error("Error al agregar factura:", error);
@@ -1040,6 +1059,7 @@ export default function ContabilidadApp() {
     }
   }, [activeTab]);
 
+  {/* Diceños y Estilos */}
   return (
     <>
     {showLandingPage ? (
@@ -1146,33 +1166,26 @@ export default function ContabilidadApp() {
 
           {/* Grupos de Trabajo Interfaz Estilo */}
           {activeTab === "grupos-trabajo" && (
-          <div >
-            <div className="mb-4 flex items-center space-x-4">
-              <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
+              {user && (
+                <>
+                  <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
+                  {userData.type === 'personal' ? (
+                    <div className="mt-8">
+                      <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
+                      <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
+                      <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+                    </div>
+                  ) : (
+                    <div className="mt-8">
+                      <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
+                      <UsuariosRegistrados user={user} />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-            {activeTab === "grupos-trabajo" && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
-            {user && (
-              <>
-                <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
-                {userData.type === 'personal' ? (
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold mb-4">Empresas Registradas</h3>
-                    <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
-                  </div>
-                ) : (
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold mb-4">Usuarios Registrados</h3>
-                    <UsuariosRegistrados user={user} />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-            
-          </div>
           )}
 
           {/* Libro Diario Interfaz Estilo */}
@@ -1608,7 +1621,9 @@ export default function ContabilidadApp() {
                   <Edit className="h-4 w-4 mr-2" />
                   Editar Campos
                 </Button>
-                <Button onClick={() => setIsCreatingInventoryItem(true)}>Agregar Ítem</Button>
+                <Button onClick={() => setIsInventoryModalOpen(true)}>
+                  Agregar Nuevo Ítem
+                </Button>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-[180px] ml-4">
                     <SelectValue placeholder="Filtrar por categoría" />
@@ -1666,23 +1681,6 @@ export default function ContabilidadApp() {
                     ))}
                 </TableBody>
               </Table>
-              {isCreatingInventoryItem && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold mb-2">Agregar nuevo ítem</h3>
-                  <div className="flex space-x-2">
-                    {Object.entries(appConfig.inventario).map(([key, field]) => (
-                      <Input
-                        key={key}
-                        type={field.type}
-                        placeholder={field.name}
-                        value={newInventoryItem[key] || ''}
-                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
-                    ))}
-                    <Button onClick={handleAddInventoryItem}>Agregar</Button>
-                    <Button variant="secondary" onClick={() => setIsCreatingInventoryItem(false)}>Cancelar</Button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -1701,8 +1699,7 @@ export default function ContabilidadApp() {
                     Editar Campos
                   </Button>
                   {/* Crear Factura */}
-                  <Button onClick={() => setIsCreatingInvoiceItem(true)}>Crear Factura</Button>
-
+                  <Button onClick={() => setIsInvoiceModalOpen(true)}>Crear Factura</Button>
                   {/* Seleccionar Fecha */}
                   <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
                     <SelectTrigger className="w-[180px] ml-4">
@@ -1785,35 +1782,6 @@ export default function ContabilidadApp() {
                   ))}
                 </TableBody>
               </Table>
-              {isCreatingInvoiceItem && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold mb-2">Crear nueva factura</h3>
-                  <div className="flex space-x-2 mb-4">
-                    <Select onValueChange={handleInventoryItemSelect}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Seleccionar ítem" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {inventoryItems.map(item => (
-                          <SelectItem key={item.id} value={item.id}>{item.descripcion}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex space-x-2">
-                    {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                      <Input
-                        key={key}
-                        type={field.type}
-                        placeholder={field.name}
-                        value={newInvoiceItem[key as keyof InvoiceItem] || ''}
-                        onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })} />
-                    ))}
-                    <Button onClick={handleAddInvoiceItem}>Crear</Button>
-                    <Button variant="secondary" onClick={() => setIsCreatingInvoiceItem(false)}>Cancelar</Button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -2048,6 +2016,72 @@ export default function ContabilidadApp() {
             <DialogFooter>
               <Button onClick={() => setShowAutoCompleteModal(false)}>Cancelar</Button>
               <Button onClick={handleAutoCompleteLibroDiario}>Aceptar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal para agregar una nueva factura */}
+        <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear nueva factura</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4 p-4">
+                <Select onValueChange={handleInventoryItemSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar ítem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inventoryItems.map(item => (
+                      <SelectItem key={item.id} value={item.id}>{item.descripcion}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {Object.entries(appConfig.facturacion).map(([key, field]) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{field.name}</Label>
+                    <Input
+                      id={key}
+                      type={field.type}
+                      value={newInvoiceItem[key as keyof InvoiceItem] || ''}
+                      onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button onClick={() => setIsInvoiceModalOpen(false)}>Cancelar</Button>
+              <Button onClick={handleAddInvoiceItem}>Crear</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal para agregar nuevo ítem al inventario */}
+        <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Nuevo Ítem al Inventario</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4 p-4">
+                {Object.entries(appConfig.inventario).map(([key, field]) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{field.name}</Label>
+                    <Input
+                      id={key}
+                      type={field.type}
+                      value={newInventoryItem[key] || ''}
+                      onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button onClick={() => setIsInventoryModalOpen(false)}>Cancelar</Button>
+              <Button onClick={handleAddInventoryItem}>Agregar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
