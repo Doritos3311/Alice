@@ -22,6 +22,7 @@ import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
 import UserProfile from '@/components/UserProfile';
 import UsuariosRegistrados from '@/components/UsuariosRegistrados';
+import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 //import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 //Importaciones de Tipos
 
@@ -175,6 +176,7 @@ export default function ContabilidadApp() {
 
   // Estados para visualizacion de cuentas
   const [isCreatingAccountingEntry, setIsCreatingAccountingEntry] = useState(false);
+  const [userData, setUserData] = useState<{ type: 'personal' | 'empresa' }>({ type: 'personal' });
 
   // Estados para la edición de campos
   const [isEditingFields, setIsEditingFields] = useState(false)
@@ -217,6 +219,7 @@ export default function ContabilidadApp() {
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
     if (user) {
+      loadUserData();
       loadUserConfig()
       loadData(viewingUID)
       setShowLandingPage(true); // Oculta la landing page cuando el usuario está autenticado
@@ -286,6 +289,10 @@ export default function ContabilidadApp() {
       await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), defaultConfig)
       setAppConfig(defaultConfig)
     }
+  }
+
+  const NecesitoVerQuePtoUsuarioSoy = async () => {
+    console.log(userData.type);
   }
 
   //Funcion Unirce a Grupo
@@ -372,6 +379,27 @@ export default function ContabilidadApp() {
     }
   };
 
+  //Funcion Cargar Informacion del Usuario
+  const loadUserData = async () => {
+    if (!user) return;
+
+    const db = getFirestore();
+    const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario/datos`));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      setUserData({
+        type: data.type || 'personal',
+      });
+      console.log('UserData loaded:', data);
+      console.log('User type set to:', data.type || 'personal');
+    }
+  };
+
+  const handleUpdateUserType = (newType: 'personal' | 'empresa') => {
+    setUserData({ type: newType });
+    console.log('User type updated to:', newType);
+  };
+
   // Funcion Requerimiento Inicio de Sesion
   const checkUserAuthentication = (): void => {
     setShowLandingPage(false);
@@ -413,8 +441,23 @@ export default function ContabilidadApp() {
   };
 
   // Funcion  para cargar datos de Grupos de Empresas
-  const handleCargarEmpresa = (empresaId: string) => {
-    loadData(empresaId);
+  const handleCargarEmpresa = async (empresaId: string) => {
+    if (!user) return;
+
+    try {
+      await loadData(empresaId);
+      toast({
+        title: "Éxito",
+        description: "Datos de la empresa cargados correctamente.",
+      });
+    } catch (error) {
+      console.error("Error al cargar datos de la empresa:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los datos de la empresa. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
   };
 
   {/* Modales */}
@@ -1104,15 +1147,31 @@ export default function ContabilidadApp() {
           {/* Grupos de Trabajo Interfaz Estilo */}
           {activeTab === "grupos-trabajo" && (
           <div >
-            <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
             <div className="mb-4 flex items-center space-x-4">
               <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
             </div>
-            {user && <UserProfile user={user} onCargarEmpresa={handleCargarEmpresa} />}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Usuarios Registrados</h2>
-              {user &&<UsuariosRegistrados user={user} />}
-            </div>
+            {activeTab === "grupos-trabajo" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
+            {user && (
+              <>
+                <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
+                {userData.type === 'personal' ? (
+                  <div className="mt-8">
+                    <h3 className="text-xl font-bold mb-4">Empresas Registradas</h3>
+                    <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+                  </div>
+                ) : (
+                  <div className="mt-8">
+                    <h3 className="text-xl font-bold mb-4">Usuarios Registrados</h3>
+                    <UsuariosRegistrados user={user} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+            
           </div>
           )}
 

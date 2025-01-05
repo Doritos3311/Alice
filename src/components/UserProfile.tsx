@@ -4,19 +4,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Check, Copy, Edit } from 'lucide-react';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
-import UsuariosRegistrados from './UsuariosRegistrados';
-import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
+
 
 interface UserProfileProps {
   user: User;
-  onCargarEmpresa: (empresaId: string) => void;
+  onUpdateUserType: (newType: 'personal' | 'empresa') => void;
 }
 
 interface UserData {
@@ -27,14 +26,14 @@ interface UserData {
 
 const db = getFirestore();
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, onCargarEmpresa }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUserType  }) => {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState<UserData>({
     displayName: user.displayName || '',
     type: 'personal',
+    companyName: '',
   });
-  const [viewingData, setViewingData] = useState<'personal' | 'empresa'>(userData.type);
 
   const { theme } = useTheme()
 
@@ -57,7 +56,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onCargarEmpresa }) => {
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), userData);
+      const dataToSave = {
+        ...userData,
+        companyName: userData.type === 'empresa' ? userData.companyName : null
+      };
+      await setDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), dataToSave);
       setIsEditing(false);
       toast({
         title: "Éxito",
@@ -71,11 +74,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onCargarEmpresa }) => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleCargarEmpresa = (empresaId: string) => {
-    onCargarEmpresa(empresaId);
-    setViewingData('empresa');
   };
 
   return (
@@ -128,16 +126,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onCargarEmpresa }) => {
             Editar Perfil
           </Button>
         </div>
-
-        {userData.type === 'personal' ? (
-          <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
-        ) : (
-          viewingData === 'personal' ? (
-            <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
-          ) : (
-            <UsuariosRegistrados user={user} />
-          )
-        )}
       </CardContent>
 
       {/* Modal Editar Perfil */}
