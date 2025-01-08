@@ -1040,11 +1040,11 @@ export default function ContabilidadApp() {
     try {
       const newLibroDiarioItem = {
         fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0],
-        nombreCuenta: "Venta", // Puedes ajustar esto según tus necesidades
+        nombreCuenta: "",
         descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion,
         idElemento: lastCreatedInvoice.idElemento || selectedInventoryItem.idElemento,
-        debe: 0, // Asumiendo que es una venta, el debe es 0
-        haber: lastCreatedInvoice.total || 0
+        haber: 0,
+        debe: lastCreatedInvoice.total || 0
       };
   
       console.log("Nuevo ítem para el libro diario:", newLibroDiarioItem);
