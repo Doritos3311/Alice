@@ -8,7 +8,7 @@ const ConfiguracionPage: React.FC = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Configuración</h1>
+      <h1 className="text-3 xl font-bold mb-4">Configuración</h1>
       <div className="flex items-center space-x-2">
         <Switch
           id="dark-mode"

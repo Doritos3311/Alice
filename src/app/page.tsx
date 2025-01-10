@@ -18,12 +18,16 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect } from "react"
+
+//Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/LandingPage';
 import UserProfile from '@/components/UserProfile';
 import UsuariosRegistrados from '@/components/UsuariosRegistrados';
 import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
-//import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
+import SolicitudIngreso from '@/components/SolicitudIngreso';
+import SolicitudPendiente from '@/components/SolicitudPendiente';
+
 //Importaciones de Tipos
 
 //Componentes Shadcn
@@ -55,7 +59,6 @@ import { RiEditLine } from "react-icons/ri";
 import { IoIosSave } from "react-icons/io";
 import { IoTrashBinSharp } from "react-icons/io5";
 
-
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
@@ -64,6 +67,10 @@ import { useAuthState } from "react-firebase-hooks/auth"
 
 // Modo Obscuro
 import { useTheme } from "next-themes"
+
+// Importaciones Archivo de Exel
+import { FileDown } from 'lucide-react'
+import GenerarRegistros from '@/components/GenerarRegistros';
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -362,18 +369,6 @@ export default function ContabilidadApp() {
     }
   };
 
-  // Funcion para cargar las Empresas Registradas
-  const cargarEmpresasRegistradas = async () => {
-    if (!user) return;
-    const userEmpresasCargadasRef = doc(db, `users/${user.uid}/Usuario/EmpresasCargadas`);
-    const userEmpresasCargadasDoc = await getDoc(userEmpresasCargadasRef);
-    if (userEmpresasCargadasDoc.exists()) {
-      setEmpresasRegistradas(userEmpresasCargadasDoc.data().empresas || []);
-    } else {
-      setEmpresasRegistradas([]);
-    }
-  };
-
   //Funcion Unirce a Grupo
   const handleJoinGroup = async () => {
     if (!user || !joinGroupUID) return;
@@ -394,34 +389,43 @@ export default function ContabilidadApp() {
       const companyName = groupData.companyName || 'Empresa sin nombre';
       const companyType = groupData.type || 'empresa';
 
-      // Añadir la empresa a la colección EmpresasCargadas del usuario actual
-      const userEmpresasCargadasRef = doc(db, `users/${user.uid}/Usuario/EmpresasCargadas`);
-      await setDoc(userEmpresasCargadasRef, {
-        empresas: arrayUnion({
-          id: joinGroupUID,
-          nombre: companyName,
-          tipo: companyType
-        })
+      // Obtener el nombre del usuario actual
+      const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
+      const userData = userDoc.data();
+      const userName = userData?.displayName || user.displayName || user.email || "Usuario sin nombre";
+
+      // Agregar solicitud a los permisos del usuario
+      await setDoc(doc(db, `users/${user.uid}/Usuario`, 'permisos'), {
+        [joinGroupUID]: { permiso1: false, nombreEmpresa: companyName }
       }, { merge: true });
+
+      // Crear solicitud a la empresa con el permiso en false
+      await setDoc(doc(db, `users/${joinGroupUID}/Usuario`, 'permisos'), {
+        [user.uid]: { permiso1: false }
+      }, { merge: true });
+
+      // Agregar solicitud a la empresa
+      await updateDoc(doc(db, `users/${joinGroupUID}/Usuario`, 'solicitudes'), {
+        [user.uid]: { nombre: userName, estado: "pendiente" }
+      });
 
       setShowJoinGroupModal(false);
       setJoinGroupUID("");
       toast({
         title: "Éxito",
-        description: "Te has unido al grupo de trabajo.",
+        description: "Solicitud enviada correctamente. La empresa se agregará a tu lista cuando sea aprobada.",
       });
-
-      // Recargar las empresas registradas
-      cargarEmpresasRegistradas();
+      
     } catch (error) {
       console.error("Error al unirse al grupo:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Hubo un problema al unirse al grupo. Por favor, intenta de nuevo.",
+        description: error instanceof Error ? error.message : "Hubo un problema al enviar la solicitud. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
   };
+  
 
   //Funcion Cargar Informacion del Usuario
   const loadUserData = async () => {
@@ -1002,6 +1006,8 @@ export default function ContabilidadApp() {
 
   // Función para autocompletar la factura en el libro diario 
   const handleAutoCompleteLibroDiario = async () => {
+
+    
     console.log("Iniciando handleAutoCompleteLibroDiario");
     console.log("user:", user);
     console.log("selectedInventoryItem:", selectedInventoryItem);
@@ -1176,12 +1182,22 @@ export default function ContabilidadApp() {
                   <Users className="mr-2 h-4 w-4" />
                   Grupos de Trabajo
                 </Button>
+
+                <Button
+                  variant={activeTab === "generar-registros" ? "default" : "ghost"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => setActiveTab("generar-registros")}
+                >
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Generar Registros
+                </Button>
+
               </nav>
             </div>
           </div>
 
           {/* Contenido principal */}
-          <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-black text-gray-300" : "bg-gray-100 text-gray-900"}`}>
+          <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-[rgb(85, 85, 85)] text-gray-900"}`}>
 
             {/* Configuracion Interfaz Estilo */}
             {activeTab === "configuracion" && (
@@ -1191,7 +1207,7 @@ export default function ContabilidadApp() {
             {/* Grupos de Trabajo Interfaz Estilo */}
             {activeTab === "grupos-trabajo" && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Grupos de Trabajo</h2>
+                <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
                 {user && (
                   <>
                     <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
@@ -1200,11 +1216,15 @@ export default function ContabilidadApp() {
                         <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
                         <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
                         <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+
+                        <SolicitudIngreso userId={user.uid} />
                       </div>
                     ) : (
                       <div className="mt-8">
                         <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
                         <UsuariosRegistrados user={user} />
+
+                        <SolicitudPendiente userId={user.uid} />
                       </div>
                     )}
                   </>
@@ -1217,7 +1237,7 @@ export default function ContabilidadApp() {
               <div>
                 {/* Titulo */}
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold">Libro Diario</h2>
+                  <h2 className="text-3xl font-bold">Libro Diario</h2>
                 </div>
                 <div className="mb-4 flex items-center space-x-4">
 
@@ -1371,7 +1391,7 @@ export default function ContabilidadApp() {
             {/* Dashboard Interfaz Estilo */}
             {activeTab === "dashboard" && (
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+                <h2 className="text-3xl font-bold mb-4">Dashboard</h2>
                 <div className="mb-4 flex items-center space-x-4">
                   <Select value={timeFrame} onValueChange={setTimeFrame}>
                     <SelectTrigger className="w-[180px] ml-4">
@@ -1635,7 +1655,7 @@ export default function ContabilidadApp() {
             {activeTab === "inventario" && (
               <div>
                 <div className="flex justify-between items-center mb-4 mr-10">
-                  <h2 className="text-2xl font-bold">Registro de Inventario</h2>
+                  <h2 className="text-3xl font-bold">Registro de Inventario</h2>
                 </div>
                 <div className="mb-4 flex items-center space-x-4">
                   <Button onClick={() => openFieldEditor('inventario')}>
@@ -1709,7 +1729,7 @@ export default function ContabilidadApp() {
             {activeTab === "facturacion" && (
               <div>
                 <div className="flex justify-between items-center mb-4 mr-10">
-                  <h2 className="text-2xl font-bold">Registro de Facturación</h2>
+                  <h2 className="text-3xl font-bold">Registro de Facturación</h2>
                 </div>
 
                 <div className="flex justify-between items-center mb-4 mr-10">
@@ -1804,6 +1824,15 @@ export default function ContabilidadApp() {
                   </TableBody>
                 </Table>
               </div>
+            )}
+
+            {/* Registros Interfaz Estilo */}
+            {activeTab === "generar-registros" && (
+              <GenerarRegistros 
+              data={data} 
+              inventoryItems={inventoryItems} 
+              invoiceItems={invoiceItems} 
+              appConfig={appConfig} />
             )}
 
           </div>
@@ -2025,7 +2054,7 @@ export default function ContabilidadApp() {
               </div>
               <DialogFooter>
                 <Button onClick={() => setShowJoinGroupModal(true)}>Cancelar</Button>
-                <Button onClick={handleJoinGroup}>Unirse</Button>
+                <Button onClick={handleJoinGroup}>Enviar Solicitud</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

@@ -1,61 +1,38 @@
-//my-next-app\src\components\EmpresasRegistradas.tsx
-
-{/* Importacion de Librerias */}
-
 import React, { useState, useEffect } from 'react';
-import { getFirestore, doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Building, Database, Trash2 } from 'lucide-react'
 import { toast } from "@/hooks/use-toast"
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
-{/* Declaracion de Tipados */}
-
-// Tipos Propiedades Empresas Registradas
 type EmpresaRegistrada = {
   id: string;
   nombre: string;
   tipo: string;
 };
 
-// Tipos Propiedades Empresas
 type EmpresasRegistradasProps = {
   userId: string;
   onCargarEmpresa: (empresaId: string) => void;
 };
 
 export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistradasProps) {
-  {/* Declaracion de Funciones */}
   const [empresasRegistradas, setEmpresasRegistradas] = useState<EmpresaRegistrada[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<EmpresaRegistrada | null>(null);
   const db = getFirestore();
 
   useEffect(() => {
-    cargarEmpresasRegistradas();
-  }, [userId]);
-
-  {/* Metodos Botones */}
-
-  // Funcion Cargar Empresa
-  const cargarEmpresasRegistradas = async () => {
-    try {
-      const userDoc = await getDoc(doc(db, `users/${userId}/Usuario/EmpresasCargadas`));
-      if (userDoc.exists()) {
-        setEmpresasRegistradas(userDoc.data().empresas || []);
+    const unsubscribe = onSnapshot(doc(db, `users/${userId}/Usuario/EmpresasCargadas`), (doc) => {
+      if (doc.exists()) {
+        setEmpresasRegistradas(doc.data().empresas || []);
       }
-    } catch (error) {
-      console.error("Error al cargar empresas registradas:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las empresas registradas.",
-        variant: "destructive",
-      });
-    }
-  };
+    });
 
-  // Funcion Elminar Empresa
+    return () => unsubscribe();
+  }, [userId, db]);
+
   const handleEliminarEmpresa = async (empresaId: string) => {
     try {
       const empresaAEliminar = empresasRegistradas.find(empresa => empresa.id === empresaId);
@@ -63,7 +40,6 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
         await updateDoc(doc(db, `users/${userId}/Usuario/EmpresasCargadas`), {
           empresas: arrayRemove(empresaAEliminar)
         });
-        setEmpresasRegistradas(empresasRegistradas.filter(empresa => empresa.id !== empresaId));
         toast({
           title: "Éxito",
           description: "Empresa eliminada correctamente.",
@@ -79,15 +55,11 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
     }
   };
 
-  // Funcion abrir modal confirmacion
   const handleOpenModal = (empresa: EmpresaRegistrada) => {
     setSelectedEmpresa(empresa);
     setIsModalOpen(true);
   };
  
-  {/* Metodo Funcionalidad */}
-
-  // Funcion Confirmar Cargar Empresa
   const handleConfirmCargarEmpresa = () => {
     if (selectedEmpresa) {
       onCargarEmpresa(selectedEmpresa.id);
@@ -97,7 +69,6 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
   return (
     <>
-      {/* Contenido Empresas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {empresasRegistradas.map((empresa) => (
           <Card key={empresa.id} className="p-4">
@@ -123,7 +94,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
         ))}
       </div>
 
-      {/* Modal de Confirmacion de Carga */}
+      {/* Modal Confirmacion Carga de Datos */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
@@ -132,11 +103,11 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
           <div className="py-4">
             <p>¿Quieres continuar con la carga de datos de la empresa?</p>
             {selectedEmpresa && (
-              <Card className="mt-4 p-4">
+              <Card className="mt-2 p-2">
                 <CardContent>
                   <div className="flex items-center">
                     <Building className="h-5 w-5 mr-2" />
-                    <div>
+                    <div className='mt-4'>
                       <p className="font-medium">{selectedEmpresa.nombre}</p>
                       <p className="text-sm text-gray-500">ID: {selectedEmpresa.id.substring(0, 8)}...</p>
                     </div>
