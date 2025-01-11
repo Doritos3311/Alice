@@ -27,6 +27,7 @@ import UsuariosRegistrados from '@/components/UsuariosRegistrados';
 import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 import SolicitudIngreso from '@/components/SolicitudIngreso';
 import SolicitudPendiente from '@/components/SolicitudPendiente';
+import AccesoRestringido from '@/components/AccesoRestringido';
 
 //Importaciones de Tipos
 
@@ -239,6 +240,13 @@ export default function ContabilidadApp() {
   const [cancelActionInventario, setCancelActionInventario] = useState<() => void>(() => {})
   const [cancelActionFacturacion, setCancelActionFacturacion] = useState<() => void>(() => {})
 
+  // Estado de Control de Permisos
+  const [permisos, setPermisos] = useState({
+    permisoLibroDiario: false,
+    permisoInventario: false,
+    permisoFacturacion: false
+  });
+
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
     if (user) {
@@ -262,6 +270,7 @@ export default function ContabilidadApp() {
   }, [user, viewingUID])
 
   {/* Funciones */}
+
 
   {/* Carga de Datos */}
 
@@ -425,21 +434,16 @@ export default function ContabilidadApp() {
       });
     }
   };
-  
 
   //Funcion Cargar Informacion del Usuario
   const loadUserData = async () => {
     if (!user) return;
-
-    const db = getFirestore();
-    const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario/datos`));
+    const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
     if (userDoc.exists()) {
       const data = userDoc.data();
       setUserData({
         type: data.type || 'personal',
       });
-      console.log('UserData loaded:', data);
-      console.log('User type set to:', data.type || 'personal');
     }
   };
 
@@ -453,6 +457,7 @@ export default function ContabilidadApp() {
   const checkUserAuthentication = (): void => {
     setShowLandingPage(false);
   };
+
 
   {/* Modales */}
 
@@ -491,6 +496,7 @@ export default function ContabilidadApp() {
     cancelActionFacturacion();
     setShowCancelConfirmModalFacturacion(false);
   };
+
 
   {/* Manejo de Campos */}
 
@@ -543,6 +549,7 @@ export default function ContabilidadApp() {
       }
     }))
   }
+
 
   {/* Libro Diario */}
 
@@ -675,6 +682,7 @@ export default function ContabilidadApp() {
     ]
   }, [totals])
 
+
   {/* IA */}
 
   // Función para manejar el envío de mensajes al asistente IA
@@ -736,53 +744,27 @@ export default function ContabilidadApp() {
     console.log("Iniciando entrada de voz...")
   }
 
+
   {/* Inventario */}
 
   // Función para agregar un nuevo ítem al inventario
   const handleAddInventoryItem = async () => {
-    if (!user) return;
+    if (!user) return;// Si usuario existe entonces
 
-    try {
-      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem);
-      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);
-      setNewInventoryItem({} as InventoryItem);
+    try {//Intentar
+      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem);// Agregar Documento a la base de datos en base a la ruta y con los datos de esta funcion newInventoryItem
+      setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);// Realiza un barrido y los digita en la base de datos
+      setNewInventoryItem({} as InventoryItem);// Vacia la funcion setNewInventoryItem para colocar otros datos proximamente
       setIsInventoryModalOpen(false); // Cerrar el modal después de agregar
-      toast({
+      toast({//Mensaje detallado a la consola
         title: "Éxito",
         description: "Nuevo ítem agregado al inventario.",
       });
-    } catch (error) {
-      console.error("Error al agregar ítem al inventario:", error);
+    } catch (error) {//Si no se realizo la accion anterior
+      console.error("Error al agregar ítem al inventario:", error);//Mensaje consola
       toast({
-        title: "Error",
+        title: "Error",// Mensaje detallado consola
         description: "Hubo un problema al agregar el ítem al inventario. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Función para agregar una nueva factura
-  const handleAddInvoiceItem = async () => {
-    if (!user || !db) return;
-
-    try {
-      const newInvoiceItemWithId = { 
-        ...newInvoiceItem, 
-        idElemento: newInvoiceItem.idElemento || Date.now().toString()
-      };
-      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItemWithId);
-      const createdInvoice = { ...newInvoiceItemWithId, id: docRef.id };
-      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);
-      setLastCreatedInvoice(createdInvoice);
-
-      setNewInvoiceItem({} as InvoiceItem);
-      setIsInvoiceModalOpen(false);
-      setShowAutoCompleteModal(true);
-    } catch (error) {
-      console.error("Error al agregar factura:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al agregar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
@@ -790,27 +772,27 @@ export default function ContabilidadApp() {
 
   // Función para editar un ítem del inventario
   const handleEditInventoryItem = (id: string) => {
-    setEditingInventoryId(id)
-    const itemToEdit = inventoryItems.find(item => item.id === id)
-    if (itemToEdit) {
-      setNewInventoryItem(itemToEdit)
+    setEditingInventoryId(id)//Busca el item en base al id
+    const itemToEdit = inventoryItems.find(item => item.id === id)//Compara que exista el item seleccionado
+    if (itemToEdit) {//Si existe entonces
+      setNewInventoryItem(itemToEdit)//Modificar los cambios aplicados
     }
   }
 
   // Función para guardar los cambios de un ítem del inventario
   const handleSaveInventoryItem = async () => {
-    if (!user || !editingInventoryId) return
+    if (!user || !editingInventoryId) return// Si usuario existe
 
-    try {
-      await updateDoc(doc(db, `users/${user.uid}/inventario`, editingInventoryId), newInventoryItem)
-      setInventoryItems(inventoryItems.map(item => 
-        item.id === editingInventoryId ? { ...newInventoryItem, id: editingInventoryId } : item
+    try {//Intentar
+      await updateDoc(doc(db, `users/${user.uid}/inventario`, editingInventoryId), newInventoryItem)//Entra a la ruta y actualiza los datos segun la funcion editingInventoryId y newInventoryItem
+      setInventoryItems(inventoryItems.map(item => //Mapeado de los campos de el inventario en base al id
+        item.id === editingInventoryId ? { ...newInventoryItem, id: editingInventoryId } : item// Actualiza los campos modificados
       ))
-      setEditingInventoryId(null)
-      setNewInventoryItem({} as InventoryItem)
-    } catch (error) {
-      console.error("Error al guardar cambios en el inventario:", error)
-      toast({
+      setEditingInventoryId(null)//Vacia la funcion setEditingInventoryId
+      setNewInventoryItem({} as InventoryItem)// Vacia y carga por defecto a la funcion setNewInventoryItem
+    } catch (error) {//Si error
+      console.error("Error al guardar cambios en el inventario:", error)// Mensaje consola error
+      toast({//Mensaje detallado error
         title: "Error",
         description: "Hubo un problema al guardar los cambios en el inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -820,18 +802,18 @@ export default function ContabilidadApp() {
 
   // Función para eliminar un ítem del inventario
   const handleDeleteInventoryItem = async (id: string) => {
-    if (!user) return;
+    if (!user) return;//Si usuario existe
   
-    try {
-      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id));
-      setInventoryItems(inventoryItems.filter(item => item.id !== id));
-      toast({
+    try {//Intentar
+      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id));//Borrar el documento en base al id dentro de la ruta
+      setInventoryItems(inventoryItems.filter(item => item.id !== id));// Verifica que ya no exista el documento
+      toast({//Mensaje de funcionamiento efectivo
         title: "Éxito",
         description: "Ítem eliminado correctamente.",
       });
-    } catch (error) {
-      console.error("Error al eliminar ítem del inventario:", error);
-      toast({
+    } catch (error) {//Error
+      console.error("Error al eliminar ítem del inventario:", error);//Mensaje error
+      toast({//Mensaje detallado error
         title: "Error",
         description: "Hubo un problema al eliminar el ítem del inventario. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -839,31 +821,59 @@ export default function ContabilidadApp() {
     }
   };
 
+
   {/* Facturacion */}
+
+  // Función para agregar una nueva factura
+  const handleAddInvoiceItem = async () => {
+    if (!user || !db) return;// Si usuario existe
+
+    try {//Intentar
+      const newInvoiceItemWithId = {// Funcion barrido de los datos en la aplicacion y coloca dentro de la base de datos
+        ...newInvoiceItem, 
+        idElemento: newInvoiceItem.idElemento || Date.now().toString()
+      };
+      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItemWithId);// Añade los datos dentro de la ruta segun la funcion newInvoiceItemWithId
+      const createdInvoice = { ...newInvoiceItemWithId, id: docRef.id };//Crea un nuevo espacio dentro de la base de datos
+      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);// Carga la funcion setInvoiceItems con los items de la factura por defecto
+      setLastCreatedInvoice(createdInvoice);// Utiliza el nuevo y ultimo espacio creado dentro de la base de datos
+
+      setNewInvoiceItem({} as InvoiceItem);//Vacia y carga datos por defecto
+      setIsInvoiceModalOpen(false);// Cierra el modal
+      setShowAutoCompleteModal(true);// Llama al modal autocompletar
+    } catch (error) {//Si no se pudo realizar correctamente la funcion anterior
+      console.error("Error al agregar factura:", error);// Mensaje error
+      toast({//Mensaje detallado error
+        title: "Error",
+        description: "Hubo un problema al agregar la factura. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Función para editar una factura
   const handleEditInvoiceItem = (id: string) => {
-    setEditingInvoiceId(id)
-    const itemToEdit = invoiceItems.find(item => item.id === id)
-    if (itemToEdit) {
-      setNewInvoiceItem(itemToEdit)
+    setEditingInvoiceId(id)//Extrae el id del Componente
+    const itemToEdit = invoiceItems.find(item => item.id === id)//Compara el id del componente
+    if (itemToEdit) {//Condicion si existe item para editar entonces, editar
+      setNewInvoiceItem(itemToEdit)//Si existe entonces cargar nuevos datos
     }
   }
 
   // Función para guardar los cambios de una factura
   const handleSaveInvoiceItem = async () => {
-    if (!user || !editingInvoiceId) return
+    if (!user || !editingInvoiceId) return//Condicion para verificar si el usuario esta iniciado sesion
 
-    try {
-      await updateDoc(doc(db, `users/${user.uid}/facturacion`, editingInvoiceId), newInvoiceItem)
-      setInvoiceItems(invoiceItems.map(item => 
-        item.id === editingInvoiceId ? { ...newInvoiceItem, id: editingInvoiceId } : item
+    try {//Intenta cargar de la base de datos
+      await updateDoc(doc(db, `users/${user.uid}/facturacion`, editingInvoiceId), newInvoiceItem)//Entra en las carpetas y llama a la funcion editar campos de facturacion, y se coloca los nuevos campos con la funcion newInvoiceItem
+      setInvoiceItems(invoiceItems.map(item => //Mapeado de la estructura de la base de datos segun el id del item
+        item.id === editingInvoiceId ? { ...newInvoiceItem, id: editingInvoiceId } : item//Se asegura de que los campos esten igual en la aplicacion como en la base de datos
       ))
-      setEditingInvoiceId(null)
-      setNewInvoiceItem({} as InvoiceItem)
-    } catch (error) {
-      console.error("Error al guardar cambios en la factura:", error)
-      toast({
+      setEditingInvoiceId(null)//Vacia la condicion de colocar datos editados en la factura
+      setNewInvoiceItem({} as InvoiceItem)//Vacia la concion de colocar nuevos datos y llama a la funcion por defecto de datos de facturacion
+    } catch (error) {//Si es que no se pudo realizar la accion 
+      console.error("Error al guardar cambios en la factura:", error)//Mensaje de erro a la consola
+      toast({//Mensaje detallado dentro de la consola para el correspondiente analicis
         title: "Error",
         description: "Hubo un problema al guardar los cambios en la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -873,20 +883,21 @@ export default function ContabilidadApp() {
 
   // Función para eliminar una factura
   const handleDeleteInvoiceItem = async (id: string) => {
-    if (!user) return
+    if (!user) return //Si usuario esta iniciado sesion
 
-    try {
-      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, id))
-      setInvoiceItems(invoiceItems.filter(item => item.id !== id))
-    } catch (error) {
-      console.error("Error al eliminar factura:", error)
-      toast({
+    try {//Intentar
+      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, id))//Eliminar documento en base al la ruta y en base al id del elemento
+      setInvoiceItems(invoiceItems.filter(item => item.id !== id))//Analizar si es que el documento ya no existe
+    } catch (error) {//Si esque no se realizo la accion anterior 
+      console.error("Error al eliminar factura:", error)//Ejecutar un mensaje en la consola
+      toast({//Ejecutar un mensaje detallado en la consola
         title: "Error",
         description: "Hubo un problema al eliminar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
       })
     }
   }
+
 
   {/* Inicio de Sesion */}
 
@@ -967,37 +978,43 @@ export default function ContabilidadApp() {
     }
   }
 
-  // Función para obtener categorías únicas
+
+  {/* Filtros */}
+
+  // Filtrado de Inventario
   const getUniqueCategories = () => {
-    const categories = new Set(inventoryItems.map(item => item.category))
+    const categories = new Set(inventoryItems.map(item => item.category))//Mapeado en base a la campo de categoria en base al item
     return Array.from(categories).filter(Boolean) // Filtra valores nulos o undefined
   }
 
   // Filtrado de facturas
   const filteredInvoiceItems = useMemo(() => {
-    return invoiceItems.filter(item => {
+    return invoiceItems.filter(item => {// Devuelva el filtro seleccionado de la factura seleccionado por el usuario
       const itemDate = new Date(item.fechaEmision)
-      switch (invoiceFilterType) {
-        case "day":
-          return item.fechaEmision === invoiceFilterDate
-        case "month":
+      switch (invoiceFilterType) {// Analiza el filtro devuelto segun el nombre para darle la funcion
+        case "day"://Si es = dia entonces
+          return item.fechaEmision === invoiceFilterDate //Devuelve el filtro ejecutario si en base al campo de fecha de emision que sea igual al filtro devuelto por el usuario
+        case "month":// Si es = mes entonce
           return item.fechaEmision.startsWith(invoiceFilterMonth)
-        case "year":
+        case "year":// Si es = año entonces
           return item.fechaEmision.startsWith(invoiceFilterYear)
         default:
           return true
       }
     })
-  }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])
+  }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])//Devolver las funciones en base al analisis de la funcion filteredInvoiceItems
+
+
+  {/* Vinculacion entre tablas */}
 
   // Función para Seleccionar Item en Facturacion
   const handleInventoryItemSelect = (itemId: string) => {
-    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);
-    if (selectedItem) {
-      setSelectedInventoryItem(selectedItem);
-      setNewInvoiceItem(prev => ({
+    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);// Funcion para analizar y extraer los datos dentro los items segun el idElemento dentro de la base de datos en el apartado de Inventario
+    if (selectedItem) {// Si item seleccionado existe
+      setSelectedInventoryItem(selectedItem);// Colocar item seleccionado dentro de facturacion en base al idElemento
+      setNewInvoiceItem(prev => ({// Analiza los datos que estan en el invetario y los coloca dentro de la facturacion
         ...prev,
-        idElemento: selectedItem.idElemento,
+        idElemento: selectedItem.idElemento, // colocar IdElemento de invtario en idElemento de Facturacion
         detallesProducto: selectedItem.descripcion,
         precioUnitario: selectedItem.precioVenta
       }));
@@ -1006,12 +1023,6 @@ export default function ContabilidadApp() {
 
   // Función para autocompletar la factura en el libro diario 
   const handleAutoCompleteLibroDiario = async () => {
-
-    
-    console.log("Iniciando handleAutoCompleteLibroDiario");
-    console.log("user:", user);
-    console.log("selectedInventoryItem:", selectedInventoryItem);
-    console.log("lastCreatedInvoice:", lastCreatedInvoice);
   
     if (!user) {
       console.error("Usuario no autenticado");
@@ -1095,7 +1106,6 @@ export default function ContabilidadApp() {
         {/* Visualizador */}
         
 
-
           {/* Menu Izquierda*/}
           <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(20,20,20)] text-gray-300" : "bg-white text-gray-900"}`}>
             <div className="p-4">
@@ -1133,26 +1143,6 @@ export default function ContabilidadApp() {
               )}
               <nav>
 
-                {/* Btn Libro Diario */}
-                <Button
-                  variant={activeTab === "libro-diario" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => setActiveTab("libro-diario")}
-                >
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  Libro Diario
-                </Button>
-
-                {/* Btn Dashboard */}
-                <Button
-                  variant={activeTab === "dashboard" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => setActiveTab("dashboard")}
-                >
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Button>
-
                 {/* Btn Registro de Inventario */}
                 <Button
                   variant={activeTab === "inventario" ? "default" : "ghost"}
@@ -1173,6 +1163,26 @@ export default function ContabilidadApp() {
                   Registro de Facturación
                 </Button>
 
+                {/* Btn Libro Diario */}
+                <Button
+                  variant={activeTab === "libro-diario" ? "default" : "ghost"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => setActiveTab("libro-diario")}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Libro Diario
+                </Button>
+
+                {/* Btn Dashboard */}
+                <Button
+                  variant={activeTab === "dashboard" ? "default" : "ghost"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => setActiveTab("dashboard")}
+                >
+                  <BarChart2 className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+
                 {/* Btn Registro De Facturacion */}
                 <Button
                   variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
@@ -1183,6 +1193,7 @@ export default function ContabilidadApp() {
                   Grupos de Trabajo
                 </Button>
 
+                {/* Btn Generar Registros */}
                 <Button
                   variant={activeTab === "generar-registros" ? "default" : "ghost"}
                   className="w-full justify-start mb-2"
@@ -1665,6 +1676,8 @@ export default function ContabilidadApp() {
                   <Button onClick={() => setIsInventoryModalOpen(true)}>
                     Agregar Nuevo Ítem
                   </Button>
+
+                  {/* Filtros */}
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-[180px] ml-4">
                       <SelectValue placeholder="Seleccionar por categoría" />
@@ -1672,7 +1685,9 @@ export default function ContabilidadApp() {
                     <SelectContent>
                       <SelectItem value="all">Todas las categorías</SelectItem>
                       {getUniqueCategories().map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                        <SelectItem 
+                        key={category} //Nombre clave en base a categoria
+                        value={category}>{category}</SelectItem>//Valor clave en base a categoria
                       ))}
                     </SelectContent>
                   </Select>
@@ -1741,6 +1756,7 @@ export default function ContabilidadApp() {
                     </Button>
                     {/* Crear Factura */}
                     <Button onClick={() => setIsInvoiceModalOpen(true)}>Crear Factura</Button>
+
                     {/* Seleccionar Fecha */}
                     <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
                       <SelectTrigger className="w-[180px] ml-4">
@@ -1753,12 +1769,12 @@ export default function ContabilidadApp() {
                         <SelectItem value="year">Por año</SelectItem>
                       </SelectContent>
                     </Select>
-                    {invoiceFilterType === "day" && (
+                    {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
                       <Input
-                        type="date"
-                        value={invoiceFilterDate}
-                        onChange={(e) => setInvoiceFilterDate(e.target.value)}
-                        className="ml-4" />
+                        type="date"// Tipo de dato que es usado
+                        value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
+                        onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
+                        className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
                     )}
                     {invoiceFilterType === "month" && (
                       <Input
@@ -2081,14 +2097,18 @@ export default function ContabilidadApp() {
               <DialogHeader>
                 <DialogTitle>Crear nueva factura</DialogTitle>
               </DialogHeader>
+
+              {/* Contenido */}
               <ScrollArea className="max-h-[70vh]">
                 <div className="space-y-4 p-4">
                   <Select onValueChange={handleInventoryItemSelect}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar ítem" />
                     </SelectTrigger>
+
+                    {/* Campos de facturacion */}
                     <SelectContent>
-                      {inventoryItems.map(item => (
+                      {inventoryItems.map(item => (//Mapeado de la funcion inventoryItems y digitacion de los inputs
                         <SelectItem key={item.idElemento} value={item.idElemento}>
                           {item.idElemento}
                         </SelectItem>
@@ -2108,6 +2128,8 @@ export default function ContabilidadApp() {
                   ))}
                 </div>
               </ScrollArea>
+
+              {/* Contenido Inferior */}
               <DialogFooter>
                 <Button onClick={() => handleCancelCreationFacturacion(() => {
                 setNewInvoiceItem({} as InvoiceItem);
@@ -2116,6 +2138,7 @@ export default function ContabilidadApp() {
               </Button>
                 <Button onClick={handleAddInvoiceItem}>Crear</Button>
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
 
@@ -2125,12 +2148,14 @@ export default function ContabilidadApp() {
               <DialogHeader>
                 <DialogTitle>Agregar Nuevo Ítem al Inventario</DialogTitle>
               </DialogHeader>
+
+              {/* Contenido */}
               <ScrollArea className="max-h-[70vh]">
                 <div className="space-y-4 p-4">
-                  {Object.entries(appConfig.inventario).map(([key, field]) => (
-                    <div key={key} className="space-y-2">
+                  {Object.entries(appConfig.inventario).map(([key, field]) => (//Mapeado en base a los campos del usuario
+                    <div key={key} className="space-y-2"> 
                       <Label htmlFor={key}>{field.name}</Label>
-                      <Input
+                      <Input //Agregar nuevo input en base a el nombre y rellenar en base al campo
                         id={key}
                         type={field.type}
                         value={newInventoryItem[key] || ''}
@@ -2140,6 +2165,8 @@ export default function ContabilidadApp() {
                   ))}
                 </div>
               </ScrollArea>
+
+              {/* Contenido Inferior */}
               <DialogFooter>
               <Button onClick={() => handleCancelCreationInventario(() => {
                 setNewInventoryItem({} as InventoryItem);
@@ -2148,6 +2175,7 @@ export default function ContabilidadApp() {
               </Button>
                 <Button onClick={handleAddInventoryItem}>Agregar</Button>
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
 
@@ -2191,7 +2219,7 @@ export default function ContabilidadApp() {
 
           {/* Modal de confirmación para cancelar creación en Libro Diario */}
           <Dialog open={showCancelConfirmModalLibroDiario} onOpenChange={setShowCancelConfirmModalLibroDiario}>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Confirmar cancelación - Libro Diario</DialogTitle>
                 <DialogDescription>
@@ -2207,29 +2235,38 @@ export default function ContabilidadApp() {
 
           {/* Modal de confirmación para cancelar creación en Inventario */}
           <Dialog open={showCancelConfirmModalInventario} onOpenChange={setShowCancelConfirmModalInventario}>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
+
+              {/* Contenido */}
               <DialogHeader>
                 <DialogTitle>Confirmar cancelación - Inventario</DialogTitle>
                 <DialogDescription>
                   ¿Está seguro de que desea cancelar la creación del nuevo ítem de inventario? Los datos no guardados se perderán.
                 </DialogDescription>
               </DialogHeader>
+
+              {/* Contenido Inferior */}
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCancelConfirmModalInventario(false)}>No, continuar editando</Button>
                 <Button variant="destructive" onClick={confirmCancelInventario}>Sí, cancelar creación</Button>
               </DialogFooter>
+              
             </DialogContent>
           </Dialog>
 
           {/* Modal de confirmación para cancelar creación en Facturación */}
           <Dialog open={showCancelConfirmModalFacturacion} onOpenChange={setShowCancelConfirmModalFacturacion}>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
+
+              {/* Contenido */}
               <DialogHeader>
                 <DialogTitle>Confirmar cancelación - Facturación</DialogTitle>
                 <DialogDescription>
                   ¿Está seguro de que desea cancelar la creación de la nueva factura? Los datos no guardados se perderán.
                 </DialogDescription>
               </DialogHeader>
+
+              {/* Contenido Inferior */}
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCancelConfirmModalFacturacion(false)}>No, continuar editando</Button>
                 <Button variant="destructive" onClick={confirmCancelFacturacion}>Sí, cancelar creación</Button>

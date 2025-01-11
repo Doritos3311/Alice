@@ -101,6 +101,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onUpdateUserType  }) =>
           </p>
           <p className="text-sm font-mono break-all">{user.uid}</p>
         </div>
+        
         <div className="flex space-x-2">
           <Button
             onClick={copyToClipboard}
