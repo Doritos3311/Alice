@@ -1,3 +1,8 @@
+
+{/* Ruta */}
+//my-next-app\src\components\SolicitudPendiente.tsx
+
+{/* Importacion de Librerias */}
 import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, updateDoc, deleteField, setDoc, arrayUnion, onSnapshot } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card"
@@ -5,19 +10,32 @@ import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
 import { Check, X } from 'lucide-react'
 
+{/* Definicion de Tipos de Datos */}
+
+// Definicion de Solicitud Recibida 
 interface SolicitudPendienteProps {
   userId: string;
 }
 
+// Definicion de infomacion dentro de Solicitud Recibida
 interface SolicitudUsuario {
   nombre: string;
   estado: string;
 }
 
 const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
+  
+  {/* Declaracion de Estados */}
+  
+  // Estado de Solicitudes Pendientes por aceptar
   const [solicitudesPendientes, setSolicitudesPendientes] = useState<{[key: string]: SolicitudUsuario}>({});
+  
+  // Estado Informacion Base de Datos
   const db = getFirestore();
 
+  {/* Funciones */}
+
+  // Efecto para extraer en tiempo real las solicitudes
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, `users/${userId}/Usuario`, 'solicitudes'), (doc) => {
       if (doc.exists()) {
@@ -28,6 +46,16 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
     return () => unsubscribe();
   }, [userId, db]);
 
+  // Funcion para Cargar Datos de Usuario
+  const saveUserData = async (usuarioId: string, userData: SolicitudUsuario) => {
+    await setDoc(doc(db, `users/${usuarioId}/Usuario/datos`), {
+      nombre: userData.nombre,
+      estado: 'activo',
+      fechaIngreso: new Date().toISOString()
+    }, { merge: true });
+  };
+
+  //Funcion para Analizar la solicitud
   const handleSolicitud = async (usuarioId: string, aceptar: boolean) => {
     try {
       // Actualizar el permiso del usuario
@@ -41,6 +69,9 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
           [usuarioId]: { ...solicitudesPendientes[usuarioId], estado: 'aceptado' }
         });
 
+        //Guardar la data del usuario
+        await saveUserData(usuarioId, solicitudesPendientes[usuarioId]);
+
         // Obtener el nombre de la empresa
         const empresaDocRef = doc(db, `users/${userId}/Usuario`, 'datos');
         const unsubscribeEmpresa = onSnapshot(empresaDocRef, (docSnapshot) => {
@@ -48,7 +79,7 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
             const empresaData = docSnapshot.data();
             const nombreEmpresa = empresaData?.companyName || 'Empresa sin nombre';
 
-            // Agregar a EmpresasCargadas
+            // Agregar a EmpresasCargadas del usuario
             setDoc(doc(db, `users/${usuarioId}/Usuario/EmpresasCargadas`), {
               empresas: arrayUnion({
                 id: userId,
@@ -56,6 +87,15 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
                 tipo: 'empresa'
               })
             }, { merge: true });
+
+            // Agregar a loggedUsers de la empresa
+            updateDoc(doc(db, `users/${userId}/Usuario`, 'datos'), {
+              loggedUsers: arrayUnion({
+                name: solicitudesPendientes[usuarioId].nombre,
+                type: 'personal',
+                uid: usuarioId
+              })
+            });
           }
         });
 
@@ -65,6 +105,12 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
         }, 5000); // 5 segundos, ajusta según sea necesario
 
       } else {
+        // Eliminar los permisos asociados a esta solicitud
+        await updateDoc(doc(db, `users/${usuarioId}/Usuario`, 'permisos'), {
+          [userId]: deleteField()
+        });
+
+        // Eliminar completamente la solicitud de la empresa
         await updateDoc(doc(db, `users/${userId}/Usuario`, 'solicitudes'), {
           [usuarioId]: deleteField()
         });
@@ -85,14 +131,26 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
   };
 
   return (
+    // Visualizador
     <div className="space-y-4">
+      {/* Titulo */}
       <h3 className="text-xl font-bold mt-10">Solicitudes Pendientes de Ingreso</h3>
+      
+      {/* Contenido Principal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Mapeado de las Solicitudes de Usuarios */}
         {Object.entries(solicitudesPendientes).map(([usuarioId, solicitud]) => (
           solicitud.estado === 'pendiente' && (
+
+            // Listado de Solicitudes de Usuario
             <Card key={usuarioId}>
               <CardContent className="flex justify-between items-center p-4">
+
+                {/* Nombre de Usuario */}
                 <span>{solicitud.nombre}</span>
+
+                {/* Botones */}
                 <div className="space-x-2">
                   <Button variant="outline" size="sm" onClick={() => handleSolicitud(usuarioId, true)}>
                     <Check className="h-4 w-4" />
@@ -105,6 +163,7 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
             </Card>
           )
         ))}
+
       </div>
     </div>
   );

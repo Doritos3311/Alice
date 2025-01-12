@@ -1,58 +1,104 @@
+
+{/* Ruta */}
+//my-next-app\src\components\UsuariosRegistrados.tsx
+
+{/* Importacion de Librerias */}
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Edit, Trash2 } from 'lucide-react';
-import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, setDoc, getDoc, deleteField } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/react-scroll-area"
 
+{/* Definicion de Tipos de Datos */}
+
+// Definicion de Usuario
 interface UserProfileProps {
   user: User;
 }
 
-interface UserData {
-  displayName: string;
-  type: 'personal' | 'empresa';
-  companyName?: string;
-  loggedUsers?: LoggedUser[];
+// Definicion de Informacion de Usuario
+interface UserInfo {
+  id: string;
+  nombre: string;
+  tipo: 'usuario';
 }
 
+// Definicion de Usuario Registrado
 interface LoggedUser {
   name: string;
   type: 'personal' | 'empresa';
   uid: string;
+  id: string;
 }
 
+// Definicion de Permisos
 interface Permisos {
   permisoLibroDiario: boolean;
   permisoInventario: boolean;
   permisoFacturacion: boolean;
+  permisoDashboard: boolean;
+  permisoGenerarRegistros: boolean;
 }
 
-const db = getFirestore();
+// Definicion de Nombres de Permisos
+const permisosLabels: Record<keyof Permisos, string> = {
+  permisoLibroDiario: "Libro Diario",
+  permisoInventario: "Inventario",
+  permisoFacturacion: "Facturación",
+  permisoDashboard: "Dashboard",
+  permisoGenerarRegistros: "Generar Registros"
+};
 
 const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
-  const [userData, setUserData] = useState<UserData>({
-    displayName: user.displayName || '',
-    type: 'personal',
-  });
+
+  {/* Declaracion de Estados */}
+
+  // Estado de Usuarios Registrados
   const [loggedUsers, setLoggedUsers] = useState<LoggedUser[]>([]);
+
+  // Estado de Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<LoggedUser | null>(null);
+
+  // Estado de UsuarioSeleccionado
+  const [selectedUser, setSelectedUser] = useState<LoggedUser | UserInfo | null>(null);
+  
+  // Estado de declaracion de Permisos
   const [permisos, setPermisos] = useState<Permisos>({
     permisoLibroDiario: false,
     permisoInventario: false,
     permisoFacturacion: false,
+    permisoDashboard: false,
+    permisoGenerarRegistros: false
   });
 
+  // Estado de informacion de Usuario
+  const [userData, setUserData] = useState<UserInfo>({
+    id: user.uid,
+    nombre: user.displayName || 'Usuario',
+    tipo: 'usuario'
+  });
+
+  // Estado Informacion Base de Datos
+  const db = getFirestore();
+
+  {/* Funciones */}
+
+  // Efecto para extraer en tiempo real los datos del usuario
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, `users/${user.uid}/Usuario`, 'datos'), (doc) => {
       if (doc.exists()) {
-        const data = doc.data() as UserData;
-        setUserData(data);
+        const data = doc.data();
+        setUserData({
+          id: user.uid,
+          nombre: data.displayName || 'Usuario',
+          tipo: 'usuario'
+        });
         setLoggedUsers(data.loggedUsers || []);
       }
     });
@@ -60,14 +106,32 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
     return () => unsubscribe();
   }, [user.uid]);
 
+  // Funcion para borrar el usuario
   const handleDeleteUser = async (userToDelete: LoggedUser) => {
     try {
-      await updateDoc(doc(db, `users/${userToDelete.uid}/Usuario`, 'permisos'), {
-        [user.uid]: { permiso1: false }
-      });
-
+      
+      // 1. Eliminar al usuario de la lista de usuarios registrados de la empresa
       await updateDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'), {
         loggedUsers: arrayRemove(userToDelete)
+      });
+
+      // 2. Eliminar los permisos del usuario en la empresa
+      await updateDoc(doc(db, `users/${user.uid}/Usuario`, 'permisos'), {
+        [user.uid]: deleteField()
+      });
+
+      // 3. Eliminar la empresa de la lista de EmpresasCargadas del usuario personal
+      const empresasCargadasRef = doc(db, `users/${userToDelete.uid}/Usuario/EmpresasCargadas`);
+      const empresasCargadasDoc = await getDoc(empresasCargadasRef);
+      if (empresasCargadasDoc.exists()) {
+        const empresasCargadas = empresasCargadasDoc.data().empresas || [];
+        const updatedEmpresas = empresasCargadas.filter((empresa: any) => empresa.id !== user.uid);
+        await setDoc(empresasCargadasRef, { empresas: updatedEmpresas }, { merge: true });
+      }
+
+      // 4. Eliminar cualquier solicitud pendiente relacionada con este usuario
+      await updateDoc(doc(db, `users/${user.uid}/Usuario`, 'solicitudes'), {
+        [userToDelete.uid]: deleteField()
       });
 
       toast({
@@ -84,30 +148,60 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
     }
   };
 
-  const handleOpenModal = async (userToEdit: LoggedUser) => {
+  // Funcion para abrir el modal
+  const handleOpenModal = async (userToEdit: LoggedUser | UserInfo) => {
     setSelectedUser(userToEdit);
     setIsModalOpen(true);
 
-    // Cargar permisos actuales
-    const permisosDoc = await getDoc(doc(db, `users/${userToEdit.uid}/Usuario`, 'permisos'));
-    if (permisosDoc.exists()) {
-      const permisosData = permisosDoc.data()[user.uid] as Permisos;
-      setPermisos(permisosData || {
-        permisoLibroDiario: false,
-        permisoInventario: false,
-        permisoFacturacion: false,
+    try {
+      const userIdToEdit = 'uid' in userToEdit ? userToEdit.uid : userToEdit.id;
+      await setDoc(doc(db, `users/${userIdToEdit}/Usuario`, 'permisos'), {
+        [user.uid]: {
+          permisoLibroDiario: false,
+          permisoInventario: false,
+          permisoFacturacion: false,
+          permisoDashboard: false,
+          permisoGenerarRegistros: false
+        }
+      }, { merge: true });
+
+      const permisosDoc = await getDoc(doc(db, `users/${userIdToEdit}/Usuario`, 'permisos'));
+      if (permisosDoc.exists()) {
+        const permisosData = permisosDoc.data()[user.uid] as Permisos;
+        if (userIdToEdit === user.uid) {
+          setPermisos({
+            permisoLibroDiario: true,
+            permisoInventario: true,
+            permisoFacturacion: true,
+            permisoDashboard: true,
+            permisoGenerarRegistros: true
+          });
+        } else {
+          setPermisos(permisosData);
+        }
+      }
+    } 
+    catch (error) {
+      console.error("Error al cargar permisos:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los permisos. Por favor, intenta de nuevo.",
+        variant: "destructive",
       });
     }
   };
 
+  // Funcion para cambiar permisos
   const handlePermissionChange = (permission: keyof Permisos) => {
     setPermisos(prev => ({ ...prev, [permission]: !prev[permission] }));
   };
 
+  // Funcion para guardar los permisos
   const handleSavePermissions = async () => {
     if (selectedUser) {
       try {
-        await setDoc(doc(db, `users/${selectedUser.uid}/Usuario`, 'permisos'), {
+        const userIdToSave = 'uid' in selectedUser ? selectedUser.uid : selectedUser.id;
+        await setDoc(doc(db, `users/${userIdToSave}/Usuario`, 'permisos'), {
           [user.uid]: permisos
         }, { merge: true });
 
@@ -128,66 +222,84 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
   };
 
   return (
+    //Visualizador
     <div className="mt-8 w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Recuadro del usuario personal */}
+        <Card key={userData.id} className="p-4">
+          <CardContent className="flex justify-between items-center">
+            <div className="flex items-center mt-4">
+              <div>
+                <p className="font-medium">{userData.nombre} (Tu)</p>
+                <p className="text-sm text-gray-500">ID: {userData.id.substring(0, 8)}...</p>
+              </div>
+            </div>
+            <div className='mt-5'>
+              <Button variant="outline" size="sm" className="mr-2" onClick={() => handleOpenModal(userData)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Lista de los Usuarios Registrados */}
         {loggedUsers.map((loggedUser, index) => (
           <Card key={index} className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">{loggedUser.name}</p>
-                <p className="text-sm text-gray-500">{loggedUser.type === 'personal' ? 'Personal' : 'Empresa'}</p>
+            <CardContent className="flex justify-between items-center">
+              <div className="flex items-center mt-4">
+                <div>
+                  <p className="font-medium">{loggedUser.name}</p>
+                  <p className="text-sm text-gray-500">ID: {loggedUser.uid.substring(0, 8)}...</p>
+                </div>
               </div>
-              <div>
+              <div className='mt-5'>
                 <Button variant="outline" size="sm" className="mr-2" onClick={() => handleOpenModal(loggedUser)}>
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDeleteUser(loggedUser)}>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(loggedUser)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
+
+          {/* Cabecera */}
           <DialogHeader>
             <DialogTitle>Editar Permisos de Usuario</DialogTitle>
           </DialogHeader>
+
+          {/* Contenido */}
           <div className="py-4">
             <h3 className="text-lg font-medium mb-4">Otorgar permisos</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="libro-diario">Libro Diario</Label>
-                <Switch
-                  id="libro-diario"
-                  checked={permisos.permisoLibroDiario}
-                  onCheckedChange={() => handlePermissionChange('permisoLibroDiario')}
-                />
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="space-y-4">
+                {(Object.keys(permisos) as Array<keyof Permisos>).map((key) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <Label htmlFor={key}>{permisosLabels[key]}</Label>
+                    <Switch
+                      id={key}
+                      checked={permisos[key]}
+                      onCheckedChange={() => handlePermissionChange(key)}
+                    />
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="inventario">Inventario</Label>
-                <Switch
-                  id="inventario"
-                  checked={permisos.permisoInventario}
-                  onCheckedChange={() => handlePermissionChange('permisoInventario')}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="facturacion">Facturación</Label>
-                <Switch
-                  id="facturacion"
-                  checked={permisos.permisoFacturacion}
-                  onCheckedChange={() => handlePermissionChange('permisoFacturacion')}
-                />
-              </div>
-            </div>
+            </ScrollArea>
           </div>
+
+          {/* Contenido Inferior */}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button onClick={handleSavePermissions}>Guardar Cambios</Button>
           </DialogFooter>
+          
         </DialogContent>
       </Dialog>
     </div>

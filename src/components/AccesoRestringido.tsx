@@ -2,7 +2,16 @@ import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card"
 
-const AccesoRestringido: React.FC = () => {
+interface AccesoRestringidoProps {
+  tienePermiso: boolean;
+  children: React.ReactNode;
+}
+
+const AccesoRestringido: React.FC<AccesoRestringidoProps> = ({ tienePermiso, children }) => {
+  if (tienePermiso) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex items-center justify-center h-full">
       <Card className="w-full max-w-md">
@@ -20,3 +29,4 @@ const AccesoRestringido: React.FC = () => {
 };
 
 export default AccesoRestringido;
+
