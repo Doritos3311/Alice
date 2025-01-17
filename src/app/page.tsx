@@ -35,7 +35,7 @@ import AccesoRestringido from '@/components/AccesoRestringido';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
@@ -125,6 +125,14 @@ type InvoiceItem = {
   [key: string]: any
 }
 
+interface DetalleFactura {
+  idElemento: string;
+  cantidad: string;
+  detalle: string;
+  precioUnitario: string;
+  valorTotal: string;
+}
+
 // Definicion Mensaje
 type Message = {
   role: 'user' | 'assistant'
@@ -178,6 +186,12 @@ export default function ContabilidadApp() {
   // Estados Facturacion
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
   const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({} as InvoiceItem)
+  const [detallesFactura, setDetallesFactura] = useState<DetalleFactura[]>([
+    { idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }
+  ]);
+  const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceItem | null>(null);
+  const [isEditingInvoice, setIsEditingInvoice] = useState(false);
 
   // Estados Dashboard
   const [dashboardType, setDashboardType] = useState("financial")
@@ -602,17 +616,17 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva fila al libro diario
   const handleAddRow = async () => {
-    if (!user) return;
+    if (!user) return;//Si usuario existe entonces
 
-    try {
-      const newRowWithIdElemento = { ...newRow, idElemento: Date.now().toString() };
-      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRowWithIdElemento);
-      setData([...data, { ...newRowWithIdElemento, id: docRef.id }]);
-      setNewRow({});
-      setIsCreatingAccountingEntry(false);
-    } catch (error) {
-      console.error("Error al agregar fila:", error);
-      toast({
+    try {//Intetar
+      const newRowWithIdElemento = { ...newRow, idElemento: Date.now().toString() };// Extrae los datos ingresados de la app
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRowWithIdElemento); // Añade un documento segun los datos extraidos
+      setData([...data, { ...newRowWithIdElemento, id: docRef.id }]); // Coloca los datos por defecto
+      setNewRow({}); // Coloca datos por defecto
+      setIsCreatingAccountingEntry(false); // Cerrar el Modal
+    } catch (error) { //Si no se pudo realizar
+      console.error("Error al agregar fila:", error);//Error a consola
+      toast({// Error detallado a la consola
         title: "Error",
         description: "Hubo un problema al agregar la fila. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -622,22 +636,22 @@ export default function ContabilidadApp() {
 
   // Función para editar una fila del libro diario
   const handleEditRow = (id: string) => {
-    setEditingId(id)
+    setEditingId(id) //Edita los campos segun la funcion setEditingId en base al id
   }
 
   // Función para guardar los cambios de una fila del libro diario
   const handleSaveRow = async (id: string) => {
-    if (!user) return
+    if (!user) return // Analiza si usuario
 
-    const editedRow = data.find(row => row.id === id)
-    if (!editedRow) return
+    const editedRow = data.find(row => row.id === id) // Compara si el item por editar existe
+    if (!editedRow) return // Si existe entonces
 
-    try {
-      await updateDoc(doc(db, `users/${user.uid}/libroDiario`, id), editedRow)
-      setEditingId(null)
-    } catch (error) {
-      console.error("Error al guardar cambios:", error)
-      toast({
+    try { //Intentar
+      await updateDoc(doc(db, `users/${user.uid}/libroDiario`, id), editedRow) // Espera actualice el item en base al id y segun los campos cambiante
+      setEditingId(null)// Vacia con datos por defecto
+    } catch (error) {// Si no se pudo ejecutar
+      console.error("Error al guardar cambios:", error)// error
+      toast({// error detallado
         title: "Error",
         description: "Hubo un problema al guardar los cambios. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -647,14 +661,14 @@ export default function ContabilidadApp() {
 
   // Función para eliminar una fila del libro diario
   const handleDeleteRow = async (id: string) => {
-    if (!user) return
+    if (!user) return// si usuario existe
 
-    try {
-      await deleteDoc(doc(db, `users/${user.uid}/libroDiario`, id))
-      setData(data.filter(row => row.id !== id))
-    } catch (error) {
-      console.error("Error al eliminar fila:", error)
-      toast({
+    try {//Intentar 
+      await deleteDoc(doc(db, `users/${user.uid}/libroDiario`, id)) // Borra el documento en base al id
+      setData(data.filter(row => row.id !== id)) // Comprueba si es que el documento ya se elimino
+    } catch (error) {// si no
+      console.error("Error al eliminar fila:", error)//error consola
+      toast({// error detallado consola
         title: "Error",
         
         description: "Hubo un problema al eliminar la fila. Por favor, intenta de nuevo.",
@@ -675,55 +689,55 @@ export default function ContabilidadApp() {
     setNewRow({ ...newRow, [field]: value })
   }
 
+  {/* Filtros */}
+
   // Filtrado de datos para el libro diario
   const filteredData = useMemo(() => {
-    return data.filter(row => {
-      if (!row || !row.fecha) {
+    return data.filter(row => { // retorna la opccion colocada 
+      if (!row || !row.fecha) { // analiza si no existe el filtro
         return false; 
       }
-      const rowDate = new Date(row.fecha);
-  
-      switch (timeFrame) {
-        case "diario":
-          return row.fecha === selectedDate;
-        case "mensual":
-          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedMonth);
-        case "anual":
-          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedYear);
+      switch (timeFrame) {// Analiza la variable timeFrame
+        case "diario": // Compara si es diario
+          return row.fecha === selectedDate; //Devulve la fecha seleccionada
+        case "mensual": // Compara si es mensual
+          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedMonth); //Devulve la fecha seleccionada
+        case "anual": // Compara si es anual
+          return typeof row.fecha === 'string' && row.fecha.startsWith(selectedYear); //Devulve la fecha seleccionada
         default:
-          return true;
+          return true;//Cierre
       }
     });
   }, [data, timeFrame, selectedDate, selectedMonth, selectedYear]);
 
-  // Cálculo de totales para el libro diario
+  // Cálculo de totales para el libro diario segun la fecha
   const totals = useMemo(() => {
-    return filteredData.reduce((acc, row) => {
-      acc.debe += parseFloat(row.debe) || 0
-      acc.haber += parseFloat(row.haber) || 0
-      return acc
+    return filteredData.reduce((acc, row) => {// Devolver el valor resultante
+      acc.debe += parseFloat(row.debe) || 0 // Analizar el valor de debe
+      acc.haber += parseFloat(row.haber) || 0 // Analizar el valor de haber
+      return acc // Devuelve los valores
     }, { debe: 0, haber: 0 })
   }, [filteredData])
 
   // Datos para los gráficos
   const chartData = useMemo(() => {
-    return [
+    return [ // Devuelve los valores debe y haber
       { name: 'Totales', Debe: totals.debe, Haber: totals.haber }
     ]
   }, [totals])
 
   //Metodo Resultado Filtro Libro Diario
-  const lineChartData = useMemo(() => {
-    return filteredData.map(row => ({
-      fecha: row.fecha,
-      Debe: parseFloat(row.debe) || 0,
-      Haber: parseFloat(row.haber) || 0
+  const lineChartData = useMemo(() => { 
+    return filteredData.map(row => ({ //Segun el filtro 
+      fecha: row.fecha, // Seleccione el item en base al filtro
+      Debe: parseFloat(row.debe) || 0, // Devuelva los valores debe
+      Haber: parseFloat(row.haber) || 0 // Devuelva los valores haber
     }))
   }, [filteredData])
 
   //Metodo Interfaz Libro Diario
-  const pieChartData = useMemo(() => {
-    return [
+  const pieChartData = useMemo(() => { 
+    return [ // Devolver name debe/haber sus totales
       { name: 'Debe', value: totals.debe },
       { name: 'Haber', value: totals.haber }
     ]
@@ -873,60 +887,128 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    if (!user || !db) return;// Si usuario existe
-
-    try {//Intentar
-      const newInvoiceItemWithId = {// Funcion barrido de los datos en la aplicacion y coloca dentro de la base de datos
-        ...newInvoiceItem, 
-        idElemento: newInvoiceItem.idElemento || Date.now().toString()
-      };
-      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceItemWithId);// Añade los datos dentro de la ruta segun la funcion newInvoiceItemWithId
-      const createdInvoice = { ...newInvoiceItemWithId, id: docRef.id };//Crea un nuevo espacio dentro de la base de datos
-      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);// Carga la funcion setInvoiceItems con los items de la factura por defecto
-      setLastCreatedInvoice(createdInvoice);// Utiliza el nuevo y ultimo espacio creado dentro de la base de datos
-
-      setNewInvoiceItem({} as InvoiceItem);//Vacia y carga datos por defecto
-      setIsInvoiceModalOpen(false);// Cierra el modal
-      setShowAutoCompleteModal(true);// Llama al modal autocompletar
-    } catch (error) {//Si no se pudo realizar correctamente la funcion anterior
-      console.error("Error al agregar factura:", error);// Mensaje error
-      toast({//Mensaje detallado error
+    if (!user || !db) {
+      toast({
         title: "Error",
-        description: "Hubo un problema al agregar la factura. Por favor, intenta de nuevo.",
+        description: "Debes iniciar sesión para crear una factura.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    try {
+      // Recopilar todos los datos de la factura
+      const newInvoiceData = {
+        ...newInvoiceItem,
+        idElemento: newInvoiceItem.idElemento || Date.now().toString(),
+        rucEmisor: (document.getElementById('rucEmisor') as HTMLInputElement)?.value,
+        numeroAutorizacion: (document.getElementById('numeroAutorizacion') as HTMLInputElement)?.value,
+        numeroFactura: (document.getElementById('numeroFactura') as HTMLInputElement)?.value,
+        fechaAutorizacion: (document.getElementById('fechaAutorizacion') as HTMLInputElement)?.value,
+        direccionMatriz: (document.getElementById('direccionMatriz') as HTMLInputElement)?.value,
+        direccionSucursal: (document.getElementById('direccionSucursal') as HTMLInputElement)?.value,
+        identificacionAdquiriente: (document.getElementById('identificacionAdquiriente') as HTMLInputElement)?.value,
+        fechaEmision: (document.getElementById('fechaEmision') as HTMLInputElement)?.value,
+        rucCi: (document.getElementById('rucCi') as HTMLInputElement)?.value,
+        guiaRemision: (document.getElementById('guiaRemision') as HTMLInputElement)?.value,
+        formaPago: (document.getElementById('formaPago') as HTMLInputElement)?.value,
+        otros: (document.getElementById('otros') as HTMLInputElement)?.value,
+        detalles: detallesFactura,
+        // Agregar aquí los campos adicionales como subtotales, IVA, etc.
+      };
+  
+      // Guardar la factura en Firebase
+      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceData);
+  
+      // Actualizar el estado local
+      const createdInvoice = { ...newInvoiceData, id: docRef.id };
+      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);
+      setLastCreatedInvoice(createdInvoice);
+  
+      // Limpiar el formulario y cerrar el modal
+      setNewInvoiceItem({} as InvoiceItem);
+      setIsInvoiceModalOpen(false);
+      setDetallesFactura([{ idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }]);
+  
+      toast({
+        title: "Éxito",
+        description: "La factura se ha guardado correctamente.",
+      });
+  
+      // Opcional: Mostrar modal de autocompletar
+      setShowAutoCompleteModal(true);
+    } catch (error) {
+      console.error("Error al agregar factura:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al guardar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
   };
 
   // Función para editar una factura
-  const handleEditInvoiceItem = (id: string) => {
-    setEditingInvoiceId(id)//Extrae el id del Componente
-    const itemToEdit = invoiceItems.find(item => item.id === id)//Compara el id del componente
-    if (itemToEdit) {//Condicion si existe item para editar entonces, editar
-      setNewInvoiceItem(itemToEdit)//Si existe entonces cargar nuevos datos
-    }
-  }
+  const handleEditInvoiceItem = () => {
+    setIsEditingInvoice(true);
+  };
 
   // Función para guardar los cambios de una factura
   const handleSaveInvoiceItem = async () => {
-    if (!user || !editingInvoiceId) return//Condicion para verificar si el usuario esta iniciado sesion
-
-    try {//Intenta cargar de la base de datos
-      await updateDoc(doc(db, `users/${user.uid}/facturacion`, editingInvoiceId), newInvoiceItem)//Entra en las carpetas y llama a la funcion editar campos de facturacion, y se coloca los nuevos campos con la funcion newInvoiceItem
-      setInvoiceItems(invoiceItems.map(item => //Mapeado de la estructura de la base de datos segun el id del item
-        item.id === editingInvoiceId ? { ...newInvoiceItem, id: editingInvoiceId } : item//Se asegura de que los campos esten igual en la aplicacion como en la base de datos
-      ))
-      setEditingInvoiceId(null)//Vacia la condicion de colocar datos editados en la factura
-      setNewInvoiceItem({} as InvoiceItem)//Vacia la concion de colocar nuevos datos y llama a la funcion por defecto de datos de facturacion
-    } catch (error) {//Si es que no se pudo realizar la accion 
-      console.error("Error al guardar cambios en la factura:", error)//Mensaje de erro a la consola
-      toast({//Mensaje detallado dentro de la consola para el correspondiente analicis
+    if (!user || !currentInvoice) {
+      toast({
         title: "Error",
-        description: "Hubo un problema al guardar los cambios en la factura. Por favor, intenta de nuevo.",
+        description: "No se pudo guardar la factura. Información de usuario o factura no disponible.",
         variant: "destructive",
-      })
+      });
+      return;
     }
-  }
+
+    try {
+      // Calcular los totales
+      let subtotal = 0;
+      let iva12 = 0;
+      let total = 0;
+
+      currentInvoice.detalles.forEach((detalle: { cantidad: string; precioUnitario: string; }) => {
+        const cantidad = parseFloat(detalle.cantidad);
+        const precioUnitario = parseFloat(detalle.precioUnitario);
+        subtotal += cantidad * precioUnitario;
+      });
+
+      iva12 = subtotal * 0.12;
+      total = subtotal + iva12;
+
+      // Actualizar los campos calculados
+      const updatedInvoice = {
+        ...currentInvoice,
+        subtotal12iva: subtotal.toFixed(2),
+        iva12: iva12.toFixed(2),
+        valortotal: total.toFixed(2),
+      };
+
+      // Actualizar en Firestore
+      await updateDoc(doc(db, `users/${user.uid}/facturacion`, updatedInvoice.id), updatedInvoice);
+
+      // Actualizar el estado local
+      setCurrentInvoice(updatedInvoice);
+      setInvoiceItems(prevItems => 
+        prevItems.map(item => item.id === updatedInvoice.id ? updatedInvoice : item)
+      );
+
+      setIsEditingInvoice(false);
+      toast({
+        title: "Éxito",
+        description: "La factura se ha guardado correctamente.",
+      });
+    } catch (error) {
+      console.error("Error al guardar la factura:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al guardar la factura. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Función para eliminar una factura
   const handleDeleteInvoiceItem = async (id: string) => {
@@ -944,6 +1026,31 @@ export default function ContabilidadApp() {
       })
     }
   }
+
+  const eliminarFila = (index: number) => {
+    setDetallesFactura(detallesFactura.filter((_, i) => i !== index));
+  };
+
+  const handleViewInvoice = (invoice: InvoiceItem) => {
+    setCurrentInvoice(invoice);
+    setIsViewInvoiceModalOpen(true);
+  };
+
+  // Funcion Crear nueva fila dentro de factura
+  const agregarNuevaFila = () => {
+    setDetallesFactura([...detallesFactura, { idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }]);
+  };
+
+  //Funcion de detalles de factura
+  const handleDetalleChange = (index: number, campo: keyof DetalleFactura, valor: string) => {
+    const newDetalles = [...detallesFactura];
+    newDetalles[index][campo] = valor;
+    setDetallesFactura(newDetalles);
+
+    if (campo === 'cantidad' || campo === 'precioUnitario') {
+      updateValorTotal(index);
+    }
+  };
 
 
   {/* Inicio de Sesion */}
@@ -1055,25 +1162,40 @@ export default function ContabilidadApp() {
   {/* Vinculacion entre tablas */}
 
   // Función para Seleccionar Item en Facturacion
-  const handleInventoryItemSelect = (itemId: string) => {
-    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);// Funcion para analizar y extraer los datos dentro los items segun el idElemento dentro de la base de datos en el apartado de Inventario
-    if (selectedItem) {// Si item seleccionado existe
-      setSelectedInventoryItem(selectedItem);// Colocar item seleccionado dentro de facturacion en base al idElemento
-      setNewInvoiceItem(prev => ({// Analiza los datos que estan en el invetario y los coloca dentro de la facturacion
-        ...prev,
-        idElemento: selectedItem.idElemento, // colocar IdElemento de invtario en idElemento de Facturacion
-        detallesProducto: selectedItem.descripcion,
-        precioUnitario: selectedItem.precioVenta
-      }));
+  const handleInventoryItemSelect = (itemId: string, index: number) => {
+    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);
+    if (selectedItem) {
+      const newDetalles = [...detallesFactura];
+      newDetalles[index] = {
+        idElemento: selectedItem.idElemento,
+        cantidad: '1', // Valor por defecto, el usuario puede cambiarlo
+        detalle: selectedItem.descripcion,
+        precioUnitario: selectedItem.precioVenta.toString(),
+        valorTotal: selectedItem.precioVenta.toString()
+      };
+      setDetallesFactura(newDetalles);
+      setSelectedInventoryItem(selectedItem);
     }
+  };
+
+  // Actualiza el valor total de una fila en los detalles de la factura
+  const updateValorTotal = (index: number) => {
+    const detalle = detallesFactura[index];
+    const cantidad = parseFloat(detalle.cantidad) || 0;
+    const precioUnitario = parseFloat(detalle.precioUnitario) || 0;
+    const valorTotal = (cantidad * precioUnitario).toFixed(2);
+    
+    const newDetalles = [...detallesFactura];
+    newDetalles[index] = { ...detalle, valorTotal };
+    setDetallesFactura(newDetalles);
   };
 
   // Función para autocompletar la factura en el libro diario 
   const handleAutoCompleteLibroDiario = async () => {
   
-    if (!user) {
-      console.error("Usuario no autenticado");
-      toast({
+    if (!user) {// Si usuario no existe
+      console.error("Usuario no autenticado"); // Consola error
+      toast({// error detallado
         title: "Error",
         description: "Debes iniciar sesión para realizar esta acción.",
         variant: "destructive",
@@ -1081,9 +1203,9 @@ export default function ContabilidadApp() {
       return;
     }
   
-    if (!selectedInventoryItem) {
-      console.error("No se ha seleccionado un ítem del inventario");
-      toast({
+    if (!selectedInventoryItem) { //si item seleccionado no existe
+      console.error("No se ha seleccionado un ítem del inventario"); //error
+      toast({// error
         title: "Error",
         description: "Por favor, selecciona un ítem del inventario.",
         variant: "destructive",
@@ -1091,9 +1213,9 @@ export default function ContabilidadApp() {
       return;
     }
   
-    if (!lastCreatedInvoice) {
-      console.error("No hay factura creada recientemente");
-      toast({
+    if (!lastCreatedInvoice) { //si ultimo item seleccionado no existe
+      console.error("No hay factura creada recientemente"); //error
+      toast({ //error
         title: "Error",
         description: "No hay factura reciente para autocompletar en el libro diario.",
         variant: "destructive",
@@ -1101,32 +1223,33 @@ export default function ContabilidadApp() {
       return;
     }
   
-    try {
-      const newLibroDiarioItem = {
-        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0],
-        nombreCuenta: "",
-        descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion,
-        idElemento: lastCreatedInvoice.idElemento || selectedInventoryItem.idElemento,
-        haber: 0,
-        debe: lastCreatedInvoice.total || 0
+    try {// Intentar
+      const valorTotal = lastCreatedInvoice.detalles.reduce((total: number, detalle: { valorTotal: string; }) => 
+        total + parseFloat(detalle.valorTotal), 0);
+
+      const newLibroDiarioItem = { // Crear un metodo con los datos para una nueva tabla
+        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0], // Valor fecha segun fecha de facturacion
+        nombreCuenta: "Venta "+`Factura #${lastCreatedInvoice.numeroFactura}`, // Nombre de cuenta vacio
+        descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion, // Descriocion segun descripcion facturacion
+        idElemento: lastCreatedInvoice.idElemento || selectedInventoryItem.idElemento, // IdElemento segun idElemento de inventario
+        haber: 0, // Haber 0
+        debe: valorTotal.toFixed(2) // Debe segun total de facturacion o 0
       };
+      
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);// Agrega a la base de datos el nuevo documento
+      console.log("Documento agregado con ID:", docRef.id); // Control de funcionamiento
   
-      console.log("Nuevo ítem para el libro diario:", newLibroDiarioItem);
+      setData(prevData => [...prevData, { ...newLibroDiarioItem, id: docRef.id }]);// Devuelve los valores por defecto
   
-      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);
-      console.log("Documento agregado con ID:", docRef.id);
-  
-      setData(prevData => [...prevData, { ...newLibroDiarioItem, id: docRef.id }]);
-  
-      toast({
+      toast({ //error detallado
         title: "Éxito",
         description: "Se ha agregado el ítem al libro diario.",
       });
   
-      setShowAutoCompleteModal(false);
-      setSelectedInventoryItem(null);
-      setLastCreatedInvoice(null);
-    } catch (error) {
+      setShowAutoCompleteModal(false); // Cerrar el modal de autocompletar 
+      setSelectedInventoryItem(null); // Vacia la funcion setSelectedInventoryItem
+      setLastCreatedInvoice(null); // Vacia la funcion setLastCreatedInvoice
+    } catch (error) { //error
       console.error("Error al agregar ítem al libro diario:", error);
       toast({
         title: "Error",
@@ -1136,14 +1259,13 @@ export default function ContabilidadApp() {
     }
   };
 
-  useEffect(() => {
+  useEffect(() => { // Al Inicio de App
     if (activeTab !== "facturacion") {
-      setSelectedInventoryItem(null);
-      setLastCreatedInvoice(null);
+      setSelectedInventoryItem(null); // Vacia setSelectedInventoryItem
+      setLastCreatedInvoice(null); // Vacia setLastCreatedInvoice
     }
   }, [activeTab]);
 
-  {/* Diceños y Estilos */}
   return (
     <>
     {showLandingPage ? (
@@ -1372,6 +1494,7 @@ export default function ContabilidadApp() {
                         className="w-[180px]" />
                     )}
                   </div>
+
                   {/* Tablas de Libro Diario */}
                   <Table>
                     <TableHeader>
@@ -1851,48 +1974,26 @@ export default function ContabilidadApp() {
                     </div>
                   </div>
 
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                          <TableHead key={key}>{field.name}</TableHead>
-                        ))}
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredInvoiceItems.map((item) => (
-                        <TableRow key={item.id}>
-                          {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                            <TableCell key={key}>
-                              {editingInvoiceId === item.id ? (
-                                <Input
-                                  type={field.type}
-                                  value={newInvoiceItem[key] || ''}
-                                  onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })} />
-                              ) : (
-                                advancedViewInvoice ? item[key] : (key === 'numeroFactura' || key === 'cliente' ? item[key] : '•••')
-                              )}
-                            </TableCell>
-                          ))}
-                          <TableCell>
-                            {editingInvoiceId === item.id ? (
-                              <Button className="m-1" onClick={handleSaveInvoiceItem}>
-                                <IoIosSave size={20} />
-                              </Button>
-                            ) : (
-                              <Button className="m-1" onClick={() => handleEditInvoiceItem(item.id)}>
-                                <RiEditLine size={20} />
-                              </Button>
-                            )}
-                            <Button className="m-1" variant="destructive" onClick={() => handleDeleteInvoiceItem(item.id)}>
-                              <IoTrashBinSharp size={20} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    {filteredInvoiceItems.map((factura, index) => (
+                      <Card key={factura.id} className="p-4">
+                        <CardHeader>
+                          <CardTitle>Factura #{factura.numeroFactura}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p><strong>Fecha de Emisión:</strong> {factura.fechaEmision}</p>
+                          <p><strong>Nombre del Adquiriente:</strong> {factura.nombreCliente}</p>
+                          <p><strong>Número de Factura:</strong> {factura.numeroFactura}</p>
+                        </CardContent>
+                        <CardFooter className="flex justify-end space-x-2">
+                          <Button onClick={() => handleViewInvoice(factura)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Ver Detalles
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </AccesoRestringido>
             )}
@@ -1979,9 +2080,13 @@ export default function ContabilidadApp() {
           {/* Modal para editar campos */}
           <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
             <DialogContent aria-describedby={undefined}>
+
+              {/* Cabecera */}
               <DialogHeader>
                 <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
               </DialogHeader>
+
+              {/* Contenido */}
               <div className="space-y-4">
                 {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
                   <div key={key} className="flex items-center space-x-2">
@@ -2011,6 +2116,8 @@ export default function ContabilidadApp() {
                   Agregar Campo
                 </Button>
               </div>
+
+              {/* Contenido Inferior */}
               <DialogFooter>
                 <Button onClick={saveFieldChanges}>
                   <Save className="h-4 w-4 mr-2" />
@@ -2148,57 +2255,466 @@ export default function ContabilidadApp() {
 
           {/* Agregar Nuevos Items */}
 
+          {/* Modale para visualizar una factura */}
+          <Dialog open={isViewInvoiceModalOpen} onOpenChange={setIsViewInvoiceModalOpen}>
+            <DialogContent className="bg-background text-foreground max-w-4xl" aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>
+                  {isEditingInvoice ? "Editar Factura" : "Ver Factura"}
+                </DialogTitle>
+              </DialogHeader>
+              {currentInvoice && (
+                <ScrollArea className="max-h-[80vh]">
+                  <div className="space-y-4 p-4">
+                    {/* Cabecera */}
+                    <div className="grid grid-cols-2 gap-4">
+
+                      {/* Superior Izquierda */}
+                      <div className="border p-4 rounded-md">
+                        <h2 className="text-xl font-bold">{user?.displayName || "Nombre Comercial"}</h2>
+                        <p className="text-sm text-gray-600">{user?.email || "Razón Social Emisor"}</p>
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="space-y-2">
+                            <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                            <Input 
+                              id="direccionMatriz" 
+                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              value={currentInvoice.direccionMatriz || ''} 
+                              onChange={(e) => setCurrentInvoice({...currentInvoice, direccionMatriz: e.target.value})}
+                              disabled={!isEditingInvoice}
+                            />
+                          </div>
+                          <div className="space-y-2 mt-2">
+                            <Label htmlFor="direccionSucursal">Dirección Sucursal:</Label>
+                            <Input 
+                              id="direccionSucursal" 
+                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              value={currentInvoice.direccionSucursal || ''} 
+                              onChange={(e) => setCurrentInvoice({...currentInvoice, direccionSucursal: e.target.value})}
+                              disabled={!isEditingInvoice}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Superior Derecha */}
+                      <div className="border p-4 rounded-md space-y-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                          <Input 
+                            id="rucEmisor" 
+                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.rucEmisor || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, rucEmisor: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                          <Input 
+                            id="numeroAutorizacion" 
+                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.numeroAutorizacion || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, numeroAutorizacion: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                          <Input 
+                            id="numeroFactura" 
+                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.numeroFactura || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, numeroFactura: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                          <Input 
+                            id="fechaAutorizacion" 
+                            type="date" 
+                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.fechaAutorizacion || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, fechaAutorizacion: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+                    
+                    {/* Inferior de Cabecera */}
+                    <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
+                      <div className="space-y-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
+                          <Input 
+                            id="identificacionAdquiriente" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.identificacionAdquiriente || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, identificacionAdquiriente: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                          <Input 
+                            id="fechaEmision" 
+                            type="date" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.fechaEmision || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, fechaEmision: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                          <Input 
+                            id="rucCi" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.rucCi || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, rucCi: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                          <Input 
+                            id="guiaRemision" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.guiaRemision || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, guiaRemision: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contenido */}
+                    <div className="border p-4 rounded-md">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="w-1/6">Código</th>
+                            <th className="w-1/6">Cantidad</th>
+                            <th className="w-2/6">Detalle</th>
+                            <th className="w-1/6">P. Unitario</th>
+                            <th className="w-1/6">V. Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentInvoice.detalles && currentInvoice.detalles.map((detalle: { idElemento: string | number | readonly string[] | undefined; cantidad: string | number | readonly string[] | undefined; detalle: string | number | readonly string[] | undefined; precioUnitario: string | number | readonly string[] | undefined; valorTotal: string | number | readonly string[] | undefined; }, index: number) => (
+                            <tr key={index}>
+                              <td>
+                                <Input 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  value={detalle.idElemento} 
+                                  onChange={(e) => {
+                                    const newDetalles = [...currentInvoice.detalles];
+                                    newDetalles[index] = {...newDetalles[index], idElemento: e.target.value};
+                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                  }}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </td>
+                              <td>
+                                <Input 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  value={detalle.cantidad} 
+                                  onChange={(e) => {
+                                    const newDetalles = [...currentInvoice.detalles];
+                                    newDetalles[index] = {...newDetalles[index], cantidad: e.target.value};
+                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                  }}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </td>
+                              <td>
+                                <Input 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  value={detalle.detalle} 
+                                  onChange={(e) => {
+                                    const newDetalles = [...currentInvoice.detalles];
+                                    newDetalles[index] = {...newDetalles[index], detalle: e.target.value};
+                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                  }}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </td>
+                              <td>
+                                <Input 
+                                  className={`${!isEditingInvoice ? 'bg-background ' : ''}`}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  value={detalle.precioUnitario} 
+                                  onChange={(e) => {
+                                    const newDetalles = [...currentInvoice.detalles];
+                                    newDetalles[index] = {...newDetalles[index], precioUnitario: e.target.value};
+                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                  }}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </td>
+                              <td>
+                                <Input 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  value={detalle.valorTotal} 
+                                  readOnly 
+                                  disabled={!isEditingInvoice}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Contenido Inferior */}
+                    <div className="grid grid-cols-2 gap-4">
+
+                      {/* Inferior Izquierda */}
+                      <div className="border p-4 rounded-md space-y-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="formaPago">Forma de Pago:</Label>
+                          <Input 
+                            id="formaPago" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.formaPago || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, formaPago: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="otros">Otros:</Label>
+                          <Input 
+                            id="otros" 
+                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            value={currentInvoice.otros || ''} 
+                            onChange={(e) => setCurrentInvoice({...currentInvoice, otros: e.target.value})}
+                            disabled={!isEditingInvoice}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Inferior Derecha */}
+                      <div className="border p-4 rounded-md space-y-2">
+                        {['Sub. Total 12% IVA', 'Sub. Total 0% IVA', 'Sub. Total Exento IVA', 'Sub. Total No Objeto IVA', 'Descuento', 'Sub Total', 'ICE', 'IVA 12%', 'Propina', 'Valor Total'].map((item, index) => (
+                          <div key={index} className="flex justify-between">
+                            <span>{item}:</span>
+                            <Input 
+                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''} w-1/3`} 
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              value={currentInvoice[item.toLowerCase().replace(/\s/g, '')] || ''} 
+                              onChange={(e) => setCurrentInvoice({...currentInvoice, [item.toLowerCase().replace(/\s/g, '')]: e.target.value})}
+                              disabled={!isEditingInvoice}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
+                  </div>
+                </ScrollArea>
+              )}
+              <DialogFooter>
+                {isEditingInvoice ? (
+                  <>
+                    <Button onClick={() => setIsEditingInvoice(false)}>Cancelar</Button>
+                    <Button onClick={handleSaveInvoiceItem}>Guardar Cambios</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button onClick={() => setIsViewInvoiceModalOpen(false)}>Cerrar</Button>
+                    <Button onClick={handleEditInvoiceItem}>Editar</Button>
+                    <Button variant="destructive" onClick={() => handleDeleteInvoiceItem(currentInvoice?.id!)}>Eliminar</Button>
+                  </>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Modal para agregar una nueva factura */}
           <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
-            <DialogContent aria-describedby={undefined}>
-
-              {/* Cabecera */}
+            <DialogContent className="max-w-4xl" aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Crear nueva factura</DialogTitle>
               </DialogHeader>
-
-              {/* Contenido */}
-              <ScrollArea className="max-h-[70vh]">
+              <ScrollArea className="max-h-[80vh]">
                 <div className="space-y-4 p-4">
-                  <Select onValueChange={handleInventoryItemSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar ítem" />
-                    </SelectTrigger>
+                  {/* Cabecera */}
+                  <div className="grid grid-cols-2 gap-4">
 
-                    {/* Campos de facturacion */}
-                    <SelectContent>
-                      {inventoryItems.map(item => (//Mapeado de la funcion inventoryItems y digitacion de los inputs
-                        <SelectItem key={item.idElemento} value={item.idElemento}>
-                          {item.idElemento}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {Object.entries(appConfig.facturacion).map(([key, field]) => (
-                    <div key={key} className="space-y-2">
-                      <Label htmlFor={key}>{field.name}</Label>
-                      <Input
-                        id={key}
-                        type={field.type}
-                        value={newInvoiceItem[key as keyof InvoiceItem] || ''}
-                        onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, [key]: e.target.value })}
-                      />
+                    {/* Superior Izquierda */}
+                    <div className="border p-4 rounded-md">
+                      <h2 className="text-xl font-bold">{user?.displayName || "Nombre Comercial"}</h2>
+                      <p className="text-sm text-gray-600">{user?.email || "Razón Social Emisor"}</p>
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                          <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                        </div>
+                        <div className="space-y-2 mt-2">
+                          <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
+                          <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                        </div>
+                      </div>
                     </div>
-                  ))}
+
+                    {/* Superior Derecha */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                        <Input id="fechaAutorizacion" type="date" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Inferior de Cabecera */}
+                  <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
+                    <div className="space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
+                        <Input id="identificacionAdquiriente" placeholder="Ingrese la identificación del adquiriente" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                        <Input id="fechaEmision" type="date" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="border p-4 rounded-md">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="w-1/6">Código</th>
+                          <th className="w-1/6">Cantidad</th>
+                          <th className="w-2/6">Detalle</th>
+                          <th className="w-1/6">P. Unitario</th>
+                          <th className="w-1/6">V. Total</th>
+                          <th className="w-1/12">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detallesFactura.map((detalle, index) => (
+                          <tr key={index}>
+                            <td>
+                              <Select
+                                value={detalle.idElemento}
+                                onValueChange={(value) => handleInventoryItemSelect(value, index)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Seleccionar item" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {inventoryItems.map((item) => (
+                                    <SelectItem key={item.idElemento} value={item.idElemento}>
+                                      {item.idElemento}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td><Input className="w-full" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                            <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                            <td><Input className="w-full" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full" value={detalle.valorTotal} readOnly /></td>
+                            <td>
+                              <Button 
+                                variant="destructive" 
+                                size="icon"
+                                onClick={() => eliminarFila(index)}
+                                disabled={detallesFactura.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
+                  </div>
+
+                  {/* Contenido Inferior */}
+                  <div className="grid grid-cols-2 gap-4">
+
+                    {/* Inferior Izquierda */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="formaPago">Forma de Pago:</Label>
+                        <Input id="formaPago" placeholder="Ingrese la forma de pago" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="otros">Otros:</Label>
+                        <Input id="otros" placeholder="Ingrese otros detalles" />
+                      </div>
+                    </div>
+
+                    {/* Inferior Derecha */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      {['Sub. Total 12% IVA', 'Sub. Total 0% IVA', 'Sub. Total Exento IVA', 'Sub. Total No Objeto IVA', 'Descuento', 'Sub Total', 'ICE', 'IVA 12%', 'Propina', 'Valor Total'].map((item, index) => (
+                        <div key={index} className="flex justify-between">
+                          <span>{item}:</span>
+                          <Input className="w-1/2" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </ScrollArea>
 
-              {/* Contenido Inferior */}
+              {/* Contenido de Botones */}
               <DialogFooter>
                 <Button onClick={() => handleCancelCreationFacturacion(() => {
-                setNewInvoiceItem({} as InvoiceItem);
-                setIsInvoiceModalOpen(false);
-                })}>Cancelar
-              </Button>
+                  setNewInvoiceItem({} as InvoiceItem);
+                  setIsInvoiceModalOpen(false);
+                })}>Cancelar</Button>
                 <Button onClick={handleAddInvoiceItem}>Crear</Button>
               </DialogFooter>
-
             </DialogContent>
+
           </Dialog>
 
           {/* Modal para agregar nuevo ítem al inventario */}
@@ -2332,6 +2848,7 @@ export default function ContabilidadApp() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
         </div>
 
       </div>
