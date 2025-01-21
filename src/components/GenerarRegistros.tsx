@@ -16,17 +16,30 @@ interface GenerarRegistrosProps {
 }
 
 const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItems, invoiceItems, appConfig }) => {
+  
   const mapFieldNames = (items: any[], config: { [key: string]: { name: string } }) => {
-    return items.map(item => {
-      const mappedItem: { [key: string]: any } = {};
-      Object.keys(item).forEach(key => {
-        if (key !== 'id' && config[key]) {
-          mappedItem[config[key].name] = item[key];
+    return items.map((item) => {
+      const mappedItem: { [key: string]: any } = {}
+      Object.keys(item).forEach((key) => {
+        if (key !== "id") {
+          if (config[key]) {
+            mappedItem[config[key].name] = item[key]
+          } else if (key === "detalles" && Array.isArray(item[key])) {
+            // Manejar los detalles de la factura
+            item[key].forEach((detalle: any, index: number) => {
+              Object.keys(detalle).forEach((detalleKey) => {
+                mappedItem[`Detalle ${index + 1} - ${detalleKey}`] = detalle[detalleKey]
+              })
+            })
+          } else {
+            // Incluir campos que no están en la configuración pero existen en el objeto
+            mappedItem[key] = item[key]
+          }
         }
-      });
-      return mappedItem;
-    });
-  };
+      })
+      return mappedItem
+    })
+  }
 
   const generateExcel = (items: any[], config: { [key: string]: { name: string } }, sheetName: string) => {
     const workbook = XLSX.utils.book_new();

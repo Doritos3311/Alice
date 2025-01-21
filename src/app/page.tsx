@@ -28,6 +28,7 @@ import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 import SolicitudIngreso from '@/components/SolicitudIngreso';
 import SolicitudPendiente from '@/components/SolicitudPendiente';
 import AccesoRestringido from '@/components/AccesoRestringido';
+import MensajeNoItems from "@/components/MensajeNoItems";
 
 //Importaciones de Tipos
 
@@ -39,7 +40,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -103,6 +104,12 @@ auth.onAuthStateChanged((user) => {
     console.log("Ningún usuario autenticado.");
   }
 });
+
+interface UserData {
+  displayName: string;
+  type: 'personal' | 'empresa';
+  companyName?: string; // Ahora es una propiedad opcional
+}
 
 {/* Declaracion de Tipados */}
 
@@ -170,7 +177,7 @@ export default function ContabilidadApp() {
   {/* Declaracion de Estados */}
 
   // Estado de Inicio de Aplicacion
-  const [activeTab, setActiveTab] = useState("inventario")
+  const [activeTab, setActiveTab] = useState("grupos-trabajo")
 
   {/* Estado de tipo de Data */}
 
@@ -231,8 +238,15 @@ export default function ContabilidadApp() {
 
   // Estados para visualizacion de cuentas
   const [isCreatingAccountingEntry, setIsCreatingAccountingEntry] = useState(false);
-  const [userData, setUserData] = useState<{ type: 'personal' | 'empresa' }>({ type: 'personal' });
-  const [empresasRegistradas, setEmpresasRegistradas] = useState([]);
+  const [userData, setUserData] = useState<{
+    type: 'personal' | 'empresa';
+    displayName?: string;
+    companyName?: string;
+  }>({
+    type: 'personal',
+    displayName: '',
+    companyName: '',
+  });
 
   // Estados para la edición de campos
   const [isEditingFields, setIsEditingFields] = useState(false)
@@ -279,6 +293,7 @@ export default function ContabilidadApp() {
   const [cancelActionLibroDiario, setCancelActionLibroDiario] = useState<() => void>(() => {})
   const [cancelActionInventario, setCancelActionInventario] = useState<() => void>(() => {})
   const [cancelActionFacturacion, setCancelActionFacturacion] = useState<() => void>(() => {})
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   // Estado de Control de Permisos
   const [permisosUsuario, setPermisosUsuario] = useState({
@@ -288,6 +303,10 @@ export default function ContabilidadApp() {
     permisoDashboard: true,
     permisoGenerarRegistros: true
   });
+
+  const hayItems = (items: any[]): boolean => {
+    return items.length > 0
+  }
 
   {/* Funciones */}
 
@@ -493,13 +512,16 @@ export default function ContabilidadApp() {
   //Funcion Cargar Informacion del Usuario
   const loadUserData = async () => {
     if (!user) return;
-    const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      setUserData({
-        type: data.type || 'personal',
-      });
-    }
+    const fetchUserData = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, `users/${user.uid}/Usuario`, 'datos'));
+        if (userDoc.exists()) {
+          const data = userDoc.data() as UserData;
+          setUserData(data);
+        }
+      }
+    };
+    fetchUserData();
   };
 
   // Funcion para Analizar el tipo de Usuario
@@ -901,6 +923,8 @@ export default function ContabilidadApp() {
       const newInvoiceData = {
         ...newInvoiceItem,
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
+        nombreEmisor: user.displayName || "Usuario sin nombre",
+        correoEmisor: user.email || "Sin correo",
         rucEmisor: (document.getElementById('rucEmisor') as HTMLInputElement)?.value,
         numeroAutorizacion: (document.getElementById('numeroAutorizacion') as HTMLInputElement)?.value,
         numeroFactura: (document.getElementById('numeroFactura') as HTMLInputElement)?.value,
@@ -981,6 +1005,8 @@ export default function ContabilidadApp() {
       // Actualizar los campos calculados
       const updatedInvoice = {
         ...currentInvoice,
+        nombreEmisor: user.displayName || "Usuario sin nombre",
+        correoEmisor: user.email || "Sin correo",
         subtotal12iva: subtotal.toFixed(2),
         iva12: iva12.toFixed(2),
         valortotal: total.toFixed(2),
@@ -1011,15 +1037,24 @@ export default function ContabilidadApp() {
   };
 
   // Función para eliminar una factura
-  const handleDeleteInvoiceItem = async (id: string) => {
-    if (!user) return //Si usuario esta iniciado sesion
 
-    try {//Intentar
-      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, id))//Eliminar documento en base al la ruta y en base al id del elemento
-      setInvoiceItems(invoiceItems.filter(item => item.id !== id))//Analizar si es que el documento ya no existe
-    } catch (error) {//Si esque no se realizo la accion anterior 
-      console.error("Error al eliminar factura:", error)//Ejecutar un mensaje en la consola
-      toast({//Ejecutar un mensaje detallado en la consola
+  const handleDeleteInvoiceItem = async () => {
+    if (!user || !currentInvoice) return
+
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, currentInvoice.id))
+      setInvoiceItems(invoiceItems.filter((item) => item.id !== currentInvoice.id))
+      setIsViewInvoiceModalOpen(false)
+      setIsDeleteModalOpen(false)
+      setCurrentInvoice(null)
+
+      toast({
+        title: "Éxito",
+        description: "Factura eliminada correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al eliminar factura:", error)
+      toast({
         title: "Error",
         description: "Hubo un problema al eliminar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
@@ -1496,77 +1531,86 @@ export default function ContabilidadApp() {
                   </div>
 
                   {/* Tablas de Libro Diario */}
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                          <TableHead key={key}>{field.name}</TableHead>
-                        ))}
-                        <TableHead>
-                          <span className="mr-4">Acciones</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredData.map((row) => (
-                        <TableRow key={row.id}>
+                  {hayItems(filteredData) ? (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
                           {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                            <TableCell key={key}>
-                              {editingId === row.id ? (
-                                <Input
-                                  type={field.type}
-                                  value={row[key] || ''}
-                                  onChange={(e) => handleInputChange(row.id, key, e.target.value)} />
-                              ) : (
-                                row[key]
-                              )}
-                            </TableCell>
+                            <TableHead key={key}>{field.name}</TableHead>
                           ))}
-                          <TableCell>
-                            {editingId === row.id ? (
-                              <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
-                                <IoIosSave size={20} />
-                              </Button>
-                            ) : (
-                              <Button onClick={() => handleEditRow(row.id)} className="mr-4">
-                                <RiEditLine size={20} />
-                              </Button>
-                            )}
-                            <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
-                              <IoTrashBinSharp size={20} />
-                            </Button>
-                          </TableCell>
+                          <TableHead>
+                            <span className="mr-4">Acciones</span>
+                          </TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredData.map((row) => (
+                          <TableRow key={row.id}>
+                            {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                              <TableCell key={key}>
+                                {editingId === row.id ? (
+                                  <Input
+                                    type={field.type}
+                                    value={row[key] || ''}
+                                    onChange={(e) => handleInputChange(row.id, key, e.target.value)} />
+                                ) : (
+                                  row[key]
+                                )}
+                              </TableCell>
+                            ))}
+                            <TableCell>
+                              {editingId === row.id ? (
+                                <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
+                                  <IoIosSave size={20} />
+                                </Button>
+                              ) : (
+                                <Button onClick={() => handleEditRow(row.id)} className="mr-4">
+                                  <RiEditLine size={20} />
+                                </Button>
+                              )}
+                              <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
+                                <IoTrashBinSharp size={20} />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <div className="mt-4">
+                      <Card className="col-span-2">
 
-                  {/*Libro Diario Resumen Financiaero*/}
-                  <div className="mt-4">
-                    <Card className="col-span-2">
-                      
-                      <CardHeader>
-                        <div className="text-center">
-                          <CardTitle>Resumen Financiero</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="flex justify-around items-center">
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
-                          <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
-                          <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
-                          <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
+                        <CardHeader>
+                          <div className="text-center">
+                            <CardTitle>Resumen Financiero</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex justify-around items-center">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                            <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                            <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                            <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[calc(65vh)]">
+                      <MensajeNoItems
+                      mensaje="Aún no has agregado ningún asiento contable."
+                      accion={() => setIsCreatingAccountingEntry(true)}
+                      textoBoton="Agregar Asiento Contable"
+                      />
+                    </div>
+                  )}
                 </div>
               </AccesoRestringido>
             )}
@@ -1840,9 +1884,11 @@ export default function ContabilidadApp() {
             {activeTab === "inventario" && (
               <AccesoRestringido tienePermiso={permisosUsuario.permisoInventario}>
                 <div>
+
                   <div className="flex justify-between items-center mb-4 mr-10">
                     <h2 className="text-3xl font-bold">Registro de Inventario</h2>
                   </div>
+
                   <div className="mb-4 flex items-center space-x-4">
                     <Button onClick={() => openFieldEditor('inventario')}>
                       <Edit className="h-4 w-4 mr-2" />
@@ -1867,51 +1913,62 @@ export default function ContabilidadApp() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {Object.entries(appConfig.inventario).map(([key, field]) => (
-                          <TableHead key={key}>{field.name}</TableHead>
-                        ))}
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {inventoryItems
-                        .filter(item => selectedCategory === "all" || item.category === selectedCategory)
-                        .map((item) => (
-                          <TableRow key={item.id}>
-                            {Object.entries(appConfig.inventario).map(([key, field]) => (
-                              <TableCell key={key}>
+                  {hayItems(inventoryItems) ? (
+                  <>        
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {Object.entries(appConfig.inventario).map(([key, field]) => (
+                            <TableHead key={key}>{field.name}</TableHead>
+                          ))}
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inventoryItems
+                          .filter(item => selectedCategory === "all" || item.category === selectedCategory)
+                          .map((item) => (
+                            <TableRow key={item.id}>
+                              {Object.entries(appConfig.inventario).map(([key, field]) => (
+                                <TableCell key={key}>
+                                  {editingInventoryId === item.id ? (
+                                    <Input
+                                      type={field.type}
+                                      value={newInventoryItem[key] || ''}
+                                      onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
+                                  ) : (
+                                    advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
+                                  )}
+                                </TableCell>
+                              ))}
+                              <TableCell>
                                 {editingInventoryId === item.id ? (
-                                  <Input
-                                    type={field.type}
-                                    value={newInventoryItem[key] || ''}
-                                    onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
+                                  <Button className="m-1" onClick={handleSaveInventoryItem}>
+                                    <IoIosSave size={20} />
+                                  </Button>
                                 ) : (
-                                  advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
+                                  <Button className="m-1" onClick={() => handleEditInventoryItem(item.id)}>
+                                    <RiEditLine size={20} />
+                                  </Button>
                                 )}
+                                <Button className="m-1" variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>
+                                    <IoTrashBinSharp size={20} />
+                                </Button>
                               </TableCell>
-                            ))}
-                            <TableCell>
-                              {editingInventoryId === item.id ? (
-                                <Button className="m-1" onClick={handleSaveInventoryItem}>
-                                  <IoIosSave size={20} />
-                                </Button>
-                              ) : (
-                                <Button className="m-1" onClick={() => handleEditInventoryItem(item.id)}>
-                                  <RiEditLine size={20} />
-                                </Button>
-                              )}
-                              <Button className="m-1" variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>
-                                  <IoTrashBinSharp size={20} />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[calc(65vh)]">
+                      <MensajeNoItems
+                        mensaje="Aún no has agregado ningún ítem al inventario."
+                        accion={() => setIsInventoryModalOpen(true)}
+                        textoBoton="Agregar Ítem al Inventario"
+                      />
+                    </div>
+                  )}
                 </div>
               </AccesoRestringido>
             )}  
@@ -1919,81 +1976,124 @@ export default function ContabilidadApp() {
             {/* Facturacion Interfaz Estilo */}
             {activeTab === "facturacion" && (
               <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
-                <div>
-                  <div className="flex justify-between items-center mb-4 mr-10">
-                    <h2 className="text-3xl font-bold">Registro de Facturación</h2>
-                  </div>
+               <div>
+                 <div className="flex justify-between items-center mb-4 mr-10">
+                   <h2 className="text-3xl font-bold">Registro de Facturación</h2>
+                 </div>
 
-                  <div className="flex justify-between items-center mb-4 mr-10">
-                    <div className="mb-4 flex items-center space-x-4">
-                      {/* Btn Editar Campos */}
-                      <Button onClick={() => openFieldEditor('facturacion')}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Campos
-                      </Button>
-                      {/* Crear Factura */}
-                      <Button onClick={() => setIsInvoiceModalOpen(true)}>Crear Factura</Button>
+                 <div className="flex justify-between items-center mb-4 mr-10">
+                   <div className="mb-4 flex items-center space-x-4">
+                     {/* Btn Editar Campos */}
+                     <Button onClick={() => openFieldEditor('facturacion')}>
+                       <Edit className="h-4 w-4 mr-2" />
+                       Editar Campos
+                     </Button>
+                     {/* Crear Factura */}
+                     <Button onClick={() => setIsInvoiceModalOpen(true)}>Crear Factura</Button>
 
-                      {/* Seleccionar Fecha */}
-                      <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                        <SelectTrigger className="w-[180px] ml-4">
-                          <SelectValue placeholder="Filtrar por fecha" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas las fechas</SelectItem>
-                          <SelectItem value="day">Por día</SelectItem>
-                          <SelectItem value="month">Por mes</SelectItem>
-                          <SelectItem value="year">Por año</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
-                        <Input
-                          type="date"// Tipo de dato que es usado
-                          value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
-                          onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
-                          className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
-                      )}
-                      {invoiceFilterType === "month" && (
-                        <Input
-                          type="month"
-                          value={invoiceFilterMonth}
-                          onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                          className="ml-4" />
-                      )}
-                      {invoiceFilterType === "year" && (
-                        <Input
-                          type="number"
-                          value={invoiceFilterYear}
-                          onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                          min="1900"
-                          max="2099"
-                          step="1"
-                          className="ml-4" />
-                      )}
+                     {/* Seleccionar Fecha */}
+                     <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                       <SelectTrigger className="w-[180px] ml-4">
+                         <SelectValue placeholder="Filtrar por fecha" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="all">Todas las fechas</SelectItem>
+                         <SelectItem value="day">Por día</SelectItem>
+                         <SelectItem value="month">Por mes</SelectItem>
+                         <SelectItem value="year">Por año</SelectItem>
+                       </SelectContent>
+                     </Select>
+                     {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
+                       <Input
+                         type="date"// Tipo de dato que es usado
+                         value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
+                         onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
+                         className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
+                     )}
+                     {invoiceFilterType === "month" && (
+                       <Input
+                         type="month"
+                         value={invoiceFilterMonth}
+                         onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                         className="ml-4" />
+                     )}
+                     {invoiceFilterType === "year" && (
+                       <Input
+                         type="number"
+                         value={invoiceFilterYear}
+                         onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                         min="1900"
+                         max="2099"
+                         step="1"
+                         className="ml-4" />
+                     )}
 
+                   </div>
+                 </div>
+                  
+                  {hayItems(filteredInvoiceItems) ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredInvoiceItems.map((factura) => (
+                        <Card key={factura.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg">
+
+                          <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                            <CardTitle className="text-xl font-bold flex justify-between items-center">
+                              <span>Factura #{factura.numeroFactura}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          
+                          <CardContent className="flex-grow p-4 bg-card">
+                            <div className="space-y-2">
+                              <p className="text-sm flex items-center">
+                                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="font-medium text-muted-foreground">Emisión:</span>
+                                <span className="ml-2">{factura.fechaEmision}</span>
+                              </p>
+                              <p className="text-sm flex items-center">
+                                <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="font-medium text-muted-foreground">Cliente:</span>
+                                <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                              </p>
+                              <p className="text-sm flex items-center">
+                                <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="font-medium text-muted-foreground">Emisor:</span>
+                                <span className="ml-2 truncate">
+                                  {factura.nombreEmisor ? `${factura.nombreEmisor.substring(0, 10)}...` : "N/A"}
+                                </span>
+                              </p>
+                              <p className="text-sm flex items-center">
+                                <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="font-medium text-muted-foreground">Correo:</span>
+                                <span className="ml-2 truncate">
+                                  {factura.correoEmisor ? `${factura.correoEmisor.split("@")[0].substring(0, 3)}...@...` : "N/A"}
+                                </span>
+                              </p>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                            <p className="text-sm font-semibold text-muted-foreground">Total: ${factura.total?.toFixed(2) || "0.00"}</p>
+                            <Button
+                                size="icon"
+                                onClick={() => handleViewInvoice(factura)}
+                              >
+                                <Eye className="h-5 w-5" color="#000000"/>
+                              </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
                     </div>
-                  </div>
+                  </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[calc(62vh)]">
+                      <MensajeNoItems
+                        mensaje="Aún no has agregado ninguna factura."
+                        accion={() => setIsInvoiceModalOpen(true)}
+                        textoBoton="Crear Nueva Factura"
+                      />
+                    </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    {filteredInvoiceItems.map((factura, index) => (
-                      <Card key={factura.id} className="p-4">
-                        <CardHeader>
-                          <CardTitle>Factura #{factura.numeroFactura}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p><strong>Fecha de Emisión:</strong> {factura.fechaEmision}</p>
-                          <p><strong>Nombre del Adquiriente:</strong> {factura.nombreCliente}</p>
-                          <p><strong>Número de Factura:</strong> {factura.numeroFactura}</p>
-                        </CardContent>
-                        <CardFooter className="flex justify-end space-x-2">
-                          <Button onClick={() => handleViewInvoice(factura)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Ver Detalles
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
                 </div>
               </AccesoRestringido>
             )}
@@ -2260,9 +2360,11 @@ export default function ContabilidadApp() {
             <DialogContent className="bg-background text-foreground max-w-4xl" aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>
-                  {isEditingInvoice ? "Editar Factura" : "Ver Factura"}
+                  {isEditingInvoice ? "Editor de Factura" : "Visualizador de Factura"}
                 </DialogTitle>
               </DialogHeader>
+
+              {/* Visualizador */}
               {currentInvoice && (
                 <ScrollArea className="max-h-[80vh]">
                   <div className="space-y-4 p-4">
@@ -2271,7 +2373,12 @@ export default function ContabilidadApp() {
 
                       {/* Superior Izquierda */}
                       <div className="border p-4 rounded-md">
-                        <h2 className="text-xl font-bold">{user?.displayName || "Nombre Comercial"}</h2>
+                        <h2 className="text-xl font-bold">
+                          <span>
+                            {userData?.type === 'empresa' && userData.companyName ? 
+                              userData.companyName : 
+                              userData?.displayName || 'Usuario'}
+                          </span></h2>
                         <p className="text-sm text-gray-600">{user?.email || "Razón Social Emisor"}</p>
                         <div className="mt-4 pt-4 border-t">
                           <div className="space-y-2">
@@ -2279,7 +2386,7 @@ export default function ContabilidadApp() {
                             <Input 
                               id="direccionMatriz" 
                               className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                               value={currentInvoice.direccionMatriz || ''} 
                               onChange={(e) => setCurrentInvoice({...currentInvoice, direccionMatriz: e.target.value})}
                               disabled={!isEditingInvoice}
@@ -2290,7 +2397,7 @@ export default function ContabilidadApp() {
                             <Input 
                               id="direccionSucursal" 
                               className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                               value={currentInvoice.direccionSucursal || ''} 
                               onChange={(e) => setCurrentInvoice({...currentInvoice, direccionSucursal: e.target.value})}
                               disabled={!isEditingInvoice}
@@ -2306,7 +2413,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="rucEmisor" 
                             className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.rucEmisor || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, rucEmisor: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2317,7 +2424,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="numeroAutorizacion" 
                             className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.numeroAutorizacion || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, numeroAutorizacion: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2328,7 +2435,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="numeroFactura" 
                             className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.numeroFactura || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, numeroFactura: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2340,7 +2447,7 @@ export default function ContabilidadApp() {
                             id="fechaAutorizacion" 
                             type="date" 
                             className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.fechaAutorizacion || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, fechaAutorizacion: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2358,7 +2465,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="identificacionAdquiriente" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.identificacionAdquiriente || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, identificacionAdquiriente: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2370,7 +2477,7 @@ export default function ContabilidadApp() {
                             id="fechaEmision" 
                             type="date" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.fechaEmision || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, fechaEmision: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2383,7 +2490,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="rucCi" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.rucCi || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, rucCi: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2394,7 +2501,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="guiaRemision" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.guiaRemision || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, guiaRemision: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2421,7 +2528,7 @@ export default function ContabilidadApp() {
                               <td>
                                 <Input 
                                   className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={detalle.idElemento} 
                                   onChange={(e) => {
                                     const newDetalles = [...currentInvoice.detalles];
@@ -2434,7 +2541,7 @@ export default function ContabilidadApp() {
                               <td>
                                 <Input 
                                   className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={detalle.cantidad} 
                                   onChange={(e) => {
                                     const newDetalles = [...currentInvoice.detalles];
@@ -2447,7 +2554,7 @@ export default function ContabilidadApp() {
                               <td>
                                 <Input 
                                   className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={detalle.detalle} 
                                   onChange={(e) => {
                                     const newDetalles = [...currentInvoice.detalles];
@@ -2460,7 +2567,7 @@ export default function ContabilidadApp() {
                               <td>
                                 <Input 
                                   className={`${!isEditingInvoice ? 'bg-background ' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={detalle.precioUnitario} 
                                   onChange={(e) => {
                                     const newDetalles = [...currentInvoice.detalles];
@@ -2473,7 +2580,7 @@ export default function ContabilidadApp() {
                               <td>
                                 <Input 
                                   className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={detalle.valorTotal} 
                                   readOnly 
                                   disabled={!isEditingInvoice}
@@ -2495,7 +2602,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="formaPago" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.formaPago || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, formaPago: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2506,7 +2613,7 @@ export default function ContabilidadApp() {
                           <Input 
                             id="otros" 
                             className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                             value={currentInvoice.otros || ''} 
                             onChange={(e) => setCurrentInvoice({...currentInvoice, otros: e.target.value})}
                             disabled={!isEditingInvoice}
@@ -2520,8 +2627,8 @@ export default function ContabilidadApp() {
                           <div key={index} className="flex justify-between">
                             <span>{item}:</span>
                             <Input 
-                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''} w-1/3`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1 } : {}}
+                              className={`${!isEditingInvoice ? 'bg-background' : ''} w-1/3`} 
+                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                               value={currentInvoice[item.toLowerCase().replace(/\s/g, '')] || ''} 
                               onChange={(e) => setCurrentInvoice({...currentInvoice, [item.toLowerCase().replace(/\s/g, '')]: e.target.value})}
                               disabled={!isEditingInvoice}
@@ -2534,6 +2641,8 @@ export default function ContabilidadApp() {
                   </div>
                 </ScrollArea>
               )}
+
+              {/* Editor */}
               <DialogFooter>
                 {isEditingInvoice ? (
                   <>
@@ -2543,11 +2652,16 @@ export default function ContabilidadApp() {
                 ) : (
                   <>
                     <Button onClick={() => setIsViewInvoiceModalOpen(false)}>Cerrar</Button>
-                    <Button onClick={handleEditInvoiceItem}>Editar</Button>
-                    <Button variant="destructive" onClick={() => handleDeleteInvoiceItem(currentInvoice?.id!)}>Eliminar</Button>
+                    <Button onClick={handleEditInvoiceItem}>
+                      <RiEditLine size={20} />
+                    </Button>
+                    <Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)}>
+                      <IoTrashBinSharp size={20} />
+                    </Button>
                   </>
                 )}
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
 
@@ -2845,6 +2959,25 @@ export default function ContabilidadApp() {
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCancelConfirmModalFacturacion(false)}>No, continuar editando</Button>
                 <Button variant="destructive" onClick={confirmCancelFacturacion}>Sí, cancelar creación</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+            <DialogContent aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>Confirmar Eliminación</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de que deseas eliminar esta factura? Esta acción no se puede deshacer.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteInvoiceItem}>
+                  Eliminar
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
