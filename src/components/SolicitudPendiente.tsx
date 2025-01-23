@@ -8,7 +8,9 @@ import { getFirestore, doc, updateDoc, deleteField, setDoc, arrayUnion, onSnapsh
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
-import { Check, X } from 'lucide-react'
+import { Check, User, X } from 'lucide-react'
+import { Dialog } from '@radix-ui/react-dialog';
+import { useTheme } from 'next-themes';
 
 {/* Definicion de Tipos de Datos */}
 
@@ -130,41 +132,51 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
     }
   };
 
+  // Estado para Modo Nocturno
+  const { theme } = useTheme()
+
   return (
     // Visualizador
     <div className="space-y-4">
-      {/* Titulo */}
-      <h3 className="text-xl font-bold mt-10">Solicitudes Pendientes de Ingreso</h3>
+        {/* Titulo */}
+        <h3 className="text-xl font-bold mt-10">Solicitudes Pendientes de Ingreso</h3>
+        
+        {/* Contenido Principal */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Mapeado de las Solicitudes de Usuarios */}
+          {Object.entries(solicitudesPendientes).map(([usuarioId, solicitud]) => (
+            solicitud.estado === 'pendiente' && (
+
+              // Listado de Solicitudes de Usuario
+              <Card key={usuarioId} className={`p-2 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
+                <CardContent className="flex justify-between items-center p-4">
+
+                  {/* Nombre de Usuario */}
+                  <div className="flex items-center">
+                  <User className="h-7 w-7 mr-2 mr-5" />
+                    <div>
+                      <span>{solicitud.nombre}</span>
+                      <p className="text-sm text-gray-500">ID: {usuarioId.substring(0, 8)}...</p>
+                    </div>
+                  </div>
+
+                  {/* Botones */}
+                  <div className="space-x-2">
+                    <Button size="sm" onClick={() => handleSolicitud(usuarioId, true)}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleSolicitud(usuarioId, false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          ))}
+
+        </div>
       
-      {/* Contenido Principal */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Mapeado de las Solicitudes de Usuarios */}
-        {Object.entries(solicitudesPendientes).map(([usuarioId, solicitud]) => (
-          solicitud.estado === 'pendiente' && (
-
-            // Listado de Solicitudes de Usuario
-            <Card key={usuarioId}>
-              <CardContent className="flex justify-between items-center p-4">
-
-                {/* Nombre de Usuario */}
-                <span>{solicitud.nombre}</span>
-
-                {/* Botones */}
-                <div className="space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => handleSolicitud(usuarioId, true)}>
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleSolicitud(usuarioId, false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        ))}
-
-      </div>
     </div>
   );
 };

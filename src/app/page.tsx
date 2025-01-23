@@ -421,14 +421,14 @@ export default function ContabilidadApp() {
   // Funcion  para cargar datos de Grupos de Empresas
   const handleCargarEmpresa = async (empresaId: string) => {
     if (!user) return;
-
+  
     try {
       await loadData(empresaId);
       toast({
         title: "Éxito",
         description: "Datos de la empresa cargados correctamente.",
       });
-
+  
       // Obtiene los permisos de empresa
       const permisosDoc = await getDoc(doc(db, `users/${user.uid}/Usuario/permisos`));
       if (permisosDoc.exists()) {
@@ -441,7 +441,7 @@ export default function ContabilidadApp() {
           permisoGenerarRegistros: permisos.permisoGenerarRegistros || false
         });
       }
-
+  
     } catch (error) {
       console.error("Error al cargar datos de la empresa:", error);
       toast({
@@ -638,11 +638,11 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva fila al libro diario
   const handleAddRow = async () => {
-    if (!user) return;//Si usuario existe entonces
+    if (!user || !viewingUID) return;//Si usuario existe entonces
 
     try {//Intetar
       const newRowWithIdElemento = { ...newRow, idElemento: Date.now().toString() };// Extrae los datos ingresados de la app
-      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newRowWithIdElemento); // Añade un documento segun los datos extraidos
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/libroDiario`), newRowWithIdElemento); // Añade un documento segun los datos extraidos
       setData([...data, { ...newRowWithIdElemento, id: docRef.id }]); // Coloca los datos por defecto
       setNewRow({}); // Coloca datos por defecto
       setIsCreatingAccountingEntry(false); // Cerrar el Modal
@@ -663,13 +663,13 @@ export default function ContabilidadApp() {
 
   // Función para guardar los cambios de una fila del libro diario
   const handleSaveRow = async (id: string) => {
-    if (!user) return // Analiza si usuario
+    if (!viewingUID) return // Analiza si usuario
 
     const editedRow = data.find(row => row.id === id) // Compara si el item por editar existe
     if (!editedRow) return // Si existe entonces
 
     try { //Intentar
-      await updateDoc(doc(db, `users/${user.uid}/libroDiario`, id), editedRow) // Espera actualice el item en base al id y segun los campos cambiante
+      await updateDoc(doc(db, `users/${viewingUID}/libroDiario`, id), editedRow) // Espera actualice el item en base al id y segun los campos cambiante
       setEditingId(null)// Vacia con datos por defecto
     } catch (error) {// Si no se pudo ejecutar
       console.error("Error al guardar cambios:", error)// error
@@ -683,10 +683,10 @@ export default function ContabilidadApp() {
 
   // Función para eliminar una fila del libro diario
   const handleDeleteRow = async (id: string) => {
-    if (!user) return// si usuario existe
+    if (!viewingUID) return// si usuario existe
 
     try {//Intentar 
-      await deleteDoc(doc(db, `users/${user.uid}/libroDiario`, id)) // Borra el documento en base al id
+      await deleteDoc(doc(db, `users//${viewingUID}/libroDiario`, id)) // Borra el documento en base al id
       setData(data.filter(row => row.id !== id)) // Comprueba si es que el documento ya se elimino
     } catch (error) {// si no
       console.error("Error al eliminar fila:", error)//error consola
@@ -832,10 +832,10 @@ export default function ContabilidadApp() {
 
   // Función para agregar un nuevo ítem al inventario
   const handleAddInventoryItem = async () => {
-    if (!user) return;// Si usuario existe entonces
+    if (!viewingUID) return;// Si usuario existe entonces
 
     try {//Intentar
-      const docRef = await addDoc(collection(db, `users/${user.uid}/inventario`), newInventoryItem);// Agregar Documento a la base de datos en base a la ruta y con los datos de esta funcion newInventoryItem
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/inventario`), newInventoryItem);// Agregar Documento a la base de datos en base a la ruta y con los datos de esta funcion newInventoryItem
       setInventoryItems([...inventoryItems, { ...newInventoryItem, id: docRef.id }]);// Realiza un barrido y los digita en la base de datos
       setNewInventoryItem({} as InventoryItem);// Vacia la funcion setNewInventoryItem para colocar otros datos proximamente
       setIsInventoryModalOpen(false); // Cerrar el modal después de agregar
@@ -864,10 +864,10 @@ export default function ContabilidadApp() {
 
   // Función para guardar los cambios de un ítem del inventario
   const handleSaveInventoryItem = async () => {
-    if (!user || !editingInventoryId) return// Si usuario existe
+    if (!viewingUID || !editingInventoryId) return// Si usuario existe
 
     try {//Intentar
-      await updateDoc(doc(db, `users/${user.uid}/inventario`, editingInventoryId), newInventoryItem)//Entra a la ruta y actualiza los datos segun la funcion editingInventoryId y newInventoryItem
+      await updateDoc(doc(db, `users/${viewingUID}/inventario`, editingInventoryId), newInventoryItem)//Entra a la ruta y actualiza los datos segun la funcion editingInventoryId y newInventoryItem
       setInventoryItems(inventoryItems.map(item => //Mapeado de los campos de el inventario en base al id
         item.id === editingInventoryId ? { ...newInventoryItem, id: editingInventoryId } : item// Actualiza los campos modificados
       ))
@@ -885,10 +885,10 @@ export default function ContabilidadApp() {
 
   // Función para eliminar un ítem del inventario
   const handleDeleteInventoryItem = async (id: string) => {
-    if (!user) return;//Si usuario existe
+    if (!viewingUID) return;//Si usuario existe
   
     try {//Intentar
-      await deleteDoc(doc(db, `users/${user.uid}/inventario`, id));//Borrar el documento en base al id dentro de la ruta
+      await deleteDoc(doc(db, `users/${viewingUID}/inventario`, id));//Borrar el documento en base al id dentro de la ruta
       setInventoryItems(inventoryItems.filter(item => item.id !== id));// Verifica que ya no exista el documento
       toast({//Mensaje de funcionamiento efectivo
         title: "Éxito",
@@ -909,7 +909,7 @@ export default function ContabilidadApp() {
 
   // Función para agregar una nueva factura
   const handleAddInvoiceItem = async () => {
-    if (!user || !db) {
+    if (!viewingUID || !db) {
       toast({
         title: "Error",
         description: "Debes iniciar sesión para crear una factura.",
@@ -923,8 +923,8 @@ export default function ContabilidadApp() {
       const newInvoiceData = {
         ...newInvoiceItem,
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
-        nombreEmisor: user.displayName || "Usuario sin nombre",
-        correoEmisor: user.email || "Sin correo",
+        nombreEmisor: user?.displayName || "Usuario sin nombre",
+        correoEmisor: user?.email || "Sin correo",
         rucEmisor: (document.getElementById('rucEmisor') as HTMLInputElement)?.value,
         numeroAutorizacion: (document.getElementById('numeroAutorizacion') as HTMLInputElement)?.value,
         numeroFactura: (document.getElementById('numeroFactura') as HTMLInputElement)?.value,
@@ -942,7 +942,7 @@ export default function ContabilidadApp() {
       };
   
       // Guardar la factura en Firebase
-      const docRef = await addDoc(collection(db, `users/${user.uid}/facturacion`), newInvoiceData);
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/facturacion`), newInvoiceData);
   
       // Actualizar el estado local
       const createdInvoice = { ...newInvoiceData, id: docRef.id };
@@ -978,7 +978,7 @@ export default function ContabilidadApp() {
 
   // Función para guardar los cambios de una factura
   const handleSaveInvoiceItem = async () => {
-    if (!user || !currentInvoice) {
+    if (!viewingUID || !currentInvoice) {
       toast({
         title: "Error",
         description: "No se pudo guardar la factura. Información de usuario o factura no disponible.",
@@ -1005,15 +1005,15 @@ export default function ContabilidadApp() {
       // Actualizar los campos calculados
       const updatedInvoice = {
         ...currentInvoice,
-        nombreEmisor: user.displayName || "Usuario sin nombre",
-        correoEmisor: user.email || "Sin correo",
+        nombreEmisor: user?.displayName || "Usuario sin nombre",
+        correoEmisor: user?.email || "Sin correo",
         subtotal12iva: subtotal.toFixed(2),
         iva12: iva12.toFixed(2),
         valortotal: total.toFixed(2),
       };
 
       // Actualizar en Firestore
-      await updateDoc(doc(db, `users/${user.uid}/facturacion`, updatedInvoice.id), updatedInvoice);
+      await updateDoc(doc(db, `users/${viewingUID}/facturacion`, updatedInvoice.id), updatedInvoice);
 
       // Actualizar el estado local
       setCurrentInvoice(updatedInvoice);
@@ -1037,12 +1037,11 @@ export default function ContabilidadApp() {
   };
 
   // Función para eliminar una factura
-
   const handleDeleteInvoiceItem = async () => {
-    if (!user || !currentInvoice) return
+    if (!viewingUID || !currentInvoice) return
 
     try {
-      await deleteDoc(doc(db, `users/${user.uid}/facturacion`, currentInvoice.id))
+      await deleteDoc(doc(db, `users/${viewingUID}/facturacion`, currentInvoice.id))
       setInvoiceItems(invoiceItems.filter((item) => item.id !== currentInvoice.id))
       setIsViewInvoiceModalOpen(false)
       setIsDeleteModalOpen(false)
@@ -1428,18 +1427,26 @@ export default function ContabilidadApp() {
                     <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
                     {userData.type === 'personal' ? (
                       <div className="mt-8">
-                        <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
-                        <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
-                        <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
 
-                        <SolicitudIngreso userId={user.uid} />
+                        <Card className="rounded-lg shadow-lg p-6">
+                          <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
+                          <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
+                          <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
+
+                          <SolicitudIngreso userId={user.uid} />
+                        </Card>
+                        
                       </div>
                     ) : (
                       <div className="mt-8">
-                        <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
-                        <UsuariosRegistrados user={user} />
 
-                        <SolicitudPendiente userId={user.uid} />
+                        <Card className="rounded-lg shadow-lg p-6">
+                          <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
+                          <UsuariosRegistrados user={user} />
+
+                          <SolicitudPendiente userId={user.uid} />
+                        </Card>
+
                       </div>
                     )}
                   </>
@@ -2039,7 +2046,7 @@ export default function ContabilidadApp() {
 
                           <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
                             <CardTitle className="text-xl font-bold flex justify-between items-center">
-                              <span>Factura #{factura.numeroFactura}</span>
+                              <span>Factura N°{factura.numeroFactura}</span>
                             </CardTitle>
                           </CardHeader>
                           
@@ -2059,25 +2066,26 @@ export default function ContabilidadApp() {
                                 <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
                                 <span className="font-medium text-muted-foreground">Emisor:</span>
                                 <span className="ml-2 truncate">
-                                  {factura.nombreEmisor ? `${factura.nombreEmisor.substring(0, 10)}...` : "N/A"}
+                                  {factura.nombreEmisor}
                                 </span>
                               </p>
                               <p className="text-sm flex items-center">
                                 <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
                                 <span className="font-medium text-muted-foreground">Correo:</span>
                                 <span className="ml-2 truncate">
-                                  {factura.correoEmisor ? `${factura.correoEmisor.split("@")[0].substring(0, 3)}...@...` : "N/A"}
+                                  {factura.correoEmisor}
                                 </span>
                               </p>
                             </div>
                           </CardContent>
+
                           <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
                             <p className="text-sm font-semibold text-muted-foreground">Total: ${factura.total?.toFixed(2) || "0.00"}</p>
                             <Button
                                 size="icon"
                                 onClick={() => handleViewInvoice(factura)}
                               >
-                                <Eye className="h-5 w-5" color="#000000"/>
+                                <Eye className="h-5 w-5"/>
                               </Button>
                           </CardFooter>
                         </Card>
@@ -2355,7 +2363,7 @@ export default function ContabilidadApp() {
 
           {/* Agregar Nuevos Items */}
 
-          {/* Modale para visualizar una factura */}
+          {/* Modal para visualizar una factura */}
           <Dialog open={isViewInvoiceModalOpen} onOpenChange={setIsViewInvoiceModalOpen}>
             <DialogContent className="bg-background text-foreground max-w-4xl" aria-describedby={undefined}>
               <DialogHeader>

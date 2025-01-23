@@ -140,7 +140,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user  }) => {
           {/* Boton Copiar Id */}
           <Button
             onClick={copyToClipboard}
-            variant="outline"
             size="sm"
             className={`transition-colors duration-200 ${copied ? 'bg-green-500 text-white' : ''}`}
           >
@@ -160,7 +159,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user  }) => {
           {/* Boton Editar Perfil */}
           <Button
             onClick={() => setIsEditing(true)}
-            variant="outline"
             size="sm"
           >
             <Edit className="mr-2 h-4 w-4" />

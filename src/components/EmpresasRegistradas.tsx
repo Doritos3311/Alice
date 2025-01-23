@@ -149,14 +149,14 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
         {/* Recuadro de Visualizacion de Usuario */}
         {userInfo && (
-          <Card key={userInfo.id} className="p-4">
+          <Card key={userInfo.id} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
 
             {/* Listado de Empresas */}
             <CardContent className="flex justify-between items-center">
 
               {/* Informacion de Empresas */}
               <div className="flex items-center mt-4">
-                <User className="h-5 w-5 mr-2" />
+                <User className="h-7 w-7 mr-2 mr-5" />
                 <div>
                   <p className="font-medium">{userInfo.nombre} (Tu)</p>
                   <p className="text-sm text-gray-500">ID: {userInfo.id.substring(0, 8)}...</p>
@@ -165,7 +165,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
               {/* Botones */}
               <div className='mt-5'>
-                <Button variant="outline" size="sm" onClick={() => handleOpenModal(userInfo)} className="mr-2">
+                <Button size="sm" onClick={() => handleOpenModal(userInfo)} className="mr-2">
                   <Database className="h-4 w-4 mr-2" />
                   Cargar datos
                 </Button>
@@ -176,7 +176,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
         {/* Recuadro de las empresas registradas */}
         {empresasRegistradas.map((empresa) => (
-          <Card key={empresa.id} className="p-4">
+          <Card key={empresa.id} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
 
             {/* Listado de Empresas */}
             <CardContent className="flex justify-between items-center">
@@ -194,7 +194,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
               {/* Botones */}
               <div className='mt-5'>
-                <Button variant="outline" size="sm" onClick={() => handleOpenModal(empresa)} className="mr-2">
+                <Button size="sm" onClick={() => handleOpenModal(empresa)} className="mr-2">
                   <Database className="h-4 w-4 mr-2" />
                   Cargar datos
                 </Button>
@@ -220,17 +220,17 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
           <div className="py-4">
             <p>¿Quieres continuar con la carga de datos de {selectedEmpresa?.tipo === 'usuario' ? 'tu usuario' : 'la empresa'}?</p>
             {selectedEmpresa && (
-              <Card className="mt-4 p-3">
+              <Card className={`mt-5 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
                 <CardContent>
-                  <div className="flex items-center">
+                  <div className="flex items-center mt-4">
                     {selectedEmpresa.tipo === 'usuario' ? (
-                      <User className="h-5 w-5 mr-2" />
+                      <User className="h-7 w-7 mr-2 mr-5" />
                     ) : (
-                      <Building className="h-5 w-5 mr-2" />
+                      <Building className="h-7 w-7 mr-2 mr-5" />
                     )}
-                    <div className='mt-5'>
+                    <div>
                       <p className="font-medium">{selectedEmpresa.nombre}{selectedEmpresa.tipo === 'usuario' ? ' (Tu)' : ''}</p>
-                      <div className={`p-2 rounded-md mb-4 w-full text-center ${theme === "dark" ? "bg-[rgb(30,30,30)] text-[rgb(200,200,200)]" : "bg-[rgb(240,240,240)] text-[rgb(20,20,20)]"}`}>
+                      <div>
                         <p className="text-sm text-gray-500">ID: {selectedEmpresa.id.substring(0, 8)}...</p>
                       </div>
                     </div>
@@ -242,7 +242,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
           {/* Contenido Inferior */}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button onClick={handleConfirmCargarEmpresa}>Aceptar</Button>
           </DialogFooter>
           

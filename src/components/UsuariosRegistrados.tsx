@@ -7,13 +7,14 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Edit, Trash2 } from 'lucide-react';
+import { Building, Edit, Trash2 } from 'lucide-react';
 import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, setDoc, getDoc, deleteField } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/react-scroll-area"
+import { useTheme } from "next-themes"
 
 {/* Definicion de Tipos de Datos */}
 
@@ -86,6 +87,9 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
 
   // Estado Informacion Base de Datos
   const db = getFirestore();
+
+  // Estado para Modo Nocturno
+  const { theme } = useTheme()
 
   {/* Funciones */}
 
@@ -227,16 +231,17 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Recuadro del usuario personal */}
-        <Card key={userData.id} className="p-4">
+        <Card key={userData.id} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
           <CardContent className="flex justify-between items-center">
             <div className="flex items-center mt-4">
+                <Building className="h-7 w-7 mr-2 mr-5" />
               <div>
                 <p className="font-medium">{userData.nombre} (Tu)</p>
                 <p className="text-sm text-gray-500">ID: {userData.id.substring(0, 8)}...</p>
               </div>
             </div>
             <div className='mt-5'>
-              <Button variant="outline" size="sm" className="mr-2" onClick={() => handleOpenModal(userData)}>
+              <Button size="sm" className="mr-2" onClick={() => handleOpenModal(userData)}>
                 <Edit className="h-4 w-4" />
               </Button>
             </div>
@@ -245,7 +250,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
         
         {/* Lista de los Usuarios Registrados */}
         {loggedUsers.map((loggedUser, index) => (
-          <Card key={index} className="p-4">
+          <Card key={index} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
             <CardContent className="flex justify-between items-center">
               <div className="flex items-center mt-4">
                 <div>
@@ -254,7 +259,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
                 </div>
               </div>
               <div className='mt-5'>
-                <Button variant="outline" size="sm" className="mr-2" onClick={() => handleOpenModal(loggedUser)}>
+                <Button size="sm" className="mr-2" onClick={() => handleOpenModal(loggedUser)}>
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(loggedUser)}>
