@@ -168,7 +168,7 @@ type AppConfig = {
 
 //Chatgpt IA Key
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: "k-proj-OlJgGZB6jjjYVcpfzv-tdHWsSt1Df8uKDAhvet1CZoEeASS2vxiclmLHaFLq832Wf-oEE-70g9T3BlbkFJ_rUBC-325qgezSVlV8AYW4yrq4FOH3ibNGwTjvqyKDJ2RZfQb5azK76AzX74mxlzkR_PSwPKQA",
   dangerouslyAllowBrowser: true
 });
 
@@ -194,11 +194,13 @@ export default function ContabilidadApp() {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
   const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({} as InvoiceItem)
   const [detallesFactura, setDetallesFactura] = useState<DetalleFactura[]>([
-    { idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }
+    { idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: '0' }
   ]);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceItem | null>(null);
   const [isEditingInvoice, setIsEditingInvoice] = useState(false);
+  const [nombreEmisor, setNombreEmisor] = useState("")
+  const [correoEmisor, setCorreoEmisor] = useState("")
 
   // Estados Dashboard
   const [dashboardType, setDashboardType] = useState("financial")
@@ -518,6 +520,7 @@ export default function ContabilidadApp() {
         if (userDoc.exists()) {
           const data = userDoc.data() as UserData;
           setUserData(data);
+          setNombreEmisor(data.type === 'empresa' ? data.companyName || '' : data.displayName || '');
         }
       }
     };
@@ -686,7 +689,7 @@ export default function ContabilidadApp() {
     if (!viewingUID) return// si usuario existe
 
     try {//Intentar 
-      await deleteDoc(doc(db, `users//${viewingUID}/libroDiario`, id)) // Borra el documento en base al id
+      await deleteDoc(doc(db, `users/${viewingUID}/libroDiario`, id)) // Borra el documento en base al id
       setData(data.filter(row => row.id !== id)) // Comprueba si es que el documento ya se elimino
     } catch (error) {// si no
       console.error("Error al eliminar fila:", error)//error consola
@@ -771,49 +774,67 @@ export default function ContabilidadApp() {
   // Función para manejar el envío de mensajes al asistente IA
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
+      e.preventDefault();
+  
       if (inputMessage.trim()) {
-        const userMessage = { role: 'user' as const, content: inputMessage }
-        setMessages(prev => [...prev, userMessage])
-        setInputMessage("")
-
+        // Añadir mensaje del usuario a la conversación
+        const userMessage = { role: 'user' as const, content: inputMessage };
+        setMessages(prev => [...prev, userMessage]);
+        setInputMessage("");
+  
         try {
+          // Verificar y recortar mensajes para no superar el límite de tokens
+          const maxTokens = 3000; // Límite ajustado según las especificaciones
+          const trimmedMessages = [...messages, userMessage].slice(-maxTokens);
+  
+          // Llamada a la API de OpenAI
           const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
-              { "role": "system", "content": "Eres un asistente en contabilidad y en manejo de empresas..." },
-              ...messages,
-              userMessage,
+              { role: "system", content: "Eres un asistente en contabilidad y manejo de empresas..." },
+              ...trimmedMessages,
             ],
-          })
-      
+          });
+  
+          // Añadir respuesta de la IA a los mensajes
           const assistantMessage = {
             role: 'assistant' as const,
-            content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta."
-          }
-          setMessages(prev => [...prev, assistantMessage])
-      
-          // Generar audio de la respuesta
-          const speech = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: "nova",
-            input: assistantMessage.content,
-          })
-      
-          const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }))
-          const audio = new Audio(audioUrl)
-          audio.play()
-      
-        } catch (error) {
-          console.error("Error al comunicarse con la IA:", error)
-          setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." }])
-        }          
+            content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta.",
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+  
+          //Generación de audio (si es compatible)
+          //Comentar esta parte si no usas un SDK compatible o tienes problemas
+           try {
+             const speech = await openai.audio.speech.create({
+               model: "tts-1",
+               voice: "nova",
+               input: assistantMessage.content,
+             });
+  
+             const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }));
+             const audio = new Audio(audioUrl);
+             audio.play();
+           } catch (audioError) {
+             console.error("Error al generar audio:", audioError);
+           }
+  
+        } catch (error: any) {
+          console.error("Error al comunicarse con la IA:", error.response?.data || error.message);
+  
+          // Mostrar mensaje de error en la conversación
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." },
+          ]);
+        }
       }
     } else if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault()
-      setInputMessage(prev => prev + '\n')
+      e.preventDefault();
+      setInputMessage(prev => prev + '\n');
     }
-  }
+  };
+  
 
   // Función para manejar la subida de archivos
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -923,8 +944,8 @@ export default function ContabilidadApp() {
       const newInvoiceData = {
         ...newInvoiceItem,
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
-        nombreEmisor: user?.displayName || "Usuario sin nombre",
-        correoEmisor: user?.email || "Sin correo",
+        nombreEmisor: nombreEmisor,
+        correoEmisor: correoEmisor || user?.email || "Sin correo",
         rucEmisor: (document.getElementById('rucEmisor') as HTMLInputElement)?.value,
         numeroAutorizacion: (document.getElementById('numeroAutorizacion') as HTMLInputElement)?.value,
         numeroFactura: (document.getElementById('numeroFactura') as HTMLInputElement)?.value,
@@ -952,7 +973,7 @@ export default function ContabilidadApp() {
       // Limpiar el formulario y cerrar el modal
       setNewInvoiceItem({} as InvoiceItem);
       setIsInvoiceModalOpen(false);
-      setDetallesFactura([{ idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }]);
+      setDetallesFactura([{ idElemento: '', cantidad: '0', detalle: '', precioUnitario: '0', valorTotal: '0' }]);
   
       toast({
         title: "Éxito",
@@ -970,6 +991,27 @@ export default function ContabilidadApp() {
       });
     }
   };
+
+  const calcularTotales = (detalles: any[]) => {
+    const sumaTotalFilas = detalles.reduce((sum, detalle) => sum + Number.parseFloat(detalle.valorTotal || "0"), 0)
+    const iva12 = sumaTotalFilas * 0.12
+    const subTotal12IVA = sumaTotalFilas + iva12
+  
+    return {
+      sumaTotalFilas,
+      iva12,
+      subTotal12IVA,
+    }
+  }
+
+  const calcularValorTotal = (invoice: { detalles: any[]; subtotal: any; ice: any; propina: any; }) => {
+    const { sumaTotalFilas, iva12 } = calcularTotales(invoice.detalles)
+    const subTotal = Number.parseFloat(invoice.subtotal || "0")
+    const ice = Number.parseFloat(invoice.ice || "0")
+    const propina = Number.parseFloat(invoice.propina || "0")
+  
+    return sumaTotalFilas + subTotal + ice + iva12 + propina
+  }
 
   // Función para editar una factura
   const handleEditInvoiceItem = () => {
@@ -989,27 +1031,17 @@ export default function ContabilidadApp() {
 
     try {
       // Calcular los totales
-      let subtotal = 0;
-      let iva12 = 0;
-      let total = 0;
+      const { subTotal12IVA, iva12 } = calcularTotales(currentInvoice.detalles)
+      const valorTotal = calcularValorTotal(currentInvoice.detalles)
 
-      currentInvoice.detalles.forEach((detalle: { cantidad: string; precioUnitario: string; }) => {
-        const cantidad = parseFloat(detalle.cantidad);
-        const precioUnitario = parseFloat(detalle.precioUnitario);
-        subtotal += cantidad * precioUnitario;
-      });
-
-      iva12 = subtotal * 0.12;
-      total = subtotal + iva12;
-
-      // Actualizar los campos calculados
+      // Autocompletar los campos calculables
       const updatedInvoice = {
         ...currentInvoice,
-        nombreEmisor: user?.displayName || "Usuario sin nombre",
-        correoEmisor: user?.email || "Sin correo",
-        subtotal12iva: subtotal.toFixed(2),
+        nombreEmisor: nombreEmisor,
+        correoEmisor: correoEmisor,
+        subtotal12iva: subTotal12IVA.toFixed(2),
         iva12: iva12.toFixed(2),
-        valortotal: total.toFixed(2),
+        valortotal: valorTotal.toFixed(2),
       };
 
       // Actualizar en Firestore
@@ -1061,13 +1093,17 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Funcion eliminar una fila dentro de la factura
   const eliminarFila = (index: number) => {
     setDetallesFactura(detallesFactura.filter((_, i) => i !== index));
   };
 
+  // Funcion para visualizar la factura creada
   const handleViewInvoice = (invoice: InvoiceItem) => {
-    setCurrentInvoice(invoice);
-    setIsViewInvoiceModalOpen(true);
+    setCurrentInvoice(invoice)
+    setNombreEmisor(invoice.nombreEmisor || "")
+    setCorreoEmisor(invoice.correoEmisor || "")
+    setIsViewInvoiceModalOpen(true)
   };
 
   // Funcion Crear nueva fila dentro de factura
@@ -1265,7 +1301,7 @@ export default function ContabilidadApp() {
         fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0], // Valor fecha segun fecha de facturacion
         nombreCuenta: "Venta "+`Factura #${lastCreatedInvoice.numeroFactura}`, // Nombre de cuenta vacio
         descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion, // Descriocion segun descripcion facturacion
-        idElemento: lastCreatedInvoice.idElemento || selectedInventoryItem.idElemento, // IdElemento segun idElemento de inventario
+        idElemento: selectedInventoryItem.idElemento || "", // IdElemento segun idElemento de inventario
         haber: 0, // Haber 0
         debe: valorTotal.toFixed(2) // Debe segun total de facturacion o 0
       };
@@ -2139,7 +2175,7 @@ export default function ContabilidadApp() {
                 <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
                   {messages.map((message, index) => (
                     <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                      <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+                      <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
                         {message.content}
                       </div>
                     </div>
@@ -2686,8 +2722,8 @@ export default function ContabilidadApp() {
 
                     {/* Superior Izquierda */}
                     <div className="border p-4 rounded-md">
-                      <h2 className="text-xl font-bold">{user?.displayName || "Nombre Comercial"}</h2>
-                      <p className="text-sm text-gray-600">{user?.email || "Razón Social Emisor"}</p>
+                      <h2 className="text-xl font-bold">{nombreEmisor || "Nombre Comercial"}</h2>
+                      <p className="text-sm text-gray-600">{correoEmisor || "Razón Social Emisor"}</p>
                       <div className="mt-4 pt-4 border-t">
                         <div className="space-y-2">
                           <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
@@ -2704,15 +2740,15 @@ export default function ContabilidadApp() {
                     <div className="border p-4 rounded-md space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" />
+                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
-                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" />
+                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" />
+                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
@@ -2736,11 +2772,11 @@ export default function ContabilidadApp() {
                     <div className="space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" />
+                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
-                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" />
+                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
                       </div>
                     </div>
                   </div>
@@ -2778,10 +2814,10 @@ export default function ContabilidadApp() {
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td><Input className="w-full" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                             <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                            <td><Input className="w-full" value={detalle.valorTotal} readOnly /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
                             <td>
                               <Button 
                                 variant="destructive" 
@@ -2819,7 +2855,7 @@ export default function ContabilidadApp() {
                       {['Sub. Total 12% IVA', 'Sub. Total 0% IVA', 'Sub. Total Exento IVA', 'Sub. Total No Objeto IVA', 'Descuento', 'Sub Total', 'ICE', 'IVA 12%', 'Propina', 'Valor Total'].map((item, index) => (
                         <div key={index} className="flex justify-between">
                           <span>{item}:</span>
-                          <Input className="w-1/2" />
+                          <Input className="w-1/2" type="number" />
                         </div>
                       ))}
                     </div>

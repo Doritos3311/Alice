@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Building, Edit, Trash2 } from 'lucide-react';
+import { Building, CircleUserRound, Edit, Trash2 } from 'lucide-react';
 import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, setDoc, getDoc, deleteField } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -47,14 +47,23 @@ interface Permisos {
   permisoGenerarRegistros: boolean;
 }
 
-// Definicion de Nombres de Permisos
-const permisosLabels: Record<keyof Permisos, string> = {
-  permisoLibroDiario: "Libro Diario",
+const permisosOrder = [
+  "permisoAcceso",
+  "permisoInventario",
+  "permisoFacturacion",
+  "permisoLibroDiario",
+  "permisoDashboard",
+  "permisoGenerarRegistros",
+]
+
+const permisosLabels: Record<string, string> = {
+  permisoAcceso: "Acceso",
   permisoInventario: "Inventario",
   permisoFacturacion: "Facturación",
+  permisoLibroDiario: "Libro Diario",
   permisoDashboard: "Dashboard",
-  permisoGenerarRegistros: "Generar Registros"
-};
+  permisoGenerarRegistros: "Generar Registros",
+}
 
 const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
 
@@ -158,31 +167,41 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
     setIsModalOpen(true);
 
     try {
-      const userIdToEdit = 'uid' in userToEdit ? userToEdit.uid : userToEdit.id;
-      await setDoc(doc(db, `users/${userIdToEdit}/Usuario`, 'permisos'), {
-        [user.uid]: {
-          permisoLibroDiario: false,
-          permisoInventario: false,
-          permisoFacturacion: false,
-          permisoDashboard: false,
-          permisoGenerarRegistros: false
-        }
-      }, { merge: true });
-
-      const permisosDoc = await getDoc(doc(db, `users/${userIdToEdit}/Usuario`, 'permisos'));
+      const userIdToEdit = "uid" in userToEdit ? userToEdit.uid : userToEdit.id
+      const permisosDoc = await getDoc(doc(db, `users/${userIdToEdit}/Usuario`, "permisos"))
+  
       if (permisosDoc.exists()) {
-        const permisosData = permisosDoc.data()[user.uid] as Permisos;
+        const permisosData = permisosDoc.data()[user.uid] as Permisos
         if (userIdToEdit === user.uid) {
+          // For the company owner, set all permissions to true
           setPermisos({
             permisoLibroDiario: true,
             permisoInventario: true,
             permisoFacturacion: true,
             permisoDashboard: true,
-            permisoGenerarRegistros: true
-          });
+            permisoGenerarRegistros: true,
+          })
         } else {
-          setPermisos(permisosData);
+          // For other users, use the stored permissions
+          setPermisos(
+            permisosData || {
+              permisoLibroDiario: false,
+              permisoInventario: false,
+              permisoFacturacion: false,
+              permisoDashboard: false,
+              permisoGenerarRegistros: false,
+            },
+          )
         }
+      } else {
+        // If no permissions document exists, set default permissions
+        setPermisos({
+          permisoLibroDiario: false,
+          permisoInventario: false,
+          permisoFacturacion: false,
+          permisoDashboard: false,
+          permisoGenerarRegistros: false,
+        })
       }
     } 
     catch (error) {
@@ -241,9 +260,6 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
               </div>
             </div>
             <div className='mt-5'>
-              <Button size="sm" className="mr-2" onClick={() => handleOpenModal(userData)}>
-                <Edit className="h-4 w-4" />
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -253,6 +269,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
           <Card key={index} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
             <CardContent className="flex justify-between items-center">
               <div className="flex items-center mt-4">
+                <CircleUserRound className="h-7 w-7 mr-2 mr-5" />
                 <div>
                   <p className="font-medium">{loggedUser.name}</p>
                   <p className="text-sm text-gray-500">ID: {loggedUser.uid.substring(0, 8)}...</p>
@@ -285,13 +302,13 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
             <h3 className="text-lg font-medium mb-4">Otorgar permisos</h3>
             <ScrollArea className="h-[300px] w-full rounded-md border p-4">
               <div className="space-y-4">
-                {(Object.keys(permisos) as Array<keyof Permisos>).map((key) => (
+                {permisosOrder.map((key) => (
                   <div key={key} className="flex items-center justify-between">
                     <Label htmlFor={key}>{permisosLabels[key]}</Label>
                     <Switch
                       id={key}
-                      checked={permisos[key]}
-                      onCheckedChange={() => handlePermissionChange(key)}
+                      checked={permisos[key as keyof Permisos]}
+                      onCheckedChange={() => handlePermissionChange(key as keyof Permisos)}
                     />
                   </div>
                 ))}
