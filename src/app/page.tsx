@@ -168,7 +168,7 @@ type AppConfig = {
 
 //Chatgpt IA Key
 const openai = new OpenAI({
-  apiKey: "k-proj-OlJgGZB6jjjYVcpfzv-tdHWsSt1Df8uKDAhvet1CZoEeASS2vxiclmLHaFLq832Wf-oEE-70g9T3BlbkFJ_rUBC-325qgezSVlV8AYW4yrq4FOH3ibNGwTjvqyKDJ2RZfQb5azK76AzX74mxlzkR_PSwPKQA",
+  apiKey: "",
   dangerouslyAllowBrowser: true
 });
 
