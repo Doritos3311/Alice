@@ -17,7 +17,7 @@
 */}
 
 {/* Importacion de Librerias */}
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
@@ -40,7 +40,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -132,12 +132,23 @@ type InvoiceItem = {
   [key: string]: any
 }
 
+// Definicion Contenido Factura
 interface DetalleFactura {
   idElemento: string;
   cantidad: string;
   detalle: string;
   precioUnitario: string;
   valorTotal: string;
+}
+
+// Definicion Servicios
+interface Service {
+  id: string
+  nombre: string
+  descripcion: string
+  usoDeItem: string
+  costoDeServicio: string
+  [key: string]: any
 }
 
 // Definicion Mensaje
@@ -204,6 +215,22 @@ export default function ContabilidadApp() {
 
   // Estados Dashboard
   const [dashboardType, setDashboardType] = useState("financial")
+
+  // Estados de Servicios
+  const [servicios, setServicios] = useState<Service[]>([])
+  const [isCreatingService, setIsCreatingService] = useState(false)
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null)
+  const [currentServiceId, setCurrentServiceId] = useState<string | null>(null)
+  const [isAccountingEntryModalOpen, setIsAccountingEntryModalOpen] = useState(false)
+  const [isInvoiceConfirmeModalOpen, setIsInvoiceConfirmeModalOpen] = useState(false)
+  const [newService, setNewService] = useState<Service>({
+    id: "",
+    nombre: "",
+    descripcion: "",
+    usoDeItem: "",
+    costoDeServicio: "",
+  })
 
   // Estados de edicion de inventario
   const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null)
@@ -296,6 +323,7 @@ export default function ContabilidadApp() {
   const [cancelActionInventario, setCancelActionInventario] = useState<() => void>(() => {})
   const [cancelActionFacturacion, setCancelActionFacturacion] = useState<() => void>(() => {})
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isServiceDeleteModalOpen, setIsServiceDeleteModalOpen] = useState(false)
 
   // Estado de Control de Permisos
   const [permisosUsuario, setPermisosUsuario] = useState({
@@ -303,7 +331,8 @@ export default function ContabilidadApp() {
     permisoInventario: true,
     permisoFacturacion: true,
     permisoDashboard: true,
-    permisoGenerarRegistros: true
+    permisoGenerarRegistros: true,
+    permisoServicios: true
   });
 
   const hayItems = (items: any[]): boolean => {
@@ -409,6 +438,10 @@ export default function ContabilidadApp() {
       const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setInvoiceItems(facturacionData);
 
+      const serviciosSnapshot = await getDocs(collection(db, `users/${uidToUse}/servicios`));
+      const serviciosData = serviciosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Service[];
+      setServicios(serviciosData);
+
       setViewingUID(uidToUse);
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -440,7 +473,8 @@ export default function ContabilidadApp() {
           permisoInventario: permisos.permisoInventario || false,
           permisoFacturacion: permisos.permisoFacturacion || false,
           permisoDashboard: permisos.permisoDashboard || false,
-          permisoGenerarRegistros: permisos.permisoGenerarRegistros || false
+          permisoGenerarRegistros: permisos.permisoGenerarRegistros || false,
+          permisoServicios: permisos.permisosServicios || false
         });
       }
   
@@ -644,7 +678,7 @@ export default function ContabilidadApp() {
     if (!user || !viewingUID) return;//Si usuario existe entonces
 
     try {//Intetar
-      const newRowWithIdElemento = { ...newRow, idElemento: Date.now().toString() };// Extrae los datos ingresados de la app
+      const newRowWithIdElemento = { ...newRow, idElemento: newRow.idElemento || `AC-${Date.now().toString()}`,}// Extrae los datos ingresados de la app
       const docRef = await addDoc(collection(db, `users/${viewingUID}/libroDiario`), newRowWithIdElemento); // Añade un documento segun los datos extraidos
       setData([...data, { ...newRowWithIdElemento, id: docRef.id }]); // Coloca los datos por defecto
       setNewRow({}); // Coloca datos por defecto
@@ -712,6 +746,14 @@ export default function ContabilidadApp() {
   // Función para manejar cambios en la nueva fila
   const handleNewRowChange = (field: string, value: any) => {
     setNewRow({ ...newRow, [field]: value })
+  }
+
+  const ordenDeseadoLd = ["fecha", "nombreCuenta", "descripcion", "idElemento", "debe", "haber"]
+
+  const ordenarCategoriasLd = (categorias: string[]): string[] => {
+    const categoriasOrdenadas = ordenDeseadoLd.filter((cat) => categorias.includes(cat))
+    const categoriasAdicionales = categorias.filter((cat) => !ordenDeseadoLd.includes(cat))
+    return [...categoriasOrdenadas, ...categoriasAdicionales]
   }
 
   {/* Filtros */}
@@ -925,6 +967,14 @@ export default function ContabilidadApp() {
     }
   };
 
+  const ordenDeseadoIv = ["idElemento", "category", "descripcion", "cantidadDisponible", "stockMinimo", "precioCompra" , "precioVenta" , "fechaIngreso", "proveedor"]
+
+  const ordenarCategoriasIv = (categorias: string[]): string[] => {
+    const categoriasOrdenadas = ordenDeseadoIv.filter((cat) => categorias.includes(cat))
+    const categoriasAdicionales = categorias.filter((cat) => !ordenDeseadoIv.includes(cat))
+    return [...categoriasOrdenadas, ...categoriasAdicionales]
+  }
+
 
   {/* Facturacion */}
 
@@ -992,7 +1042,10 @@ export default function ContabilidadApp() {
     }
   };
 
-  const calcularTotales = (detalles: any[]) => {
+  const calcularTotales = (detalles: any[] = []) => {
+    if (!Array.isArray(detalles) || detalles.length === 0) {
+      return { sumaTotalFilas: 0, iva12: 0, subTotal12IVA: 0 }
+    }
     const sumaTotalFilas = detalles.reduce((sum, detalle) => sum + Number.parseFloat(detalle.valorTotal || "0"), 0)
     const iva12 = sumaTotalFilas * 0.12
     const subTotal12IVA = sumaTotalFilas + iva12
@@ -1004,11 +1057,11 @@ export default function ContabilidadApp() {
     }
   }
 
-  const calcularValorTotal = (invoice: { detalles: any[]; subtotal: any; ice: any; propina: any; }) => {
-    const { sumaTotalFilas, iva12 } = calcularTotales(invoice.detalles)
-    const subTotal = Number.parseFloat(invoice.subtotal || "0")
-    const ice = Number.parseFloat(invoice.ice || "0")
-    const propina = Number.parseFloat(invoice.propina || "0")
+  const calcularValorTotal = (invoice: InvoiceItem) => {
+    const { sumaTotalFilas, iva12 } = calcularTotales(invoice.detalles || [])
+    const subTotal = Number.parseFloat(invoice.subtotal?.toString() || "0")
+    const ice = Number.parseFloat(invoice.ice?.toString() || "0")
+    const propina = Number.parseFloat(invoice.propina?.toString() || "0")
   
     return sumaTotalFilas + subTotal + ice + iva12 + propina
   }
@@ -1025,48 +1078,57 @@ export default function ContabilidadApp() {
         title: "Error",
         description: "No se pudo guardar la factura. Información de usuario o factura no disponible.",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
-
+  
     try {
+      // Verificar si currentInvoice.detalles existe y es un array
+      if (!Array.isArray(currentInvoice.detalles) || currentInvoice.detalles.length === 0) {
+        toast({
+          title: "Error",
+          description: "La factura no tiene detalles válidos.",
+          variant: "destructive",
+        })
+        return
+      }
+  
       // Calcular los totales
-      const { subTotal12IVA, iva12 } = calcularTotales(currentInvoice.detalles)
-      const valorTotal = calcularValorTotal(currentInvoice.detalles)
-
+      const { sumaTotalFilas, iva12, subTotal12IVA } = calcularTotales(currentInvoice.detalles)
+      const valorTotal = calcularValorTotal(currentInvoice)
+  
       // Autocompletar los campos calculables
-      const updatedInvoice = {
+      const updatedInvoice: InvoiceItem = {
         ...currentInvoice,
         nombreEmisor: nombreEmisor,
         correoEmisor: correoEmisor,
         subtotal12iva: subTotal12IVA.toFixed(2),
         iva12: iva12.toFixed(2),
         valortotal: valorTotal.toFixed(2),
-      };
-
+        sumaTotalFilas: sumaTotalFilas.toFixed(2),
+      }
+  
       // Actualizar en Firestore
-      await updateDoc(doc(db, `users/${viewingUID}/facturacion`, updatedInvoice.id), updatedInvoice);
-
+      await updateDoc(doc(db, `users/${viewingUID}/facturacion`, updatedInvoice.id), updatedInvoice)
+  
       // Actualizar el estado local
-      setCurrentInvoice(updatedInvoice);
-      setInvoiceItems(prevItems => 
-        prevItems.map(item => item.id === updatedInvoice.id ? updatedInvoice : item)
-      );
-
-      setIsEditingInvoice(false);
+      setCurrentInvoice(updatedInvoice)
+      setInvoiceItems((prevItems) => prevItems.map((item) => (item.id === updatedInvoice.id ? updatedInvoice : item)))
+  
+      setIsEditingInvoice(false)
       toast({
         title: "Éxito",
         description: "La factura se ha guardado correctamente.",
-      });
+      })
     } catch (error) {
-      console.error("Error al guardar la factura:", error);
+      console.error("Error al guardar la factura:", error)
       toast({
         title: "Error",
         description: "Hubo un problema al guardar la factura. Por favor, intenta de nuevo.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   // Función para eliminar una factura
   const handleDeleteInvoiceItem = async () => {
@@ -1122,6 +1184,137 @@ export default function ContabilidadApp() {
     }
   };
 
+  {/* Servicios */}
+
+  const handleAddService = async () => {
+    if (!user?.uid) return
+
+    try {
+      const serviceToAdd = {
+        ...newService,
+        fechaCreacion: new Date().toISOString(),
+      }
+      const docRef = await addDoc(collection(db, `users/${user.uid}/servicios`), serviceToAdd)
+      const addedService = { ...serviceToAdd, id: docRef.id }
+      setServicios([...servicios, addedService])
+      setNewService({
+        id: "",
+        nombre: "",
+        descripcion: "",
+        usoDeItem: "",
+        costoDeServicio: "",
+      })
+
+    } catch (error) {
+      console.error("Error al agregar servicio:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
+      })
+    }
+  }
+
+  const handleEditService = (service: Service) => {
+    setNewService({ ...service })
+    setEditingServiceId(service.id)
+    setIsCreatingService(true)
+  }
+  
+  const handleSaveService = async () => {
+    if (!user?.uid || !editingServiceId) return
+
+    try {
+      const serviceRef = doc(db, `users/${user.uid}/servicios`, editingServiceId)
+      await updateDoc(serviceRef, newService)
+      setServicios(
+        servicios.map((service) => (service.id === editingServiceId ? { ...service, ...newService } : service)),
+      )
+      setNewService({
+        id: "",
+        nombre: "",
+        descripcion: "",
+        usoDeItem: "",
+        costoDeServicio: "",
+      })
+      setEditingServiceId(null)
+
+    } catch (error) {
+      console.error("Error al actualizar servicio:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al actualizar el servicio. Por favor, intenta de nuevo.",
+      })
+    }
+  }
+
+  const handleDeleteService = async () => {
+    if (!user?.uid || !serviceToDelete) return
+
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/servicios`, serviceToDelete))
+      setServicios(servicios.filter((service) => service.id !== serviceToDelete))
+      setIsDeleteModalOpen(false)
+      setServiceToDelete(null)
+      toast({
+        title: "Éxito",
+        description: "Servicio eliminado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al eliminar servicio:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al eliminar el servicio. Por favor, intenta de nuevo.",
+      })
+    }
+  }
+
+  const handleGenerarFacturacion = (serviceId: string) => {
+    setCurrentServiceId(serviceId)
+    setIsInvoiceConfirmeModalOpen(true)
+  }
+
+  const handleGenerarLibroDiario = (serviceId: string) => {
+    setCurrentServiceId(serviceId)
+    setIsAccountingEntryModalOpen(true)
+  }
+
+  const confirmGenerateInvoice = () => {
+    
+  }
+
+  const confirmGenerateAccountingEntry = async () => {
+    if (!user?.uid || !currentServiceId) return
+
+    try {
+      const service = servicios.find((s) => s.id === currentServiceId)
+      if (!service) throw new Error("Servicio no encontrado")
+
+      const asientoContable = {
+        fecha: new Date().toISOString(),
+        nombreCuenta: `Servicio ${service.nombre}`,
+        descripcion: `Ingreso por servicio: ${service.descripcion}`,
+        idElemento: service.usoDeItem || service.nombre,
+        debe: Number.parseFloat(service.costoDeServicio),
+        haber: 0,
+      }
+
+      await addDoc(collection(db, `users/${user.uid}/libroDiario`), asientoContable)
+
+      toast({
+        title: "Éxito",
+        description: `Asiento contable generado para el servicio ${service.nombre}`,
+      })
+    } catch (error) {
+      console.error("Error al generar asiento contable:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al generar el asiento contable. Por favor, intenta de nuevo.",
+      })
+    } finally {
+      setIsAccountingEntryModalOpen(false)
+      setCurrentServiceId(null)
+    }
+  }
 
   {/* Inicio de Sesion */}
 
@@ -1381,6 +1574,15 @@ export default function ContabilidadApp() {
                 </>
               )}
               <nav>
+                {/* Btn Registro de Inventario */}
+                <Button
+                  variant={activeTab === "servicios" ? "default" : "ghost"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => setActiveTab("servicios")}
+                >
+                  <Handshake className="mr-2 h-4 w-4" />
+                  Servicios
+                </Button>
 
                 {/* Btn Registro de Inventario */}
                 <Button
@@ -1579,44 +1781,43 @@ export default function ContabilidadApp() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                            <TableHead key={key}>{field.name}</TableHead>
+                          {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
+                            <TableHead key={categoria}>{appConfig.libroDiario[categoria]?.name || categoria}</TableHead>
                           ))}
-                          <TableHead>
-                            <span className="mr-4">Acciones</span>
-                          </TableHead>
+                          <TableHead>Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredData.map((row) => (
-                          <TableRow key={row.id}>
-                            {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                              <TableCell key={key}>
-                                {editingId === row.id ? (
-                                  <Input
-                                    type={field.type}
-                                    value={row[key] || ''}
-                                    onChange={(e) => handleInputChange(row.id, key, e.target.value)} />
-                                ) : (
-                                  row[key]
-                                )}
-                              </TableCell>
-                            ))}
-                            <TableCell>
+                      {filteredData.map((row) => (
+                        <TableRow key={row.id}>
+                          {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
+                            <TableCell key={categoria}>
                               {editingId === row.id ? (
-                                <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
-                                  <IoIosSave size={20} />
-                                </Button>
+                                <Input
+                                  type={appConfig.libroDiario[categoria]?.type || "text"}
+                                  value={row[categoria] || ""}
+                                  onChange={(e) => handleInputChange(row.id, categoria, e.target.value)}
+                                />
                               ) : (
-                                <Button onClick={() => handleEditRow(row.id)} className="mr-4">
-                                  <RiEditLine size={20} />
-                                </Button>
+                                row[categoria]
                               )}
-                              <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
-                                <IoTrashBinSharp size={20} />
-                              </Button>
                             </TableCell>
-                          </TableRow>
+                          ))}
+                          <TableCell>
+                            {editingId === row.id ? (
+                              <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
+                                <IoIosSave size={20} />
+                              </Button>
+                            ) : (
+                              <Button onClick={() => handleEditRow(row.id)} className="mr-4">
+                                <RiEditLine size={20} />
+                              </Button>
+                            )}
+                            <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
+                              <IoTrashBinSharp size={20} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
                         ))}
                       </TableBody>
                     </Table>
@@ -1961,26 +2162,33 @@ export default function ContabilidadApp() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          {Object.entries(appConfig.inventario).map(([key, field]) => (
-                            <TableHead key={key}>{field.name}</TableHead>
+                          {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
+                            <TableHead key={categoria}>{appConfig.inventario[categoria]?.name || categoria}</TableHead>
                           ))}
                           <TableHead>Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {inventoryItems
-                          .filter(item => selectedCategory === "all" || item.category === selectedCategory)
+                          .filter((item) => selectedCategory === "all" || item.category === selectedCategory)
                           .map((item) => (
                             <TableRow key={item.id}>
-                              {Object.entries(appConfig.inventario).map(([key, field]) => (
-                                <TableCell key={key}>
+                              {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
+                                <TableCell key={categoria}>
                                   {editingInventoryId === item.id ? (
                                     <Input
-                                      type={field.type}
-                                      value={newInventoryItem[key] || ''}
-                                      onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })} />
+                                      type={appConfig.inventario[categoria]?.type || "text"}
+                                      value={newInventoryItem[categoria] || ""}
+                                      onChange={(e) =>
+                                        setNewInventoryItem({ ...newInventoryItem, [categoria]: e.target.value })
+                                      }
+                                    />
+                                  ) : advancedViewInventory ? (
+                                    item[categoria]
+                                  ) : categoria === "descripcion" ? (
+                                    item[categoria]
                                   ) : (
-                                    advancedViewInventory ? item[key] : (key === 'descripcion' ? item[key] : '•••')
+                                    "•••"
                                   )}
                                 </TableCell>
                               ))}
@@ -1994,14 +2202,19 @@ export default function ContabilidadApp() {
                                     <RiEditLine size={20} />
                                   </Button>
                                 )}
-                                <Button className="m-1" variant="destructive" onClick={() => handleDeleteInventoryItem(item.id)}>
-                                    <IoTrashBinSharp size={20} />
+                                <Button
+                                  className="m-1"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteInventoryItem(item.id)}
+                                >
+                                  <IoTrashBinSharp size={20} />
                                 </Button>
                               </TableCell>
                             </TableRow>
                           ))}
                       </TableBody>
                     </Table>
+
                   </>
                   ) : (
                     <div className="flex justify-center items-center h-[calc(65vh)]">
@@ -2150,6 +2363,81 @@ export default function ContabilidadApp() {
                 inventoryItems={inventoryItems} 
                 invoiceItems={invoiceItems} 
                 appConfig={appConfig} />
+              </AccesoRestringido>
+            )}
+
+            {/* Servicios Interfaz Estilo */}
+            {activeTab === "servicios" && (
+              <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-3xl font-bold">Servicios</h2>
+                  </div>
+
+                  <div>
+                    <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
+                      Agregar Nuevo Servicio
+                    </Button>
+                  </div>
+
+                  <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
+                    
+                    {servicios.map((servicio) => (
+                      <Card
+                        key={servicio.id}
+                        className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg mt-8"
+                      >
+                        <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                          <CardTitle className="text-xl font-bold flex justify-between items-center">
+                            <span>{servicio.nombre}</span>
+                          </CardTitle>
+                        </CardHeader>
+
+                        <CardContent className="flex-grow p-4 bg-card">
+                          <div className="space-y-2">
+                            <p className="text-sm flex items-center">
+                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <span className="font-medium text-muted-foreground">Descripción:</span>
+                              <span className="ml-2">{servicio.descripcion}</span>
+                            </p>
+                            <p className="text-sm flex items-center">
+                              <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <span className="font-medium text-muted-foreground">Uso de Item:</span>
+                              <span className="ml-2 truncate">{servicio.usoDeItem}</span>
+                            </p>
+                            <p className="text-sm flex items-center">
+                              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
+                              <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
+                            </p>
+                          </div>
+                        </CardContent>
+
+                        <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                          <div className="flex space-x-2">
+                            <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
+                              Generar Facturación
+                            </Button>
+                            <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
+                              Generar Asiento Contable
+                            </Button>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button size="sm" onClick={() => handleEditService(servicio)}>
+                              <RiEditLine className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => {
+                              setServiceToDelete(servicio.id)
+                              setIsDeleteModalOpen(true)
+                            }}>
+                              <IoTrashBinSharp className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </AccesoRestringido>
             )}
 
@@ -2885,7 +3173,7 @@ export default function ContabilidadApp() {
               {/* Contenido */}
               <ScrollArea className="max-h-[70vh]">
                 <div className="space-y-4 p-4">
-                  {Object.entries(appConfig.inventario).map(([key, field]) => (//Mapeado en base a los campos del usuario
+                  {(Object.entries(appConfig.inventario)).map(([key, field]) => (//Mapeado en base a los campos del usuario
                     <div key={key} className="space-y-2"> 
                       <Label htmlFor={key}>{field.name}</Label>
                       <Input //Agregar nuevo input en base a el nombre y rellenar en base al campo
@@ -2948,6 +3236,80 @@ export default function ContabilidadApp() {
             </DialogContent>
           </Dialog>
 
+          {/* Modal para crear servicio */}
+          <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
+            <DialogContent aria-describedby={undefined}>
+
+              <DialogHeader>
+                <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
+                <DialogDescription>
+                  {editingServiceId ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre del Servicio</Label>
+                  <Input
+                    id="nombre"
+                    value={newService.nombre || ""}
+                    onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Input
+                    id="descripcion"
+                    value={newService.descripcion || ""}
+                    onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="usoDeItem">Uso de Item</Label>
+                  <Select
+                    value={newService.usoDeItem || "default"}
+                    onValueChange={(value) => setNewService({ ...newService, usoDeItem: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inventoryItems.map((item) => (
+                        <SelectItem key={item.idElemento} value={item.idElemento}>
+                          {item.idElemento}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
+                  <Input
+                    id="costoDeServicio"
+                    type="number"
+                    value={newService.costoDeServicio || ""}
+                    onChange={(e) => setNewService({ ...newService, costoDeServicio: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewService({ id: "", nombre: "", descripcion: "", usoDeItem: "default", costoDeServicio: "" })
+                    setIsCreatingService(false)
+                    setEditingServiceId(null)
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={editingServiceId ? handleSaveService : handleAddService}>
+                  {editingServiceId ? "Guardar" : "Crear"}
+                </Button>
+              </DialogFooter>
+
+            </DialogContent>
+          </Dialog>
+
           {/* Control de Modales */}
 
           {/* Modal de confirmación para cancelar creación en Libro Diario */}
@@ -3007,8 +3369,9 @@ export default function ContabilidadApp() {
             </DialogContent>
           </Dialog>
 
+          {/* Modal para la confirmacion de borrar factura */}
           <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-            <DialogContent aria-describedby={undefined}>
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Confirmar Eliminación</DialogTitle>
                 <DialogDescription>
@@ -3022,6 +3385,64 @@ export default function ContabilidadApp() {
                 <Button variant="destructive" onClick={handleDeleteInvoiceItem}>
                   Eliminar
                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal para la confirmacion de borrar servicio */}
+          <Dialog open={isServiceDeleteModalOpen} onOpenChange={setIsServiceDeleteModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Eliminación</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteService}>
+                  Eliminar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal for invoice confirmation */}
+          <Dialog open={isInvoiceConfirmeModalOpen} onOpenChange={setIsInvoiceConfirmeModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Generación de Factura</DialogTitle>
+                <DialogDescription>¿Estás seguro de que deseas generar una factura para este servicio?</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsInvoiceConfirmeModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => {
+                  setIsInvoiceModalOpen(true)
+                  setIsInvoiceConfirmeModalOpen(false)
+                  confirmGenerateInvoice
+                }}>Generar Factura</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal for accounting entry confirmation */}
+          <Dialog open={isAccountingEntryModalOpen} onOpenChange={setIsAccountingEntryModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Generación de Asiento Contable</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de que deseas generar un asiento contable para este servicio?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAccountingEntryModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={confirmGenerateAccountingEntry}>Generar Asiento Contable</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
