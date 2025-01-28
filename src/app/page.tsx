@@ -40,7 +40,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -64,7 +64,7 @@ import { IoTrashBinSharp } from "react-icons/io5";
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "firebase/firestore"
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
 // Modo Obscuro
@@ -186,6 +186,9 @@ const openai = new OpenAI({
 export default function ContabilidadApp() {
 
   {/* Declaracion de Estados */}
+
+  // Estado que controla la app o la landing page
+  const [showLandingPage, setShowLandingPage] = useState<boolean>(true); 
 
   // Estado de Inicio de Aplicacion
   const [activeTab, setActiveTab] = useState("grupos-trabajo")
@@ -312,9 +315,6 @@ export default function ContabilidadApp() {
   // Estado para Modo Nocturno
   const { setTheme, theme } = useTheme()
 
-  // Estado que controla la app o la landing page
-  const [showLandingPage, setShowLandingPage] = useState<boolean>(true); 
-
   // Estado que de control de los modales
   const [showCancelConfirmModalLibroDiario, setShowCancelConfirmModalLibroDiario] = useState(false)
   const [showCancelConfirmModalInventario, setShowCancelConfirmModalInventario] = useState(false)
@@ -346,8 +346,7 @@ export default function ContabilidadApp() {
     if (user) {
       loadUserData();
       loadUserConfig()
-      loadData(viewingUID)
-      setShowLandingPage(true); // Oculta la landing page cuando el usuario está autenticado
+      const unsubscribe = loadData(viewingUID);
     }else{
       checkUserAuthentication();
     }
@@ -360,8 +359,12 @@ export default function ContabilidadApp() {
       }
     });
 
-    return () => unsubscribe();
-  }, [user, viewingUID])
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [user, viewingUID])  
 
   {/* Carga de Datos */}
 
@@ -417,32 +420,58 @@ export default function ContabilidadApp() {
   }
 
   // Función para cargar datos
-  const loadData = async (groupUID: string | null = null) => {
+  const loadData = (groupUID: string | null = null) => {
     if (!user) return;
-
+  
     const uidToUse = groupUID || user.uid;
-
+  
     try {
-      // Cargar datos del libro diario
-      const libroDiarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/libroDiario`));
-      const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setData(libroDiarioData);
-
-      // Cargar datos de inventario
-      const inventarioSnapshot = await getDocs(collection(db, `users/${uidToUse}/inventario`));
-      const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInventoryItems(inventarioData);
-
-      // Cargar datos de facturación
-      const facturacionSnapshot = await getDocs(collection(db, `users/${uidToUse}/facturacion`));
-      const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setInvoiceItems(facturacionData);
-
-      const serviciosSnapshot = await getDocs(collection(db, `users/${uidToUse}/servicios`));
-      const serviciosData = serviciosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Service[];
-      setServicios(serviciosData);
-
+      // Escuchar cambios en la colección 'libroDiario'
+      const libroDiarioUnsubscribe = onSnapshot(
+        collection(db, `users/${uidToUse}/libroDiario`),
+        (libroDiarioSnapshot) => {
+          const libroDiarioData = libroDiarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setData(libroDiarioData);
+        }
+      );
+  
+      // Escuchar cambios en la colección 'inventario'
+      const inventarioUnsubscribe = onSnapshot(
+        collection(db, `users/${uidToUse}/inventario`),
+        (inventarioSnapshot) => {
+          const inventarioData = inventarioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setInventoryItems(inventarioData);
+        }
+      );
+  
+      // Escuchar cambios en la colección 'facturacion'
+      const facturacionUnsubscribe = onSnapshot(
+        collection(db, `users/${uidToUse}/facturacion`),
+        (facturacionSnapshot) => {
+          const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setInvoiceItems(facturacionData);
+        }
+      );
+  
+      // Escuchar cambios en la colección 'servicios'
+      const serviciosUnsubscribe = onSnapshot(
+        collection(db, `users/${uidToUse}/servicios`),
+        (serviciosSnapshot) => {
+          const serviciosData = serviciosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Service[];
+          setServicios(serviciosData);
+        }
+      );
+  
+      // Establecer UID de visualización
       setViewingUID(uidToUse);
+  
+      // Retornar las funciones de limpieza para desuscribirse de las colecciones cuando sea necesario
+      return () => {
+        libroDiarioUnsubscribe();
+        inventarioUnsubscribe();
+        facturacionUnsubscribe();
+        serviciosUnsubscribe();
+      };
     } catch (error) {
       console.error("Error al cargar datos:", error);
       toast({
@@ -469,12 +498,12 @@ export default function ContabilidadApp() {
       if (permisosDoc.exists()) {
         const permisos = permisosDoc.data()[empresaId] || {};
         setPermisosUsuario({
+          permisoServicios: permisos.permisoServicios || false,
           permisoLibroDiario: permisos.permisoLibroDiario || false,
           permisoInventario: permisos.permisoInventario || false,
           permisoFacturacion: permisos.permisoFacturacion || false,
           permisoDashboard: permisos.permisoDashboard || false,
           permisoGenerarRegistros: permisos.permisoGenerarRegistros || false,
-          permisoServicios: permisos.permisosServicios || false
         });
       }
   
@@ -990,6 +1019,15 @@ export default function ContabilidadApp() {
     }
   
     try {
+      // Calcular los totales
+      const { sumaTotalFilas, iva12, subTotal12IVA } = calcularTotales(detallesFactura);
+      const valorTotal = calcularValorTotal({
+        detalles: detallesFactura,
+        sumaTotalFilas,
+        iva12,
+        id: ""
+      });
+      
       // Recopilar todos los datos de la factura
       const newInvoiceData = {
         ...newInvoiceItem,
@@ -1010,6 +1048,10 @@ export default function ContabilidadApp() {
         otros: (document.getElementById('otros') as HTMLInputElement)?.value,
         detalles: detallesFactura,
         // Agregar aquí los campos adicionales como subtotales, IVA, etc.
+        subtotal12iva: subTotal12IVA.toFixed(2),
+        iva12: iva12.toFixed(2),
+        sumaTotalFilas: sumaTotalFilas.toFixed(2),
+        valortotal: valorTotal.toFixed(2),
       };
   
       // Guardar la factura en Firebase
@@ -1174,28 +1216,32 @@ export default function ContabilidadApp() {
   };
 
   //Funcion de detalles de factura
-  const handleDetalleChange = (index: number, campo: keyof DetalleFactura, valor: string) => {
-    const newDetalles = [...detallesFactura];
-    newDetalles[index][campo] = valor;
-    setDetallesFactura(newDetalles);
-
-    if (campo === 'cantidad' || campo === 'precioUnitario') {
-      updateValorTotal(index);
+  const handleDetalleChange = (index: number, field: string, value: string) => {
+    const updatedDetalles = [...detallesFactura];
+    updatedDetalles[index] = { ...updatedDetalles[index], [field]: value };
+  
+    // Recalcular `valorTotal` para el detalle modificado
+    if (field === 'cantidad' || field === 'precioUnitario') {
+      const cantidad = parseFloat(updatedDetalles[index].cantidad || "0");
+      const precioUnitario = parseFloat(updatedDetalles[index].precioUnitario || "0");
+      updatedDetalles[index].valorTotal = (cantidad * precioUnitario).toFixed(2);
     }
   };
+  
 
   {/* Servicios */}
 
   const handleAddService = async () => {
-    if (!user?.uid) return
+    if (!viewingUID) return
 
     try {
       const serviceToAdd = {
         ...newService,
         fechaCreacion: new Date().toISOString(),
       }
-      const docRef = await addDoc(collection(db, `users/${user.uid}/servicios`), serviceToAdd)
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd)
       const addedService = { ...serviceToAdd, id: docRef.id }
+      setIsCreatingService(false)
       setServicios([...servicios, addedService])
       setNewService({
         id: "",
@@ -1221,10 +1267,10 @@ export default function ContabilidadApp() {
   }
   
   const handleSaveService = async () => {
-    if (!user?.uid || !editingServiceId) return
+    if (!viewingUID || !editingServiceId) return
 
     try {
-      const serviceRef = doc(db, `users/${user.uid}/servicios`, editingServiceId)
+      const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId)
       await updateDoc(serviceRef, newService)
       setServicios(
         servicios.map((service) => (service.id === editingServiceId ? { ...service, ...newService } : service)),
@@ -1237,6 +1283,7 @@ export default function ContabilidadApp() {
         costoDeServicio: "",
       })
       setEditingServiceId(null)
+      setIsCreatingService(false)
 
     } catch (error) {
       console.error("Error al actualizar servicio:", error)
@@ -1253,7 +1300,7 @@ export default function ContabilidadApp() {
     try {
       await deleteDoc(doc(db, `users/${user.uid}/servicios`, serviceToDelete))
       setServicios(servicios.filter((service) => service.id !== serviceToDelete))
-      setIsDeleteModalOpen(false)
+      setIsServiceDeleteModalOpen(false)
       setServiceToDelete(null)
       toast({
         title: "Éxito",
@@ -1529,6 +1576,15 @@ export default function ContabilidadApp() {
     }
   }, [activeTab]);
 
+
+  {/* Permisos */}
+  const todosLosPermisosActivos = permisosUsuario.permisoLibroDiario &&
+  permisosUsuario.permisoInventario &&
+  permisosUsuario.permisoFacturacion &&
+  permisosUsuario.permisoDashboard &&
+  permisosUsuario.permisoGenerarRegistros &&
+  permisosUsuario.permisoServicios;
+
   return (
     <>
     {showLandingPage ? (
@@ -1541,6 +1597,7 @@ export default function ContabilidadApp() {
           {/* Menu Izquierda*/}
           <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(28,28,28)] text-gray-300" : "bg-white text-gray-900"}`}>
             <div className="p-4">
+              
               <div className="flex items-center justify-between space-x-2">
                 <h1 className="text-2xl font-bold mb-4 mt-2">Alice</h1>
                 <Button
@@ -1548,31 +1605,61 @@ export default function ContabilidadApp() {
                   className="ml-10 w-15 justify-end mb-2"
                   onClick={() => setActiveTab("configuracion")}
                 >
-                  <Settings className=" h-5 w-5" />
+                  <Settings className="h-5 w-5" />
                 </Button>
               </div>
+
               {user ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" className="w-full h-100 mb-4 flex items-center justify-start p-2">
+                      <Avatar className="h-10 w-10 mr-2">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                        <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-2x1 truncate">{user.displayName || user.email}</span>
+                    </Button>
+                  </PopoverTrigger>
 
-                <div className="mb-4 flex items-center">
-                  <Avatar className="h-10 w-10 mr-2">
-                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                    <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold">{user.displayName || user.email}</p>
+                  <PopoverContent className="w-80 p-0 transform translate-x-4 rounded-3xl">
+                    <div className="flex items-center mb-4">
+                      <Avatar className="h-16 w-16 mr-4 ml-4 mt-4">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                        <AvatarFallback className="text-lg font-bold">{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-lg font-semibold mt-4">{user.displayName || "Usuario"}</h3>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
 
-                    {/* Btn Cerrar Sesion */}
-                    <Button variant="ghost" size="sm" onClick={() => setIsLogOutModalOpen(true)}>Cerrar sesión</Button>
-                  </div>
-                </div>
+                    <div className="border-t border-gray-400"></div>
+
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start mb-2 my-4"
+                      onClick={() => setShowLandingPage(false)}
+                    >
+                      <Home className="mr-2 h-4 w-4" />
+                      Inicio
+                    </Button>
+
+                    <div className="border-t border-gray-400"></div>
+
+                    <Button variant="ghost" size="sm" className="w-full justify-start my-4" onClick={() => setIsLogOutModalOpen(true)}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Cerrar sesión
+                    </Button>
+                  </PopoverContent>
+                </Popover>
               ) : (
-                <>
-                  {/* Btn Iniciar Sesíon */}
-                  <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
-                    Iniciar sesión
-                  </Button>
-                </>
+                <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
+                  Iniciar sesión
+                </Button>
               )}
+              
               <nav>
                 {/* Btn Registro de Inventario */}
                 <Button
@@ -1643,7 +1730,6 @@ export default function ContabilidadApp() {
                   <FileDown className="mr-2 h-4 w-4" />
                   Generar Registros
                 </Button>
-
               </nav>
             </div>
           </div>
@@ -1700,6 +1786,9 @@ export default function ContabilidadApp() {
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-3xl font-bold">Libro Diario</h2>
                   </div>
+
+                  <div className="border-t border-gray-400 my-4"></div>
+
                   <div className="mb-4 flex items-center space-x-4">
 
                     {/* Nav */}
@@ -1864,6 +1953,9 @@ export default function ContabilidadApp() {
               <AccesoRestringido tienePermiso={permisosUsuario.permisoDashboard}>
                 <div className="space-y-4">
                   <h2 className="text-3xl font-bold mb-4">Dashboard</h2>
+
+                  <div className="border-t border-gray-400 my-4"></div>
+
                   <div className="mb-4 flex items-center space-x-4">
                     <Select value={timeFrame} onValueChange={setTimeFrame}>
                       <SelectTrigger className="w-[180px] ml-4">
@@ -1913,6 +2005,7 @@ export default function ContabilidadApp() {
                         className="w-[180px]" />
                     )}
                   </div>
+
                   <Tabs defaultValue="financial" className="w-full">
                     <TabsList>
                       <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
@@ -2120,6 +2213,7 @@ export default function ContabilidadApp() {
                       </Card>
                     </TabsContent>
                   </Tabs>
+                  
                 </div>
               </AccesoRestringido>
             )}
@@ -2132,6 +2226,8 @@ export default function ContabilidadApp() {
                   <div className="flex justify-between items-center mb-4 mr-10">
                     <h2 className="text-3xl font-bold">Registro de Inventario</h2>
                   </div>
+
+                  <div className="border-t border-gray-400 my-4"></div>
 
                   <div className="mb-4 flex items-center space-x-4">
                     <Button onClick={() => openFieldEditor('inventario')}>
@@ -2237,6 +2333,8 @@ export default function ContabilidadApp() {
                    <h2 className="text-3xl font-bold">Registro de Facturación</h2>
                  </div>
 
+                 <div className="border-t border-gray-400 my-4"></div>
+
                  <div className="flex justify-between items-center mb-4 mr-10">
                    <div className="mb-4 flex items-center space-x-4">
                      {/* Btn Editar Campos */}
@@ -2329,7 +2427,7 @@ export default function ContabilidadApp() {
                           </CardContent>
 
                           <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                            <p className="text-sm font-semibold text-muted-foreground">Total: ${factura.total?.toFixed(2) || "0.00"}</p>
+                            <p className="text-sm font-semibold text-muted-foreground">Total: ${factura.valorTotal?.toFixed(2) || "0.00"}</p>
                             <Button
                                 size="icon"
                                 onClick={() => handleViewInvoice(factura)}
@@ -2357,7 +2455,7 @@ export default function ContabilidadApp() {
 
             {/* Registros Interfaz Estilo */}
             {activeTab === "generar-registros" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoGenerarRegistros}>
+              <AccesoRestringido tienePermiso={todosLosPermisosActivos}>
                 <GenerarRegistros 
                 data={data} 
                 inventoryItems={inventoryItems} 
@@ -2374,12 +2472,16 @@ export default function ContabilidadApp() {
                     <h2 className="text-3xl font-bold">Servicios</h2>
                   </div>
 
+                  <div className="border-t border-gray-400 my-4"></div>
+
                   <div>
                     <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
                       Agregar Nuevo Servicio
                     </Button>
                   </div>
 
+                  {hayItems(servicios) ? (
+                  <>
                   <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
                     
                     {servicios.map((servicio) => (
@@ -2426,10 +2528,14 @@ export default function ContabilidadApp() {
                             <Button size="sm" onClick={() => handleEditService(servicio)}>
                               <RiEditLine className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => {
-                              setServiceToDelete(servicio.id)
-                              setIsDeleteModalOpen(true)
-                            }}>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                setServiceToDelete(servicio.id)
+                                setIsServiceDeleteModalOpen(true)
+                              }}
+                            >
                               <IoTrashBinSharp className="h-4 w-4" />
                             </Button>
                           </div>
@@ -2437,6 +2543,16 @@ export default function ContabilidadApp() {
                       </Card>
                     ))}
                   </div>
+                  </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[calc(68vh)]">
+                      <MensajeNoItems
+                        mensaje="Aún no has agregado ningún servicio."
+                        accion={() => setIsCreatingService(true)}
+                        textoBoton="Agregar Nuevo Servicio"
+                      />
+                    </div>
+                  )}
                 </div>
               </AccesoRestringido>
             )}
@@ -3399,7 +3515,7 @@ export default function ContabilidadApp() {
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                <Button variant="outline" onClick={() => setIsServiceDeleteModalOpen(false)}>
                   Cancelar
                 </Button>
                 <Button variant="destructive" onClick={handleDeleteService}>
@@ -3423,7 +3539,7 @@ export default function ContabilidadApp() {
                 <Button onClick={() => {
                   setIsInvoiceModalOpen(true)
                   setIsInvoiceConfirmeModalOpen(false)
-                  confirmGenerateInvoice
+                  confirmGenerateInvoice()
                 }}>Generar Factura</Button>
               </DialogFooter>
             </DialogContent>
@@ -3455,7 +3571,13 @@ export default function ContabilidadApp() {
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
         
         {/* Landing Page */}
-        <LandingPage />
+        <LandingPage
+          theme={theme || "light"} // Usa 'light' como valor por defecto si theme es undefined
+          user={user}
+          setShowLandingPage={setShowLandingPage}
+          setIsLoginModalOpen={setIsLoginModalOpen}
+          setIsLogOutModalOpen={setIsLogOutModalOpen}
+        />
 
       </div>
     )}

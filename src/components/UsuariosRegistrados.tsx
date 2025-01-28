@@ -41,6 +41,7 @@ interface LoggedUser {
 // Definicion de Permisos
 interface Permisos {
   permisoLibroDiario: boolean;
+  permisoServicios: boolean;
   permisoInventario: boolean;
   permisoFacturacion: boolean;
   permisoDashboard: boolean;
@@ -49,6 +50,7 @@ interface Permisos {
 
 const permisosOrder = [
   "permisoAcceso",
+  "permisoServicios",
   "permisoInventario",
   "permisoFacturacion",
   "permisoLibroDiario",
@@ -58,6 +60,7 @@ const permisosOrder = [
 
 const permisosLabels: Record<string, string> = {
   permisoAcceso: "Acceso",
+  permisoServicios: "Servicio",
   permisoInventario: "Inventario",
   permisoFacturacion: "Facturación",
   permisoLibroDiario: "Libro Diario",
@@ -81,10 +84,11 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
   // Estado de declaracion de Permisos
   const [permisos, setPermisos] = useState<Permisos>({
     permisoLibroDiario: false,
+    permisoServicios: false,
     permisoInventario: false,
     permisoFacturacion: false,
     permisoDashboard: false,
-    permisoGenerarRegistros: false
+    permisoGenerarRegistros: false,
   });
 
   // Estado de informacion de Usuario
@@ -180,6 +184,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
             permisoFacturacion: true,
             permisoDashboard: true,
             permisoGenerarRegistros: true,
+            permisoServicios: true,
           })
         } else {
           // For other users, use the stored permissions
@@ -190,6 +195,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
               permisoFacturacion: false,
               permisoDashboard: false,
               permisoGenerarRegistros: false,
+              permisoServicios: false,
             },
           )
         }
@@ -201,6 +207,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
           permisoFacturacion: false,
           permisoDashboard: false,
           permisoGenerarRegistros: false,
+          permisoServicios: false,
         })
       }
     } 

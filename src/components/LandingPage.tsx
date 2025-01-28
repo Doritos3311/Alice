@@ -1,20 +1,25 @@
-'use client'
-
-//my-next-app\src\components\LandingPage.tsx
-
-import { useState } from 'react'
-
-import { toast } from "@/hooks/use-toast"
-import { initializeApp } from "firebase/app"
-import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
-import { FcGoogle } from "react-icons/fc"
-import { Input } from "@/components/ui/input"
+import type React from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Home, LogOut, Check, ChartColumnBig } from "lucide-react"
+import UserProfile from "./UserProfile"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check } from "lucide-react"
+import { FcGoogle } from "react-icons/fc"
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  getAuth,
+} from "firebase/auth"
+import { toast } from "../hooks/use-toast";
+import { initializeApp } from "firebase/app"
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBl1TjSQX82qh60XGIHEtp_i9RCoTTFv_w",
   authDomain: "alice-a2dc3.firebaseapp.com",
@@ -23,13 +28,33 @@ const firebaseConfig = {
   messagingSenderId: "543545407777",
   appId: "1:543545407777:web:65ab15a1f7f48c92336660",
   measurementId: "G-Y6TF6TB2HJ"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+interface LandingPageProps {
+  theme: string
+  user: any
+  setShowLandingPage: (show: boolean) => void
+  setIsLoginModalOpen: (isOpen: boolean) => void
+  setIsLogOutModalOpen: (isOpen: boolean) => void
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
+const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setIsLoginModalOpen, setIsLogOutModalOpen }) => {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showInice, setShowInice] = useState(true)
+  const [showPricing, setShowPricing] = useState(false)
+  const [showLogIn, setShowLogIn] = useState(false)
 
-export default function LandingPage() {
+  const handleUpdateUserType = async (newUserType: string) => {
+    try {
+      console.log(`Tipo de usuario actualizado a: ${newUserType}`)
+    } catch (error) {
+      console.error("Error al actualizar el tipo de usuario:", error)
+    }
+  }
 
   const plans = [
     {
@@ -72,13 +97,6 @@ export default function LandingPage() {
     },
   ]
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showInice, setShowInice] = useState(true)
-  const [showPricing, setShowPricing] = useState(false)
-  const [showLogIn, setShowLogIn] = useState(false)
-
-  // Function to handle Google login
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider()
     try {
@@ -97,7 +115,6 @@ export default function LandingPage() {
     }
   }
 
-  // Function to handle email/password sign up
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -116,7 +133,6 @@ export default function LandingPage() {
     }
   }
 
-  // Function to handle email/password sign in
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -136,109 +152,200 @@ export default function LandingPage() {
   }
 
   const handleShowInice = () => {
-    setShowInice(true);
-    setShowPricing(false);
-  };
-  
+    setShowInice(true)
+    setShowPricing(false)
+  }
+
   const handleShowPricing = () => {
-    setShowPricing(true);
-    setShowInice(false);
-  };
+    setShowPricing(true)
+    setShowInice(false)
+  }
 
   const handleShowLogIn = () => {
-    setShowLogIn(true);
+    setShowLogIn(true)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black flex flex-col">
+    <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-[#121212] text-white" : "bg-gray-100 text-black"}`}>
 
-      {/* Cabecera o Nav */}
-      <header className="bg-gray-200 p-4 flex justify-between items-center rounded-lg shadow-lg">
-        <div className="text-2xl font-bold">Logo</div>
-
-        {/* Nav */}
+      <header className={`p-0 flex justify-between items-center rounded-lg shadow-lg ${theme === "dark" ? "bg-[#1E1E1E]" : "bg-gray-200"}`}>
+        <div className="text-2xl font-bold ml-8">Alice</div>
         <nav className="flex items-center space-x-4">
-        <Button onClick={handleShowInice} variant="link" className="hover:text-purple-400">Inicio</Button>
-          <Button onClick= {handleShowInice} variant="link" className="hover:text-purple-400">Características</Button>
-          <Button onClick= {handleShowPricing} variant="link" className="hover:text-purple-400">Precios</Button>
-          <a href="#" className="hover:text-purple-400">Contacto</a>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button onClick= {handleShowLogIn} variant="link" className="bg-black hover:bg-gray-800 text-white border border-gray-600">Iniciar Sesión</Button>
-            </DialogTrigger>
+          <Button
+            onClick={handleShowInice}
+            variant="link"
+            className={`hover:text-purple-400 ${theme === "dark" ? "text-white" : "text-black"}`}
+          >
+            Inicio
+          </Button>
+          <Button
+            onClick={handleShowInice}
+            variant="link"
+            className={`hover:text-purple-400 ${theme === "dark" ? "text-white" : "text-black"}`}
+          >
+            Características
+          </Button>
+          <Button
+            onClick={handleShowPricing}
+            variant="link"
+            className={`hover:text-purple-400 ${theme === "dark" ? "text-white" : "text-black"}`}
+          >
+            Precios
+          </Button>
+          <a href="#" className={`hover:text-purple-400 ${theme === "dark" ? "text-white" : "text-black"}`}>
+            Contacto
+          </a>
+          
+          {user ? (
             
-            {showLogIn && (
-              <DialogContent className="sm:max-w-[425px] bg-gray-200" aria-describedby={undefined}>
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-center text-black">Iniciar Sesión</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <Input
-                    type="email"
-                    placeholder="Correo electrónico"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-gray-300 text-black"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-gray-300 text-black"
-                  />
-                  <Button type="submit" className="w-full bg-black flex items-center justify-center text-white border border-black">
-                    Iniciar Sesión
+            <div className="mt-6 mb-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="w-full h-100 mb-4 flex items-center justify-start p-2">
+                    <Avatar className="h-10 w-10 mr-2">
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                      <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-semibold text-2x1 truncate">{user.displayName || user.email}</span>
                   </Button>
-                </form>
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-black">¿No tienes una cuenta?</p>
-                  <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-black">
-                    Registrarse
+                </PopoverTrigger>
+
+                <PopoverContent className="w-80 p-0 transform rounded-3xl">
+                  <div className="flex items-center mb-4">
+                    <Avatar className="h-16 w-16 mr-4 ml-4 mt-4">
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                      <AvatarFallback className="text-lg font-bold">{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold mt-4">{user.displayName || "Usuario"}</h3>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-400"></div>
+
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start mb-2 my-4"
+                    onClick={() => setShowLandingPage(true)}
+                  >
+                    <ChartColumnBig className="mr-2 h-4 w-4" />
+                    Contabilidad
                   </Button>
-                </div>
-                <div className="mt-4">
-                  <Button onClick={handleGoogleLogin} variant="outline" className="bg-black w-full flex items-center justify-center text-white border border-black">
-                    <FcGoogle className="mr-2" />
-                    Continuar con Google
+
+                  <div className="border-t border-gray-400"></div>
+
+                  <Button variant="ghost" size="sm" className="w-full justify-start my-4" onClick={() => setIsLogOutModalOpen(true)}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar sesión
                   </Button>
-                </div>
-              </DialogContent>
-            )}   
-          </Dialog>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+
+          ) : (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={handleShowLogIn}
+                  variant="link"
+                  className={`bg-black hover:bg-gray-800 text-white border border-gray-600 ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : ""}`}
+                >
+                  Iniciar Sesión
+                </Button>
+              </DialogTrigger>
+
+              {showLogIn && (
+                <DialogContent
+                  className={`sm:max-w-[425px] ${theme === "dark" ? "bg-[#1E1E1E] text-white" : "bg-gray-200"}`}
+                >
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-center">Iniciar Sesión</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <Input
+                      type="email"
+                      placeholder="Correo electrónico"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
+                    />
+                    <Button
+                      type="submit"
+                      className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                    >
+                      Iniciar Sesión
+                    </Button>
+                  </form>
+                  <div className="mt-4 text-center">
+                    <p className="text-sm">¿No tienes una cuenta?</p>
+                    <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-blue-600">
+                      Registrarse
+                    </Button>
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      onClick={handleGoogleLogin}
+                      variant="outline"
+                      className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                    >
+                      <FcGoogle className="mr-2" />
+                      Continuar con Google
+                    </Button>
+                  </div>
+                </DialogContent>
+              )}
+            </Dialog>
+
+          )}
         </nav>
-        
       </header>
 
-      {/* Contenido Principal */}
       <main className="flex-grow flex items-center justify-center px-4">
-        
-        {/* Inicio */}
         {showInice && (
           <div className="mx-auto w-full flex flex-col items-center gap-8">
             <h1 className="text-5xl font-bold mb-4">Simplifica tu Contabilidad y Administración</h1>
             <div className="max-w-4xl w-full flex flex-col md:flex-row items-center gap-8">
-              
-              {/* Lado Izquierdo */}
               <div className="flex-1 text-center md:text-left">
-                <p className="text-xl mb-6">Una herramienta accesible y personalizable diseñada para microemprendedores, que transforma la gestión financiera en una tarea sencilla y efectiva.</p>
+                <p className="text-xl mb-6">
+                  Una herramienta accesible y personalizable diseñada para microemprendedores, que transforma la gestión
+                  financiera en una tarea sencilla y efectiva.
+                </p>
               </div>
-
-              {/* Lado Derecho */}
-              <div className="flex-1 bg-gray-200 p-8 rounded-lg shadow-lg h-66">
-
+              <div
+                className={`flex-1 p-8 rounded-lg shadow-lg h-66 ${theme === "dark" ? "bg-[#1E1E1E]" : "bg-gray-200"}`}
+              >
                 <h2 className="text-2xl font-bold mb-6 text-center mb-4">Únete a nosotros</h2>
-                <p className="text-xl mb-6">Con Alice, lleva tu negocio hacia adelante con un buen manejo de contabilidad.</p>
+                <p className="text-xl mb-6">
+                  Con Alice, lleva tu negocio hacia adelante con un buen manejo de contabilidad.
+                </p>
                 <div className="flex items-center justify-center mb-40">
                   <Dialog>
                     <DialogTrigger asChild>
-                    <Button onClick= {handleShowLogIn} variant="link" className="bg-black hover:bg-gray-800 text-white border border-gray-600">Comienza Ya </Button>
+                      <Button
+                        onClick={handleShowLogIn}
+                        variant="link"
+                        className={`bg-black hover:bg-gray-800 text-white border border-gray-600 ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : ""}`}
+                      >
+                        Comienza Ya
+                      </Button>
                     </DialogTrigger>
-
                     {showLogIn && (
-                      <DialogContent className="sm:max-w-[425px] bg-gray-200">
+                      <DialogContent
+                        className={`sm:max-w-[425px] ${theme === "dark" ? "bg-[#1E1E1E] text-white" : "bg-gray-200"}`}
+                      >
                         <DialogHeader>
-                          <DialogTitle className="text-2xl font-bold text-center text-black">Iniciar Sesión</DialogTitle>
+                          <DialogTitle className="text-2xl font-bold text-center">Iniciar Sesión</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleSignIn} className="space-y-4">
                           <Input
@@ -246,53 +353,57 @@ export default function LandingPage() {
                             placeholder="Correo electrónico"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-gray-300 text-black"
+                            className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
                           />
                           <Input
                             type="password"
                             placeholder="Contraseña"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-gray-300 text-black"
+                            className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
                           />
-                          <Button type="submit" className="w-full bg-black flex items-center justify-center text-white border border-black">
+                          <Button
+                            type="submit"
+                            className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                          >
                             Iniciar Sesión
                           </Button>
                         </form>
                         <div className="mt-4 text-center">
-                          <p className="text-sm text-black">¿No tienes una cuenta?</p>
-                          <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-black">
+                          <p className="text-sm">¿No tienes una cuenta?</p>
+                          <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-blue-600">
                             Registrarse
                           </Button>
                         </div>
                         <div className="mt-4">
-                          <Button onClick={handleGoogleLogin} variant="outline" className="bg-black w-full flex items-center justify-center text-white border border-black">
+                          <Button
+                            onClick={handleGoogleLogin}
+                            variant="outline"
+                            className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                          >
                             <FcGoogle className="mr-2" />
                             Continuar con Google
                           </Button>
                         </div>
                       </DialogContent>
-                    )} 
-
+                    )}
                   </Dialog>
                 </div>
               </div>
-              
             </div>
           </div>
         )}
-
-        {/* Caracteristicas */}
-
       </main>
 
-      {/* Apartado de Planes */}
       {showPricing && (
         <div className="container mx-auto py-16 px-4">
           <h1 className="text-5xl font-bold text-center mb-16">Nuestros Planes</h1>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {plans.map((plan, index) => (
-              <Card key={index} className={`w-full h-full flex flex-col justify-between ${index === 1 ? 'border-2 border-black' : ''}`}>
+              <Card
+                key={index}
+                className={`w-full h-full flex flex-col justify-between ${index === 1 ? "border-2 border-black" : ""} ${theme === "dark" ? "bg-[#1E1E1E] text-white" : ""}`}
+              >
                 <CardHeader className="text-center pb-8">
                   <CardTitle className="text-3xl font-bold mb-4">{plan.name}</CardTitle>
                   <p className="text-5xl font-bold mb-2">{plan.price}</p>
@@ -307,12 +418,12 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  {plan.note && (
-                    <p className="mt-6 text-base italic">{plan.note}</p>
-                  )}
+                  {plan.note && <p className="mt-6 text-base italic">{plan.note}</p>}
                 </CardContent>
                 <CardFooter className="pt-8">
-                  <Button className="w-full text-xl py-6 bg-black text-white hover:bg-gray-800 transition-colors duration-300">
+                  <Button
+                    className={`w-full text-xl py-6 transition-colors duration-300 ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                  >
                     Seleccionar Plan
                   </Button>
                 </CardFooter>
@@ -322,11 +433,12 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Pie de Pagina */}
-      <footer className="p-4 text-center text-sm text-gray-500">
+      <footer className={`p-4 text-center text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
         © 2024 Alice. Todos los derechos reservados.
       </footer>
-
     </div>
   )
 }
+
+export default LandingPage
+
