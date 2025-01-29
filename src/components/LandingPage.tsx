@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Home, LogOut, Check, ChartColumnBig } from "lucide-react"
 import UserProfile from "./UserProfile"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { FcGoogle } from "react-icons/fc"
 import {
   signInWithPopup,
@@ -41,12 +41,13 @@ interface LandingPageProps {
   setIsLogOutModalOpen: (isOpen: boolean) => void
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setIsLoginModalOpen, setIsLogOutModalOpen }) => {
+const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setIsLoginModalOpen }) => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showInice, setShowInice] = useState(true)
   const [showPricing, setShowPricing] = useState(false)
   const [showLogIn, setShowLogIn] = useState(false)
+  const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
 
   const handleUpdateUserType = async (newUserType: string) => {
     try {
@@ -165,6 +166,24 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
     setShowLogIn(true)
   }
 
+// Función para cerrar sesión
+  const handleLogout = async () => {
+    try {
+      await auth.signOut()
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      })
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cerrar sesión. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-[#121212] text-white" : "bg-gray-100 text-black"}`}>
 
@@ -198,7 +217,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
           
           {user ? (
             
-            <div className="mt-6 mb-2">
+            <div className="mt-5 mb-1">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" className="w-full h-100 mb-4 flex items-center justify-start p-2">
@@ -247,65 +266,67 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
             
 
           ) : (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleShowLogIn}
-                  variant="link"
-                  className={`bg-black hover:bg-gray-800 text-white border border-gray-600 ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : ""}`}
-                >
-                  Iniciar Sesión
-                </Button>
-              </DialogTrigger>
+            <div className="mt-6 mb-6">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={handleShowLogIn}
+                    variant="link"
+                    className={`bg-black hover:bg-gray-800 text-white border border-gray-600 ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : ""}`}
+                  >
+                    Iniciar Sesión
+                  </Button>
+                </DialogTrigger>
 
-              {showLogIn && (
-                <DialogContent
-                  className={`sm:max-w-[425px] ${theme === "dark" ? "bg-[#1E1E1E] text-white" : "bg-gray-200"}`}
-                >
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-center">Iniciar Sesión</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <Input
-                      type="email"
-                      placeholder="Correo electrónico"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
-                    />
-                    <Input
-                      type="password"
-                      placeholder="Contraseña"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
-                    />
-                    <Button
-                      type="submit"
-                      className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
-                    >
-                      Iniciar Sesión
-                    </Button>
-                  </form>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm">¿No tienes una cuenta?</p>
-                    <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-blue-600">
-                      Registrarse
-                    </Button>
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      onClick={handleGoogleLogin}
-                      variant="outline"
-                      className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
-                    >
-                      <FcGoogle className="mr-2" />
-                      Continuar con Google
-                    </Button>
-                  </div>
-                </DialogContent>
-              )}
-            </Dialog>
+                {showLogIn && (
+                  <DialogContent
+                    className={`sm:max-w-[425px] ${theme === "dark" ? "bg-[#1E1E1E] text-white" : "bg-gray-200"}`}
+                  >
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold text-center">Iniciar Sesión</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                      <Input
+                        type="email"
+                        placeholder="Correo electrónico"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`w-full ${theme === "dark" ? "bg-[#2E2E2E] text-white" : "bg-gray-300 text-black"}`}
+                      />
+                      <Button
+                        type="submit"
+                        className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                      >
+                        Iniciar Sesión
+                      </Button>
+                    </form>
+                    <div className="mt-4 text-center">
+                      <p className="text-sm">¿No tienes una cuenta?</p>
+                      <Button variant="link" onClick={handleSignUp} className="text-blue-400 hover:text-blue-600">
+                        Registrarse
+                      </Button>
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        onClick={handleGoogleLogin}
+                        variant="outline"
+                        className={`w-full flex items-center justify-center ${theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-800"}`}
+                      >
+                        <FcGoogle className="mr-2" />
+                        Continuar con Google
+                      </Button>
+                    </div>
+                  </DialogContent>
+                )}
+              </Dialog>
+            </div>
 
           )}
         </nav>
@@ -436,7 +457,30 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
       <footer className={`p-4 text-center text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
         © 2024 Alice. Todos los derechos reservados.
       </footer>
+
+      {/* Modal de confirmacion de cierre */}
+      <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
+            <DialogContent aria-describedby={undefined}>
+              <DialogHeader>
+                <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+                  <DialogTitle>¿Cerrar Secion?</DialogTitle>
+                </div>
+                <DialogDescription>
+                  Confirma el cierre de la secion actual
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+                <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
+                onClick={()=> {
+                  handleLogout()
+                  setIsLogOutModalOpen(false)}}>
+                  Confirmar
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
     </div>
+    
   )
 }
 

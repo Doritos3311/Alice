@@ -40,7 +40,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -128,8 +128,22 @@ type InventoryItem = {
 // Definicion Factura
 type InvoiceItem = {
   id: string
+  tipoFactura: 'emitida' | 'recibida';
   fechaEmision?: any;
   [key: string]: any
+}
+
+type TotalesFactura = {
+  SubTotal12IVA: number
+  SubTotal0IVA: number
+  SubTotalExentoIVA: number
+  SubTotalNoObjetoIVA: number
+  Descuento: number
+  SubTotal: number
+  ICE: number
+  IVA12: number
+  Propina: number
+  ValorTotalFinal: number
 }
 
 // Definicion Contenido Factura
@@ -173,6 +187,7 @@ type AppConfig = {
   libroDiario: SectionConfig
   inventario: SectionConfig
   facturacion: SectionConfig
+  facturacionRecibida: SectionConfig  // Añade esta línea
 }
 
 {/* Configuracion de Items */}
@@ -192,6 +207,7 @@ export default function ContabilidadApp() {
 
   // Estado de Inicio de Aplicacion
   const [activeTab, setActiveTab] = useState("grupos-trabajo")
+  const [identificacionAdquiriente, setIdentificacionAdquiriente] = useState("v0")
 
   {/* Estado de tipo de Data */}
 
@@ -215,6 +231,23 @@ export default function ContabilidadApp() {
   const [isEditingInvoice, setIsEditingInvoice] = useState(false);
   const [nombreEmisor, setNombreEmisor] = useState("")
   const [correoEmisor, setCorreoEmisor] = useState("")
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [isFacturacionOpen, setIsFacturacionOpen] = useState(false)
+  const [isInvoiceReceivedModalOpen, setIsInvoiceReceivedModalOpen] = useState(false)
+  const [totales, setTotales] = useState({
+    SubTotal12IVA: 0,
+    SubTotal0IVA: 0,
+    SubTotalExentoIVA: 0,
+    SubTotalNoObjetoIVA: 0,
+    Descuento: 0,
+    SubTotal: 0,
+    ICE: 0,
+    IVA12: 0,
+    Propina: 0,
+    ValorTotalFinal: 0,
+  })
+  const [empresaGuardada, setEmpresaGuardada] = useState("")
+
 
   // Estados Dashboard
   const [dashboardType, setDashboardType] = useState("financial")
@@ -286,7 +319,8 @@ export default function ContabilidadApp() {
   const [appConfig, setAppConfig] = useState<AppConfig>({
     libroDiario: {},
     inventario: {},
-    facturacion: {}
+    facturacion: {},
+    facturacionRecibida: {}  // Añade esta línea
   })
 
   // Estados para Autocompletar Campos
@@ -380,7 +414,7 @@ export default function ContabilidadApp() {
       const defaultConfig: AppConfig = {
         //Datos por defecto libro diario
         libroDiario: {
-          fecha: { name: 'Fecha' , type: 'date'},
+          fecha: { name: 'Fecha', type: 'date' },
           nombreCuenta: { name: 'Nombre de Cuenta', type: 'text' },
           descripcion: { name: 'Descripción', type: 'text' },
           idElemento: { name: 'Número de Ítem (ID)', type: 'text' },
@@ -390,7 +424,7 @@ export default function ContabilidadApp() {
         //Datos por defecto inventario
         inventario: {
           idElemento: { name: 'Número de Ítem (ID)', type: 'text' },
-          category: { name: 'Categoría', type: 'text'},
+          category: { name: 'Categoría', type: 'text' },
           descripcion: { name: 'Descripción del Producto', type: 'text' },
           cantidadDisponible: { name: 'Cantidad Disponible', type: 'number' },
           stockMinimo: { name: 'Stock Mínimo', type: 'number' },
@@ -399,8 +433,22 @@ export default function ContabilidadApp() {
           fechaIngreso: { name: 'Fecha de Ingreso', type: 'date' },
           proveedor: { name: 'Proveedor', type: 'text' }
         },
-        //Datos por defecto facturacion
+        //Datos por defecto facturacion Emitida
         facturacion: {
+          idElemento: { name: 'Número de Ítem (ID)', type: 'text' },
+          numeroFactura: { name: 'Número de Factura', type: 'text' },
+          fechaEmision: { name: 'Fecha de Emisión', type: 'date' },
+          nombreCliente: { name: 'Nombre del Cliente', type: 'text' },
+          detallesProducto: { name: 'Detalles del Producto/Servicio', type: 'text' },
+          cantidad: { name: 'Cantidad de Productos/Servicios', type: 'number' },
+          precioUnitario: { name: 'Precio Unitario', type: 'number' },
+          subtotal: { name: 'Subtotal', type: 'number' },
+          impuestos: { name: 'Impuestos Aplicables', type: 'number' },
+          total: { name: 'Total a Pagar', type: 'number' },
+          metodoPago: { name: 'Método de Pago', type: 'text' }
+        },
+        //Datos por defecto de facturacion recibida
+        facturacionRecibida: {
           idElemento: { name: 'Número de Ítem (ID)', type: 'text' },
           numeroFactura: { name: 'Número de Factura', type: 'text' },
           fechaEmision: { name: 'Fecha de Emisión', type: 'date' },
@@ -448,7 +496,11 @@ export default function ContabilidadApp() {
       const facturacionUnsubscribe = onSnapshot(
         collection(db, `users/${uidToUse}/facturacion`),
         (facturacionSnapshot) => {
-          const facturacionData = facturacionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const facturacionData = facturacionSnapshot.docs.map(doc => ({
+            id: doc.id,
+            tipoFactura: doc.data().tipoFactura || 'emitida', // Valor por defecto para facturas existentes
+            ...doc.data()
+          })) as InvoiceItem[];
           setInvoiceItems(facturacionData);
         }
       );
@@ -643,6 +695,7 @@ export default function ContabilidadApp() {
   // Funcion para Cancelar Facturacion
   const confirmCancelFacturacion = () => {
     cancelActionFacturacion();
+    setDetallesFactura([{ idElemento: "", cantidad: "0", detalle: "", precioUnitario: "0", valorTotal: "0" }])
     setShowCancelConfirmModalFacturacion(false);
   };
 
@@ -1007,8 +1060,12 @@ export default function ContabilidadApp() {
 
   {/* Facturacion */}
 
+  const handleCreateInvoice = (tipo: 'emitida' | 'recibida') => () => {
+    handleAddInvoiceItem(tipo);
+  };
+
   // Función para agregar una nueva factura
-  const handleAddInvoiceItem = async () => {
+  const handleAddInvoiceItem = async (tipo: 'emitida' | 'recibida') => {
     if (!viewingUID || !db) {
       toast({
         title: "Error",
@@ -1019,47 +1076,37 @@ export default function ContabilidadApp() {
     }
   
     try {
-      // Calcular los totales
-      const { sumaTotalFilas, iva12, subTotal12IVA } = calcularTotales(detallesFactura);
-      const valorTotal = calcularValorTotal({
-        detalles: detallesFactura,
-        sumaTotalFilas,
-        iva12,
-        id: ""
-      });
+      const totalesFactura = calcularTotalesFactura(detallesFactura)
       
       // Recopilar todos los datos de la factura
       const newInvoiceData = {
         ...newInvoiceItem,
+        tipoFactura: tipo,
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
         nombreEmisor: nombreEmisor,
         correoEmisor: correoEmisor || user?.email || "Sin correo",
-        rucEmisor: (document.getElementById('rucEmisor') as HTMLInputElement)?.value,
-        numeroAutorizacion: (document.getElementById('numeroAutorizacion') as HTMLInputElement)?.value,
-        numeroFactura: (document.getElementById('numeroFactura') as HTMLInputElement)?.value,
-        fechaAutorizacion: (document.getElementById('fechaAutorizacion') as HTMLInputElement)?.value,
-        direccionMatriz: (document.getElementById('direccionMatriz') as HTMLInputElement)?.value,
-        direccionSucursal: (document.getElementById('direccionSucursal') as HTMLInputElement)?.value,
-        identificacionAdquiriente: (document.getElementById('identificacionAdquiriente') as HTMLInputElement)?.value,
-        fechaEmision: (document.getElementById('fechaEmision') as HTMLInputElement)?.value,
-        rucCi: (document.getElementById('rucCi') as HTMLInputElement)?.value,
-        guiaRemision: (document.getElementById('guiaRemision') as HTMLInputElement)?.value,
-        formaPago: (document.getElementById('formaPago') as HTMLInputElement)?.value,
-        otros: (document.getElementById('otros') as HTMLInputElement)?.value,
+        rucEmisor: (document.getElementById("rucEmisor") as HTMLInputElement)?.value,
+        numeroAutorizacion: (document.getElementById("numeroAutorizacion") as HTMLInputElement)?.value,
+        numeroFactura: (document.getElementById("numeroFactura") as HTMLInputElement)?.value,
+        fechaAutorizacion: (document.getElementById("fechaAutorizacion") as HTMLInputElement)?.value,
+        direccionMatriz: (document.getElementById("direccionMatriz") as HTMLInputElement)?.value,
+        direccionSucursal: (document.getElementById("direccionSucursal") as HTMLInputElement)?.value,
+        identificacionAdquiriente: (document.getElementById("identificacionAdquiriente") as HTMLInputElement)?.value,
+        fechaEmision: (document.getElementById("fechaEmision") as HTMLInputElement)?.value,
+        rucCi: (document.getElementById("rucCi") as HTMLInputElement)?.value,
+        guiaRemision: (document.getElementById("guiaRemision") as HTMLInputElement)?.value,
+        formaPago: (document.getElementById("formaPago") as HTMLInputElement)?.value,
+        otros: (document.getElementById("otros") as HTMLInputElement)?.value,
         detalles: detallesFactura,
-        // Agregar aquí los campos adicionales como subtotales, IVA, etc.
-        subtotal12iva: subTotal12IVA.toFixed(2),
-        iva12: iva12.toFixed(2),
-        sumaTotalFilas: sumaTotalFilas.toFixed(2),
-        valortotal: valorTotal.toFixed(2),
-      };
+        ...totalesFactura,
+      }
   
       // Guardar la factura en Firebase
       const docRef = await addDoc(collection(db, `users/${viewingUID}/facturacion`), newInvoiceData);
+
+      const createdInvoice = { ...newInvoiceData, id: docRef.id };
   
       // Actualizar el estado local
-      const createdInvoice = { ...newInvoiceData, id: docRef.id };
-      setInvoiceItems(prevItems => [...prevItems, createdInvoice]);
       setLastCreatedInvoice(createdInvoice);
   
       // Limpiar el formulario y cerrar el modal
@@ -1106,6 +1153,57 @@ export default function ContabilidadApp() {
     const propina = Number.parseFloat(invoice.propina?.toString() || "0")
   
     return sumaTotalFilas + subTotal + ice + iva12 + propina
+  }
+
+  const calcularTotalesFactura = (detalles: any[]): TotalesFactura => {
+    let subTotal12IVA = 0
+    let subTotal0IVA = 0
+  
+    detalles.forEach((detalle) => {
+      const valorTotal = Number.parseFloat(detalle.valorTotal) || 0
+      if (detalle.tipoIVA === "12") {
+        subTotal12IVA += valorTotal
+      } else if (detalle.tipoIVA === "0") {
+        subTotal0IVA += valorTotal
+      }
+    })
+  
+    const subTotalExentoIVA = Number.parseFloat(
+      (document.getElementById("SubTotalExentoIVA") as HTMLInputElement)?.value || "0",
+    )
+    const subTotalNoObjetoIVA = Number.parseFloat(
+      (document.getElementById("SubTotalNoObjetoIVA") as HTMLInputElement)?.value || "0",
+    )
+    const descuento = Number.parseFloat((document.getElementById("Descuento") as HTMLInputElement)?.value || "0")
+    const ice = Number.parseFloat((document.getElementById("ICE") as HTMLInputElement)?.value || "0")
+    const propina = Number.parseFloat((document.getElementById("Propina") as HTMLInputElement)?.value || "0")
+  
+    const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento
+    const iva12 = subTotal12IVA * 0.12
+    const valorTotal = subTotal + ice + iva12 + propina
+  
+    return {
+      SubTotal12IVA: subTotal12IVA,
+      SubTotal0IVA: subTotal0IVA,
+      SubTotalExentoIVA: subTotalExentoIVA,
+      SubTotalNoObjetoIVA: subTotalNoObjetoIVA,
+      Descuento: descuento,
+      SubTotal: subTotal,
+      ICE: ice,
+      IVA12: iva12,
+      Propina: propina,
+      ValorTotalFinal: valorTotal,
+    }
+  }
+  
+  // Función para actualizar los campos de totales en el formulario
+  const actualizarCamposTotales = (totales: TotalesFactura) => {
+    Object.entries(totales).forEach(([key, value]) => {
+      const input = document.getElementById(key) as HTMLInputElement
+      if (input) {
+        input.value = value.toFixed(2)
+      }
+    })
   }
 
   // Función para editar una factura
@@ -1217,48 +1315,60 @@ export default function ContabilidadApp() {
 
   //Funcion de detalles de factura
   const handleDetalleChange = (index: number, field: string, value: string) => {
-    const updatedDetalles = [...detallesFactura];
-    updatedDetalles[index] = { ...updatedDetalles[index], [field]: value };
+    const newDetalles = [...detallesFactura]
+    newDetalles[index] = { ...newDetalles[index], [field]: value }
   
-    // Recalcular `valorTotal` para el detalle modificado
-    if (field === 'cantidad' || field === 'precioUnitario') {
-      const cantidad = parseFloat(updatedDetalles[index].cantidad || "0");
-      const precioUnitario = parseFloat(updatedDetalles[index].precioUnitario || "0");
-      updatedDetalles[index].valorTotal = (cantidad * precioUnitario).toFixed(2);
+    if (field === "cantidad" || field === "precioUnitario") {
+      const cantidad = Number.parseFloat(newDetalles[index].cantidad) || 0
+      const precioUnitario = Number.parseFloat(newDetalles[index].precioUnitario) || 0
+      newDetalles[index].valorTotal = (cantidad * precioUnitario).toFixed(2)
     }
-  };
+  
+    setDetallesFactura(newDetalles)
+  
+    // Calcular y actualizar los totales de la factura
+    //const totalesFactura = calcularTotalesFactura()
+    //actualizarCamposTotales(totalesFactura)
+  }
   
 
   {/* Servicios */}
 
   const handleAddService = async () => {
-    if (!viewingUID) return
-
+    if (!viewingUID) return;
+  
     try {
+      const selectedItem = inventoryItems.find(item => item.idElemento === newService.usoDeItem);
       const serviceToAdd = {
         ...newService,
+        id: newService.id || `service-${Date.now()}`,
         fechaCreacion: new Date().toISOString(),
-      }
-      const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd)
-      const addedService = { ...serviceToAdd, id: docRef.id }
-      setIsCreatingService(false)
-      setServicios([...servicios, addedService])
+        gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
+        gastosPorServicio: (parseFloat(newService.gastosPorItem) * newService.cantidad).toString(),
+        cantidad: newService.cantidad || 1,
+      };
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
+      const addedService = { ...serviceToAdd, id: docRef.id };
+      setIsCreatingService(false);
+      setServicios([...servicios, addedService]);
       setNewService({
         id: "",
         nombre: "",
         descripcion: "",
         usoDeItem: "",
         costoDeServicio: "",
-      })
-
+        gastosPorItem: "",
+        gastosPorServicio: "",
+        cantidad: 1,
+      });
     } catch (error) {
-      console.error("Error al agregar servicio:", error)
+      console.error("Error al agregar servicio:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
-      })
+      });
     }
-  }
+  };
 
   const handleEditService = (service: Service) => {
     setNewService({ ...service })
@@ -1453,117 +1563,106 @@ export default function ContabilidadApp() {
 
   // Filtrado de facturas
   const filteredInvoiceItems = useMemo(() => {
-    return invoiceItems.filter(item => {// Devuelva el filtro seleccionado de la factura seleccionado por el usuario
-      const itemDate = new Date(item.fechaEmision)
-      switch (invoiceFilterType) {// Analiza el filtro devuelto segun el nombre para darle la funcion
-        case "day"://Si es = dia entonces
-          return item.fechaEmision === invoiceFilterDate //Devuelve el filtro ejecutario si en base al campo de fecha de emision que sea igual al filtro devuelto por el usuario
-        case "month":// Si es = mes entonce
+    return invoiceItems.filter(item => {
+      const itemDate = new Date(item.fechaEmision);
+      const isCorrectType = activeTab === "facturacion-emitidas" ? item.tipoFactura === 'emitida' : item.tipoFactura === 'recibida';
+      
+      if (!isCorrectType) return false;
+  
+      switch (invoiceFilterType) {
+        case "day":
+          return item.fechaEmision === invoiceFilterDate;
+        case "month":
           return typeof item.fechaEmision === "string" && item.fechaEmision.startsWith(invoiceFilterMonth);
-        case "year":// Si es = año entonces
+        case "year":
           return typeof item.fechaEmision === "string" && item.fechaEmision.startsWith(invoiceFilterYear);
         default:
-          return true
+          return true;
       }
-    })
-  }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear])//Devolver las funciones en base al analisis de la funcion filteredInvoiceItems
+    });
+  }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear, activeTab]);//Devolver las funciones en base al analisis de la funcion filteredInvoiceItems
 
 
   {/* Vinculacion entre tablas */}
 
   // Función para Seleccionar Item en Facturacion
-  const handleInventoryItemSelect = (itemId: string, index: number) => {
-    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);
-    if (selectedItem) {
+  const handleServiceSelect = (serviceId: string, index: number) => {
+    const selectedService = servicios.find(service => service.id === serviceId);
+    if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
-        idElemento: selectedItem.idElemento,
-        cantidad: '1', // Valor por defecto, el usuario puede cambiarlo
-        detalle: selectedItem.descripcion,
-        precioUnitario: selectedItem.precioVenta.toString(),
-        valorTotal: selectedItem.precioVenta.toString()
+        idElemento: selectedService.id || `service-${Date.now()}`,
+        cantidad: '1',
+        detalle: selectedService.nombre,
+        precioUnitario: selectedService.costoDeServicio,
+        valorTotal: selectedService.costoDeServicio
       };
       setDetallesFactura(newDetalles);
-      setSelectedInventoryItem(selectedItem);
+      setSelectedService(selectedService);
     }
-  };
-
-  // Actualiza el valor total de una fila en los detalles de la factura
-  const updateValorTotal = (index: number) => {
-    const detalle = detallesFactura[index];
-    const cantidad = parseFloat(detalle.cantidad) || 0;
-    const precioUnitario = parseFloat(detalle.precioUnitario) || 0;
-    const valorTotal = (cantidad * precioUnitario).toFixed(2);
-    
-    const newDetalles = [...detallesFactura];
-    newDetalles[index] = { ...detalle, valorTotal };
-    setDetallesFactura(newDetalles);
   };
 
   // Función para autocompletar la factura en el libro diario 
   const handleAutoCompleteLibroDiario = async () => {
-  
-    if (!user) {// Si usuario no existe
-      console.error("Usuario no autenticado"); // Consola error
-      toast({// error detallado
+    if (!user) {
+      console.error("Usuario no autenticado");
+      toast({
         title: "Error",
         description: "Debes iniciar sesión para realizar esta acción.",
         variant: "destructive",
       });
       return;
     }
-  
-    if (!selectedInventoryItem) { //si item seleccionado no existe
-      console.error("No se ha seleccionado un ítem del inventario"); //error
-      toast({// error
+
+    if (!selectedService) {
+      console.error("No se ha seleccionado un servicio");
+      toast({
         title: "Error",
-        description: "Por favor, selecciona un ítem del inventario.",
+        description: "Por favor, selecciona un servicio.",
         variant: "destructive",
       });
       return;
     }
-  
-    if (!lastCreatedInvoice) { //si ultimo item seleccionado no existe
-      console.error("No hay factura creada recientemente"); //error
-      toast({ //error
+
+    if (!lastCreatedInvoice) {
+      console.error("No hay factura creada recientemente");
+      toast({
         title: "Error",
         description: "No hay factura reciente para autocompletar en el libro diario.",
         variant: "destructive",
       });
       return;
     }
-  
-    try {// Intentar
+
+    try {
       const valorTotal = lastCreatedInvoice.detalles.reduce((total: number, detalle: { valorTotal: string; }) => 
         total + parseFloat(detalle.valorTotal), 0);
 
-      const newLibroDiarioItem = { // Crear un metodo con los datos para una nueva tabla
-        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0], // Valor fecha segun fecha de facturacion
-        nombreCuenta: "Venta "+`Factura #${lastCreatedInvoice.numeroFactura}`, // Nombre de cuenta vacio
-        descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion, // Descriocion segun descripcion facturacion
-        idElemento: selectedInventoryItem.idElemento || "", // IdElemento segun idElemento de inventario
-        haber: 0, // Haber 0
-        debe: valorTotal.toFixed(2) // Debe segun total de facturacion o 0
+      const newLibroDiarioItem = {
+        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0],
+        nombreCuenta: `Venta Servicio - Factura #${lastCreatedInvoice.numeroFactura}`,
+        descripcion: selectedService.descripcion || lastCreatedInvoice.detallesProducto,
+        idElemento: selectedService.id || "",
+        haber: valorTotal.toFixed(2),
+        debe: "0",
       };
       
-      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);// Agrega a la base de datos el nuevo documento
-      console.log("Documento agregado con ID:", docRef.id); // Control de funcionamiento
-  
-      setData(prevData => [...prevData, { ...newLibroDiarioItem, id: docRef.id }]);// Devuelve los valores por defecto
-  
-      toast({ //error detallado
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);
+      console.log("Documento agregado con ID:", docRef.id);
+
+      toast({
         title: "Éxito",
-        description: "Se ha agregado el ítem al libro diario.",
+        description: "Se ha agregado el servicio al libro diario.",
       });
-  
-      setShowAutoCompleteModal(false); // Cerrar el modal de autocompletar 
-      setSelectedInventoryItem(null); // Vacia la funcion setSelectedInventoryItem
-      setLastCreatedInvoice(null); // Vacia la funcion setLastCreatedInvoice
-    } catch (error) { //error
-      console.error("Error al agregar ítem al libro diario:", error);
+
+      setShowAutoCompleteModal(false);
+      setSelectedService(null);
+      setLastCreatedInvoice(null);
+    } catch (error) {
+      console.error("Error al agregar servicio al libro diario:", error);
       toast({
         title: "Error",
-        description: "Hubo un problema al agregar el ítem al libro diario. Por favor, intenta de nuevo.",
+        description: "Hubo un problema al agregar el servicio al libro diario. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
@@ -1584,6 +1683,14 @@ export default function ContabilidadApp() {
   permisosUsuario.permisoDashboard &&
   permisosUsuario.permisoGenerarRegistros &&
   permisosUsuario.permisoServicios;
+
+  useEffect(() => {
+    if (isInvoiceModalOpen && newInvoiceItem.tipoFactura === "recibida") {
+      setIdentificacionAdquiriente("v0")
+    } else {
+      setIdentificacionAdquiriente("")
+    }
+  }, [isInvoiceModalOpen, newInvoiceItem.tipoFactura])
 
   return (
     <>
@@ -1610,6 +1717,7 @@ export default function ContabilidadApp() {
               </div>
 
               {user ? (
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" className="w-full h-100 mb-4 flex items-center justify-start p-2">
@@ -1654,6 +1762,7 @@ export default function ContabilidadApp() {
                     </Button>
                   </PopoverContent>
                 </Popover>
+
               ) : (
                 <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
                   Iniciar sesión
@@ -1682,14 +1791,37 @@ export default function ContabilidadApp() {
                 </Button>
 
                 {/* Btn Registro De Facturacion */}
-                <Button
-                  variant={activeTab === "facturacion" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => setActiveTab("facturacion")}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Registro de Facturación
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
+                    className="w-full justify-start mb-2"
+                    onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Facturación
+                    {isFacturacionOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+                  </Button>
+                  {isFacturacionOpen && (
+                    <div className="pl-4 space-y-2 mb-2">
+                      <Button
+                        variant={activeTab === "facturacion-emitidas" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setActiveTab("facturacion-emitidas")}
+                      >
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Facturas Emitidas
+                      </Button>
+                      <Button
+                        variant={activeTab === "facturacion-recibidas" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setActiveTab("facturacion-recibidas")}
+                      >
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Facturas Recibidas
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Btn Libro Diario */}
                 <Button
@@ -2325,8 +2457,8 @@ export default function ContabilidadApp() {
               </AccesoRestringido>
             )}  
 
-            {/* Facturacion Interfaz Estilo */}
-            {activeTab === "facturacion" && (
+            {/* Facturacion Emitidas Interfaz Estilo */}
+            {activeTab === "facturacion-emitidas" && (
               <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
                <div>
                  <div className="flex justify-between items-center mb-4 mr-10">
@@ -2343,7 +2475,7 @@ export default function ContabilidadApp() {
                        Editar Campos
                      </Button>
                      {/* Crear Factura */}
-                     <Button onClick={() => setIsInvoiceModalOpen(true)}>Crear Factura</Button>
+                     <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
 
                      {/* Seleccionar Fecha */}
                      <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
@@ -2427,7 +2559,9 @@ export default function ContabilidadApp() {
                           </CardContent>
 
                           <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                            <p className="text-sm font-semibold text-muted-foreground">Total: ${factura.valorTotal?.toFixed(2) || "0.00"}</p>
+                            <p className="text-sm font-semibold text-muted-foreground">
+                              Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                            </p>
                             <Button
                                 size="icon"
                                 onClick={() => handleViewInvoice(factura)}
@@ -2449,6 +2583,133 @@ export default function ContabilidadApp() {
                     </div>
                   )}
 
+                </div>
+              </AccesoRestringido>
+            )}
+
+            {/* Facturacion Recibidas Interfaz Estilo */}
+            {activeTab === "facturacion-recibidas" && (
+              <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
+                <div>
+                  <div className="flex justify-between items-center mb-4 mr-10">
+                    <h2 className="text-3xl font-bold">Registro de Facturación Recibida</h2>
+                  </div>
+
+                  <div className="border-t border-gray-400 my-4"></div>
+
+                  <div className="flex justify-between items-center mb-4 mr-10">
+                    <div className="mb-4 flex items-center space-x-4">
+                      {/* Btn Editar Campos */}
+                      <Button onClick={() => openFieldEditor('facturacionRecibida')}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Campos
+                      </Button>
+                      {/* Crear Factura Recibida */}
+                      <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
+
+                      {/* Seleccionar Fecha */}
+                      <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                        <SelectTrigger className="w-[180px] ml-4">
+                          <SelectValue placeholder="Filtrar por fecha" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas las fechas</SelectItem>
+                          <SelectItem value="day">Por día</SelectItem>
+                          <SelectItem value="month">Por mes</SelectItem>
+                          <SelectItem value="year">Por año</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {invoiceFilterType === "day" && (
+                        <Input
+                          type="date"
+                          value={invoiceFilterDate}
+                          onChange={(e) => setInvoiceFilterDate(e.target.value)}
+                          className="ml-4" />
+                      )}
+                      {invoiceFilterType === "month" && (
+                        <Input
+                          type="month"
+                          value={invoiceFilterMonth}
+                          onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                          className="ml-4" />
+                      )}
+                      {invoiceFilterType === "year" && (
+                        <Input
+                          type="number"
+                          value={invoiceFilterYear}
+                          onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                          min="1900"
+                          max="2099"
+                          step="1"
+                          className="ml-4" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {hayItems(filteredInvoiceItems.filter(item => item.tipoFactura === 'recibida')) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredInvoiceItems
+                        .filter(factura => factura.tipoFactura === 'recibida')
+                        .map((factura) => (
+                          <Card key={factura.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg">
+                            <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                              <CardTitle className="text-xl font-bold flex justify-between items-center">
+                                <span>Factura N°{factura.numeroFactura}</span>
+                              </CardTitle>
+                            </CardHeader>
+                            
+                            <CardContent className="flex-grow p-4 bg-card">
+                              <div className="space-y-2">
+                                <p className="text-sm flex items-center">
+                                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Emisión:</span>
+                                  <span className="ml-2">{factura.fechaEmision}</span>
+                                </p>
+                                <p className="text-sm flex items-center">
+                                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Cliente:</span>
+                                  <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                                </p>
+                                <p className="text-sm flex items-center">
+                                  <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Emisor:</span>
+                                  <span className="ml-2 truncate">
+                                    {factura.nombreEmisor}
+                                  </span>
+                                </p>
+                                <p className="text-sm flex items-center">
+                                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Correo:</span>
+                                  <span className="ml-2 truncate">
+                                    {factura.correoEmisor}
+                                  </span>
+                                </p>
+                              </div>
+                            </CardContent>
+
+                            <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                              <p className="text-sm font-semibold text-muted-foreground">
+                                Total: ${typeof factura.valorTotal === 'number' ? factura.valorTotal.toFixed(2) : "0.00"}
+                              </p>
+                              <Button
+                                  size="icon"
+                                  onClick={() => handleViewInvoice(factura)}
+                                >
+                                  <Eye className="h-5 w-5"/>
+                                </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="flex justify-center items-center h-[calc(62vh)]">
+                      <MensajeNoItems
+                        mensaje="Aún no has agregado ninguna factura recibida."
+                        accion={() => setIsInvoiceReceivedModalOpen(true)}
+                        textoBoton="Crear Nueva Factura Recibida"
+                      />
+                    </div>
+                  )}
                 </div>
               </AccesoRestringido>
             )}
@@ -3071,14 +3332,28 @@ export default function ContabilidadApp() {
 
                       {/* Inferior Derecha */}
                       <div className="border p-4 rounded-md space-y-2">
-                        {['Sub. Total 12% IVA', 'Sub. Total 0% IVA', 'Sub. Total Exento IVA', 'Sub. Total No Objeto IVA', 'Descuento', 'Sub Total', 'ICE', 'IVA 12%', 'Propina', 'Valor Total'].map((item, index) => (
-                          <div key={index} className="flex justify-between">
-                            <span>{item}:</span>
-                            <Input 
-                              className={`${!isEditingInvoice ? 'bg-background' : ''} w-1/3`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                              value={currentInvoice[item.toLowerCase().replace(/\s/g, '')] || ''} 
-                              onChange={(e) => setCurrentInvoice({...currentInvoice, [item.toLowerCase().replace(/\s/g, '')]: e.target.value})}
+                        {[
+                          { id: "SubTotal12IVA", label: "Sub. Total 12% IVA" },
+                          { id: "SubTotal0IVA", label: "Sub. Total 0% IVA" },
+                          { id: "SubTotalExentoIVA", label: "Sub. Total Exento IVA" },
+                          { id: "SubTotalNoObjetoIVA", label: "Sub. Total No Objeto IVA" },
+                          { id: "Descuento", label: "Descuento" },
+                          { id: "SubTotal", label: "Sub Total" },
+                          { id: "ICE", label: "ICE" },
+                          { id: "IVA12", label: "IVA 12%" },
+                          { id: "Propina", label: "Propina" },
+                          { id: "ValorTotalFinal", label: "Valor Total" },
+                        ].map((item) => (
+                          <div key={item.id} className="space-y-2">
+                            <Label htmlFor={item.id}>{item.label}:</Label>
+                            <Input
+                              id={item.id}
+                              type="number"
+                              placeholder="0.00"
+                              value={currentInvoice[item.id] || ""}
+                              onChange={(e) => setCurrentInvoice({ ...currentInvoice, [item.id]: e.target.value })}
+                              className={`${!isEditingInvoice ? "bg-background" : ""}`}
+                              style={!isEditingInvoice ? { color: "white", opacity: 1, cursor: "default" } : {}}
                               disabled={!isEditingInvoice}
                             />
                           </div>
@@ -3113,12 +3388,14 @@ export default function ContabilidadApp() {
             </DialogContent>
           </Dialog>
 
-          {/* Modal para agregar una nueva factura */}
+          {/* Modal para emitir una nueva factura */}
           <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
             <DialogContent className="max-w-4xl" aria-describedby={undefined}>
+
               <DialogHeader>
                 <DialogTitle>Crear nueva factura</DialogTitle>
               </DialogHeader>
+
               <ScrollArea className="max-h-[80vh]">
                 <div className="space-y-4 p-4">
                   {/* Cabecera */}
@@ -3203,16 +3480,16 @@ export default function ContabilidadApp() {
                           <tr key={index}>
                             <td>
                               <Select
-                                value={detalle.idElemento}
-                                onValueChange={(value) => handleInventoryItemSelect(value, index)}
+                                value={detalle.idElemento || ""}
+                                onValueChange={(value) => handleServiceSelect(value, index)}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Seleccionar item" />
+                                  <SelectValue placeholder="Seleccionar servicio" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {inventoryItems.map((item) => (
-                                    <SelectItem key={item.idElemento} value={item.idElemento}>
-                                      {item.idElemento}
+                                  {servicios.map((servicio) => (
+                                    <SelectItem key={servicio.id} value={servicio.id || `service-${Date.now()}`}>
+                                      {servicio.nombre}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -3256,12 +3533,46 @@ export default function ContabilidadApp() {
 
                     {/* Inferior Derecha */}
                     <div className="border p-4 rounded-md space-y-2">
-                      {['Sub. Total 12% IVA', 'Sub. Total 0% IVA', 'Sub. Total Exento IVA', 'Sub. Total No Objeto IVA', 'Descuento', 'Sub Total', 'ICE', 'IVA 12%', 'Propina', 'Valor Total'].map((item, index) => (
-                        <div key={index} className="flex justify-between">
-                          <span>{item}:</span>
-                          <Input className="w-1/2" type="number" />
-                        </div>
-                      ))}
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
+                        <Input id="SubTotal12IVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
+                        <Input id="SubTotal0IVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
+                        <Input id="SubTotalExentoIVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
+                        <Input id="SubTotalNoObjetoIVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="Descuento">Descuento:</Label>
+                        <Input id="Descuento" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal">Sub Total:</Label>
+                        <Input id="SubTotal" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ICE">ICE:</Label>
+                        <Input id="ICE" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="IVA12">IVA 12%:</Label>
+                        <Input id="IVA12" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="Propina">Propina:</Label>
+                        <Input id="Propina" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
+                        <Input id="ValorTotalFinal" type="number" placeholder="0.00" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3273,10 +3584,227 @@ export default function ContabilidadApp() {
                   setNewInvoiceItem({} as InvoiceItem);
                   setIsInvoiceModalOpen(false);
                 })}>Cancelar</Button>
-                <Button onClick={handleAddInvoiceItem}>Crear</Button>
+                <Button onClick={handleCreateInvoice('emitida')}>Crear</Button>
               </DialogFooter>
             </DialogContent>
 
+          </Dialog>
+
+          {/* Modal para registrar una nueva factura */}
+          <Dialog open={isInvoiceReceivedModalOpen} onOpenChange={setIsInvoiceReceivedModalOpen}>
+            <DialogContent className="max-w-4xl" aria-describedby={undefined}>
+
+            <DialogHeader>
+              <DialogTitle>
+                {newInvoiceItem.tipoFactura === "emitida" ? "Emitir Factura" : "Registrar Factura Recibida"}
+              </DialogTitle>
+            </DialogHeader>
+
+              {/* ... (contenido del formulario) ... */}
+              <ScrollArea className="max-h-[80vh]">
+                <div className="space-y-4 p-4">
+                  {/* Cabecera */}
+                  <div className="grid grid-cols-2 gap-4">
+
+                    {/* Superior Izquierda */}
+                    <div className="border p-4 rounded-md">
+                      <div className="col-span-2">
+                        <Label htmlFor="empresaGuardada">Empresa Guardada</Label>
+                        <Input
+                          id="empresaGuardada"
+                          value={empresaGuardada}
+                          onChange={(e) => setEmpresaGuardada(e.target.value)}
+                          placeholder="Ingrese el nombre de la empresa"
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600">{correoEmisor || "Razón Social Emisor"}</p>
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                          <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                        </div>
+                        <div className="space-y-2 mt-2">
+                          <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
+                          <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Superior Derecha */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                        <Input id="fechaAutorizacion" type="date" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Inferior de Cabecera */}
+                  <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
+                    <div className="space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente</Label>
+                        <Input
+                          id="identificacionAdquiriente"
+                          value={nombreEmisor}
+                          onChange={(e) => setIdentificacionAdquiriente(e.target.value)}
+                          placeholder="Identificación del adquiriente"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                        <Input id="fechaEmision" type="date" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="border p-4 rounded-md">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="w-1/6">Código</th>
+                          <th className="w-1/6">Cantidad</th>
+                          <th className="w-2/6">Detalle</th>
+                          <th className="w-1/6">P. Unitario</th>
+                          <th className="w-1/6">V. Total</th>
+                          <th className="w-1/12">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detallesFactura.map((detalle, index) => (
+                          <tr key={index}>
+                            <td>
+                              <Select
+                                value={detalle.idElemento || ""}
+                                onValueChange={(value) => handleServiceSelect(value, index)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Seleccionar servicio" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {servicios.map((servicio) => (
+                                    <SelectItem key={servicio.id} value={servicio.id || `service-${Date.now()}`}>
+                                      {servicio.nombre}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                            <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
+                            <td>
+                              <Button 
+                                variant="destructive" 
+                                size="icon"
+                                onClick={() => eliminarFila(index)}
+                                disabled={detallesFactura.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
+                  </div>
+
+                  {/* Contenido Inferior */}
+                  <div className="grid grid-cols-2 gap-4">
+
+                    {/* Inferior Izquierda */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="formaPago">Forma de Pago:</Label>
+                        <Input id="formaPago" placeholder="Ingrese la forma de pago" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="otros">Otros:</Label>
+                        <Input id="otros" placeholder="Ingrese otros detalles" />
+                      </div>
+                    </div>
+
+                    {/* Inferior Derecha */}
+                    <div className="border p-4 rounded-md space-y-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
+                        <Input id="SubTotal12IVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
+                        <Input id="SubTotal0IVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
+                        <Input id="SubTotalExentoIVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
+                        <Input id="SubTotalNoObjetoIVA" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="Descuento">Descuento:</Label>
+                        <Input id="Descuento" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="SubTotal">Sub Total:</Label>
+                        <Input id="SubTotal" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ICE">ICE:</Label>
+                        <Input id="ICE" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="IVA12">IVA 12%:</Label>
+                        <Input id="IVA12" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="Propina">Propina:</Label>
+                        <Input id="Propina" type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
+                        <Input id="ValorTotalFinal" type="number" placeholder="0.00" />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </ScrollArea>
+
+              <DialogFooter>
+                <Button onClick={() => handleCancelCreationFacturacion(() => {
+                  setNewInvoiceItem({} as InvoiceItem);
+                  setIsInvoiceReceivedModalOpen(false);
+                })}>Cancelar</Button>
+                <Button onClick={handleCreateInvoice('recibida')}>Crear</Button>
+              </DialogFooter>
+            </DialogContent>
           </Dialog>
 
           {/* Modal para agregar nuevo ítem al inventario */}
@@ -3355,13 +3883,14 @@ export default function ContabilidadApp() {
           {/* Modal para crear servicio */}
           <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
             <DialogContent aria-describedby={undefined}>
-
+              
               <DialogHeader>
                 <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
                 <DialogDescription>
                   {editingServiceId ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
                 </DialogDescription>
               </DialogHeader>
+
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="nombre">Nombre del Servicio</Label>
@@ -3382,13 +3911,33 @@ export default function ContabilidadApp() {
                 <div className="space-y-2">
                   <Label htmlFor="usoDeItem">Uso de Item</Label>
                   <Select
-                    value={newService.usoDeItem || "default"}
-                    onValueChange={(value) => setNewService({ ...newService, usoDeItem: value })}
+                    value={newService.usoDeItem || "none"}
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        setNewService({ 
+                          ...newService, 
+                          usoDeItem: "",
+                          gastosPorItem: "",
+                          cantidad: 1,
+                          gastosPorServicio: "",
+                        });
+                      } else {
+                        const selectedItem = inventoryItems.find(item => item.idElemento === value);
+                        setNewService({ 
+                          ...newService, 
+                          usoDeItem: value,
+                          gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
+                          cantidad: 1,
+                          gastosPorServicio: selectedItem ? selectedItem.precioCompra : "0",
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un item" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Ninguno</SelectItem>
                       {inventoryItems.map((item) => (
                         <SelectItem key={item.idElemento} value={item.idElemento}>
                           {item.idElemento}
@@ -3397,6 +3946,45 @@ export default function ContabilidadApp() {
                     </SelectContent>
                   </Select>
                 </div>
+                {newService.usoDeItem && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="gastosPorItem">Gastos por Item</Label>
+                      <Input
+                        id="gastosPorItem"
+                        type="number"
+                        value={newService.gastosPorItem || ""}
+                        readOnly
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cantidad">Cantidad</Label>
+                      <Input
+                        id="cantidad"
+                        type="number"
+                        value={newService.cantidad || 1}
+                        onChange={(e) => {
+                          const cantidad = parseInt(e.target.value) || 1;
+                          const gastosPorItem = parseFloat(newService.gastosPorItem) || 0;
+                          setNewService({ 
+                            ...newService, 
+                            cantidad: cantidad,
+                            gastosPorServicio: (cantidad * gastosPorItem).toString()
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gastosPorServicio">Gastos por Servicio</Label>
+                      <Input
+                        id="gastosPorServicio"
+                        type="number"
+                        value={newService.gastosPorServicio || ""}
+                        readOnly
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
                   <Input
@@ -3411,9 +3999,18 @@ export default function ContabilidadApp() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setNewService({ id: "", nombre: "", descripcion: "", usoDeItem: "default", costoDeServicio: "" })
-                    setIsCreatingService(false)
-                    setEditingServiceId(null)
+                    setNewService({
+                      id: "",
+                      nombre: "",
+                      descripcion: "",
+                      usoDeItem: "",
+                      costoDeServicio: "",
+                      gastosPorItem: "",
+                      gastosPorServicio: "",
+                      cantidad: 1,
+                    });
+                    setIsCreatingService(false);
+                    setEditingServiceId(null);
                   }}
                 >
                   Cancelar
@@ -3422,7 +4019,6 @@ export default function ContabilidadApp() {
                   {editingServiceId ? "Guardar" : "Crear"}
                 </Button>
               </DialogFooter>
-
             </DialogContent>
           </Dialog>
 
