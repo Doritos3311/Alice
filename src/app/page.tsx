@@ -148,11 +148,12 @@ type TotalesFactura = {
 
 // Definicion Contenido Factura
 interface DetalleFactura {
+  tipoIVA: string;
   idElemento: string;
   cantidad: string;
   detalle: string;
   precioUnitario: string;
-  valorTotal: string;
+  valorTotal: number;
 }
 
 // Definicion Servicios
@@ -224,7 +225,7 @@ export default function ContabilidadApp() {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
   const [newInvoiceItem, setNewInvoiceItem] = useState<InvoiceItem>({} as InvoiceItem)
   const [detallesFactura, setDetallesFactura] = useState<DetalleFactura[]>([
-    { idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: '0' }
+    { idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }
   ]);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceItem | null>(null);
@@ -234,7 +235,7 @@ export default function ContabilidadApp() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isFacturacionOpen, setIsFacturacionOpen] = useState(false)
   const [isInvoiceReceivedModalOpen, setIsInvoiceReceivedModalOpen] = useState(false)
-  const [totales, setTotales] = useState({
+  const [totales, setTotales] = useState<TotalesFactura>({
     SubTotal12IVA: 0,
     SubTotal0IVA: 0,
     SubTotalExentoIVA: 0,
@@ -245,7 +246,7 @@ export default function ContabilidadApp() {
     IVA12: 0,
     Propina: 0,
     ValorTotalFinal: 0,
-  })
+  });
   const [empresaGuardada, setEmpresaGuardada] = useState("")
 
 
@@ -695,7 +696,9 @@ export default function ContabilidadApp() {
   // Funcion para Cancelar Facturacion
   const confirmCancelFacturacion = () => {
     cancelActionFacturacion();
-    setDetallesFactura([{ idElemento: "", cantidad: "0", detalle: "", precioUnitario: "0", valorTotal: "0" }])
+
+    setDetallesFactura([{ idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }])
+    setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
     setShowCancelConfirmModalFacturacion(false);
   };
 
@@ -958,7 +961,6 @@ export default function ContabilidadApp() {
       setInputMessage(prev => prev + '\n');
     }
   };
-  
 
   // Función para manejar la subida de archivos
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1076,34 +1078,37 @@ export default function ContabilidadApp() {
     }
   
     try {
-      const totalesFactura = calcularTotalesFactura(detallesFactura)
-      
+      // Calcular los totales usando los valores del DOM
+      const totalesFactura = calcularTotalesFactura(detallesFactura);
+  
       // Recopilar todos los datos de la factura
       const newInvoiceData = {
         ...newInvoiceItem,
         tipoFactura: tipo,
+        empresaGuardada: (document.getElementById("empresaGuardada") as HTMLInputElement)?.value || "",
+        correoEmisorRecibido: (document.getElementById("correoEmisorRecibido") as HTMLInputElement)?.value || "",
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
         nombreEmisor: nombreEmisor,
         correoEmisor: correoEmisor || user?.email || "Sin correo",
-        rucEmisor: (document.getElementById("rucEmisor") as HTMLInputElement)?.value,
-        numeroAutorizacion: (document.getElementById("numeroAutorizacion") as HTMLInputElement)?.value,
-        numeroFactura: (document.getElementById("numeroFactura") as HTMLInputElement)?.value,
-        fechaAutorizacion: (document.getElementById("fechaAutorizacion") as HTMLInputElement)?.value,
-        direccionMatriz: (document.getElementById("direccionMatriz") as HTMLInputElement)?.value,
-        direccionSucursal: (document.getElementById("direccionSucursal") as HTMLInputElement)?.value,
-        identificacionAdquiriente: (document.getElementById("identificacionAdquiriente") as HTMLInputElement)?.value,
-        fechaEmision: (document.getElementById("fechaEmision") as HTMLInputElement)?.value,
-        rucCi: (document.getElementById("rucCi") as HTMLInputElement)?.value,
-        guiaRemision: (document.getElementById("guiaRemision") as HTMLInputElement)?.value,
-        formaPago: (document.getElementById("formaPago") as HTMLInputElement)?.value,
-        otros: (document.getElementById("otros") as HTMLInputElement)?.value,
+        rucEmisor: (document.getElementById("rucEmisor") as HTMLInputElement)?.value || "",
+        numeroAutorizacion: (document.getElementById("numeroAutorizacion") as HTMLInputElement)?.value || "",
+        numeroFactura: (document.getElementById("numeroFactura") as HTMLInputElement)?.value || "",
+        fechaAutorizacion: (document.getElementById("fechaAutorizacion") as HTMLInputElement)?.value || "",
+        direccionMatriz: (document.getElementById("direccionMatriz") as HTMLInputElement)?.value || "",
+        direccionSucursal: (document.getElementById("direccionSucursal") as HTMLInputElement)?.value || "",
+        identificacionAdquiriente: (document.getElementById("identificacionAdquiriente") as HTMLInputElement)?.value || "",
+        fechaEmision: (document.getElementById("fechaEmision") as HTMLInputElement)?.value || "",
+        rucCi: (document.getElementById("rucCi") as HTMLInputElement)?.value || "",
+        guiaRemision: (document.getElementById("guiaRemision") as HTMLInputElement)?.value || "",
+        formaPago: (document.getElementById("formaPago") as HTMLInputElement)?.value || "",
+        otros: (document.getElementById("otros") as HTMLInputElement)?.value || "",
         detalles: detallesFactura,
-        ...totalesFactura,
-      }
+        ...totalesFactura, // Incluir los totales calculados
+      };
   
       // Guardar la factura en Firebase
       const docRef = await addDoc(collection(db, `users/${viewingUID}/facturacion`), newInvoiceData);
-
+  
       const createdInvoice = { ...newInvoiceData, id: docRef.id };
   
       // Actualizar el estado local
@@ -1112,7 +1117,8 @@ export default function ContabilidadApp() {
       // Limpiar el formulario y cerrar el modal
       setNewInvoiceItem({} as InvoiceItem);
       setIsInvoiceModalOpen(false);
-      setDetallesFactura([{ idElemento: '', cantidad: '0', detalle: '', precioUnitario: '0', valorTotal: '0' }]);
+      setDetallesFactura([{ idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }]);
+      setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
   
       toast({
         title: "Éxito",
@@ -1136,7 +1142,7 @@ export default function ContabilidadApp() {
       return { sumaTotalFilas: 0, iva12: 0, subTotal12IVA: 0 }
     }
     const sumaTotalFilas = detalles.reduce((sum, detalle) => sum + Number.parseFloat(detalle.valorTotal || "0"), 0)
-    const iva12 = sumaTotalFilas * 0.12
+    const iva12 = sumaTotalFilas * 0.15
     const subTotal12IVA = sumaTotalFilas + iva12
   
     return {
@@ -1155,32 +1161,29 @@ export default function ContabilidadApp() {
     return sumaTotalFilas + subTotal + ice + iva12 + propina
   }
 
-  const calcularTotalesFactura = (detalles: any[]): TotalesFactura => {
-    let subTotal12IVA = 0
-    let subTotal0IVA = 0
+  const calcularTotalesFactura = (detalles: DetalleFactura[]): TotalesFactura => {
+    let subTotal12IVA = 0;
+    let subTotal0IVA = 0;
   
     detalles.forEach((detalle) => {
-      const valorTotal = Number.parseFloat(detalle.valorTotal) || 0
-      if (detalle.tipoIVA === "12") {
-        subTotal12IVA += valorTotal
+      const valorTotal = detalle.valorTotal || 0;
+  
+      if (detalle.tipoIVA === "15") {
+        subTotal12IVA += valorTotal;
       } else if (detalle.tipoIVA === "0") {
-        subTotal0IVA += valorTotal
+        subTotal0IVA += valorTotal;
       }
-    })
+    });
   
-    const subTotalExentoIVA = Number.parseFloat(
-      (document.getElementById("SubTotalExentoIVA") as HTMLInputElement)?.value || "0",
-    )
-    const subTotalNoObjetoIVA = Number.parseFloat(
-      (document.getElementById("SubTotalNoObjetoIVA") as HTMLInputElement)?.value || "0",
-    )
-    const descuento = Number.parseFloat((document.getElementById("Descuento") as HTMLInputElement)?.value || "0")
-    const ice = Number.parseFloat((document.getElementById("ICE") as HTMLInputElement)?.value || "0")
-    const propina = Number.parseFloat((document.getElementById("Propina") as HTMLInputElement)?.value || "0")
+    const subTotalExentoIVA = 0; // Siempre 0
+    const subTotalNoObjetoIVA = 0; // Siempre 0
+    const descuento = 0; // Siempre 0
+    const ice = 0; // Siempre 0
+    const propina = 0; // Siempre 0
   
-    const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento
-    const iva12 = subTotal12IVA * 0.12
-    const valorTotal = subTotal + ice + iva12 + propina
+    const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento;
+    const iva12 = subTotal12IVA * 0.15;
+    const valorTotalFinal = subTotal + ice + iva12 + propina;
   
     return {
       SubTotal12IVA: subTotal12IVA,
@@ -1192,19 +1195,9 @@ export default function ContabilidadApp() {
       ICE: ice,
       IVA12: iva12,
       Propina: propina,
-      ValorTotalFinal: valorTotal,
-    }
-  }
-  
-  // Función para actualizar los campos de totales en el formulario
-  const actualizarCamposTotales = (totales: TotalesFactura) => {
-    Object.entries(totales).forEach(([key, value]) => {
-      const input = document.getElementById(key) as HTMLInputElement
-      if (input) {
-        input.value = value.toFixed(2)
-      }
-    })
-  }
+      ValorTotalFinal: valorTotalFinal,
+    };
+  };
 
   // Función para editar una factura
   const handleEditInvoiceItem = () => {
@@ -1310,26 +1303,45 @@ export default function ContabilidadApp() {
 
   // Funcion Crear nueva fila dentro de factura
   const agregarNuevaFila = () => {
-    setDetallesFactura([...detallesFactura, { idElemento: '', cantidad: '', detalle: '', precioUnitario: '', valorTotal: '' }]);
+    setDetallesFactura([...detallesFactura, { idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }]);
   };
 
-  //Funcion de detalles de factura
+  //Funcion de actualizar detalles de factura
   const handleDetalleChange = (index: number, field: string, value: string) => {
-    const newDetalles = [...detallesFactura]
-    newDetalles[index] = { ...newDetalles[index], [field]: value }
+    const newDetalles = [...detallesFactura];
+    newDetalles[index] = { ...newDetalles[index], [field]: value };
   
+    // Si el campo es "cantidad" o "precioUnitario", recalcular el valorTotal
     if (field === "cantidad" || field === "precioUnitario") {
-      const cantidad = Number.parseFloat(newDetalles[index].cantidad) || 0
-      const precioUnitario = Number.parseFloat(newDetalles[index].precioUnitario) || 0
-      newDetalles[index].valorTotal = (cantidad * precioUnitario).toFixed(2)
+      const cantidad = Number.parseFloat(newDetalles[index].cantidad) || 0;
+      const precioUnitario = Number.parseFloat(newDetalles[index].precioUnitario) || 0;
+      newDetalles[index].valorTotal = cantidad * precioUnitario;
     }
   
-    setDetallesFactura(newDetalles)
+    // Si el campo es "valorTotal", asegúrate de que el valor sea un número válido
+    if (field === "valorTotal") {
+      newDetalles[index].valorTotal = Number.parseFloat(value) || 0;
+    }
   
-    // Calcular y actualizar los totales de la factura
-    //const totalesFactura = calcularTotalesFactura()
-    //actualizarCamposTotales(totalesFactura)
-  }
+    // Recalcular los totales basados en los nuevos detalles
+    const nuevosTotales = calcularTotalesFactura(newDetalles);
+  
+    // Actualizar el estado de detallesFactura y totales
+    setDetallesFactura(newDetalles);
+    setTotales(nuevosTotales);
+  };
+
+  const handleTotalesChange = (field: keyof TotalesFactura, value: string) => {
+    // Convertir el valor a número
+    const numericValue = parseFloat(value) || 0;
+  
+    // Actualizar el estado de totales
+    setTotales((prevTotales) => ({
+      ...prevTotales,
+      [field]: numericValue,
+    }));
+    
+  };
   
 
   {/* Servicios */}
@@ -1585,17 +1597,18 @@ export default function ContabilidadApp() {
 
   {/* Vinculacion entre tablas */}
 
-  // Función para Seleccionar Item en Facturacion
+  // Función para Seleccionar un Servicio en Facturacion
   const handleServiceSelect = (serviceId: string, index: number) => {
     const selectedService = servicios.find(service => service.id === serviceId);
     if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
-        idElemento: selectedService.id || `service-${Date.now()}`,
-        cantidad: '1',
-        detalle: selectedService.nombre,
+        idElemento: selectedService.nombre || `no valio kkkk`,
+        cantidad: '0',
+        detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
-        valorTotal: selectedService.costoDeServicio
+        valorTotal: Number(selectedService.costoDeServicio),
+        tipoIVA: "15"
       };
       setDetallesFactura(newDetalles);
       setSelectedService(selectedService);
@@ -1880,7 +1893,12 @@ export default function ContabilidadApp() {
                 <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
                 {user && (
                   <>
-                    <UserProfile user={user} onUpdateUserType={handleUpdateUserType} />
+                    <UserProfile
+                      user={user}
+                      onUpdateUserType={(newType) => console.log(newType)}
+                      setActiveTab={setActiveTab}
+                      setShowLandingPage={setShowLandingPage}
+                    />
                     {userData.type === 'personal' ? (
                       <div className="mt-8">
 
@@ -2689,7 +2707,7 @@ export default function ContabilidadApp() {
 
                             <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
                               <p className="text-sm font-semibold text-muted-foreground">
-                                Total: ${typeof factura.valorTotal === 'number' ? factura.valorTotal.toFixed(2) : "0.00"}
+                                Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
                               </p>
                               <Button
                                   size="icon"
@@ -3082,13 +3100,40 @@ export default function ContabilidadApp() {
 
                       {/* Superior Izquierda */}
                       <div className="border p-4 rounded-md">
-                        <h2 className="text-xl font-bold">
-                          <span>
-                            {userData?.type === 'empresa' && userData.companyName ? 
-                              userData.companyName : 
-                              userData?.displayName || 'Usuario'}
-                          </span></h2>
-                        <p className="text-sm text-gray-600">{user?.email || "Razón Social Emisor"}</p>
+                        <div className="col-span-2">
+                          {isEditingInvoice ? (
+                            <>
+                              <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
+                              <Input
+                                id="empresaGuardada"
+                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.empresaGuardada || ''}
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, empresaGuardada: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </>
+                          ) : (
+                            <h2 className="text-xl font-bold">{currentInvoice.empresaGuardada || "Nombre Comercial"}</h2>
+                          )}
+                        </div>
+                        <div className="col-span-2 mt-2">
+                          {isEditingInvoice ? (
+                            <>
+                              <Label htmlFor="correoEmisorRecibido">Correo de Empresa Emisora</Label>
+                              <Input
+                                id="correoEmisorRecibido"
+                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.correoEmisorRecibido || ''}
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, correoEmisorRecibido: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-600">{currentInvoice.correoEmisorRecibido || "Razón Social Emisor"}</p>
+                          )}
+                        </div>
                         <div className="mt-4 pt-4 border-t">
                           <div className="space-y-2">
                             <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
@@ -3350,7 +3395,7 @@ export default function ContabilidadApp() {
                               id={item.id}
                               type="number"
                               placeholder="0.00"
-                              value={currentInvoice[item.id] || ""}
+                              value={currentInvoice[item.id] || 0}
                               onChange={(e) => setCurrentInvoice({ ...currentInvoice, [item.id]: e.target.value })}
                               className={`${!isEditingInvoice ? "bg-background" : ""}`}
                               style={!isEditingInvoice ? { color: "white", opacity: 1, cursor: "default" } : {}}
@@ -3403,8 +3448,14 @@ export default function ContabilidadApp() {
 
                     {/* Superior Izquierda */}
                     <div className="border p-4 rounded-md">
-                      <h2 className="text-xl font-bold">{nombreEmisor || "Nombre Comercial"}</h2>
-                      <p className="text-sm text-gray-600">{correoEmisor || "Razón Social Emisor"}</p>
+                      <div className="col-span-2">
+                        <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
+                        <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"}/>
+                      </div>
+                      <div className="col-span-2 mt-2">
+                        <Label htmlFor="correoEmisor">Empresa Emisora</Label>
+                        <Input id="correoEmisor" placeholder="Ingrese el nombre de la empresa" value={correoEmisor || "Nombre Comercial"}/>
+                      </div>
                       <div className="mt-4 pt-4 border-t">
                         <div className="space-y-2">
                           <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
@@ -3488,7 +3539,7 @@ export default function ContabilidadApp() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {servicios.map((servicio) => (
-                                    <SelectItem key={servicio.id} value={servicio.id || `service-${Date.now()}`}>
+                                    <SelectItem key={servicio.id} value={servicio.id}>
                                       {servicio.nombre}
                                     </SelectItem>
                                   ))}
@@ -3497,8 +3548,8 @@ export default function ContabilidadApp() {
                             </td>
                             <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                             <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
+                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} readOnly onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} readOnly/></td>
                             <td>
                               <Button 
                                 variant="destructive" 
@@ -3535,45 +3586,106 @@ export default function ContabilidadApp() {
                     <div className="border p-4 rounded-md space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
-                        <Input id="SubTotal12IVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal12IVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotal12IVA.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
-                        <Input id="SubTotal0IVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal0IVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotal0IVA.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
-                        <Input id="SubTotalExentoIVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotalExentoIVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotalExentoIVA.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
-                        <Input id="SubTotalNoObjetoIVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotalNoObjetoIVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="Descuento">Descuento:</Label>
-                        <Input id="Descuento" type="number" placeholder="0.00" />
+                        <Input
+                          id="Descuento"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.Descuento.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal">Sub Total:</Label>
-                        <Input id="SubTotal" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotal.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ICE">ICE:</Label>
-                        <Input id="ICE" type="number" placeholder="0.00" />
+                        <Input
+                          id="ICE"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.ICE.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="IVA12">IVA 12%:</Label>
-                        <Input id="IVA12" type="number" placeholder="0.00" />
+                        <Input
+                          id="IVA12"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.IVA12.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="Propina">Propina:</Label>
-                        <Input id="Propina" type="number" placeholder="0.00" />
+                        <Input
+                          id="Propina"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.Propina.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
-                        <Input id="ValorTotalFinal" type="number" placeholder="0.00" />
+                        <Input
+                          id="ValorTotalFinal"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.ValorTotalFinal.toFixed(2)}
+                          readOnly
+                        />
                       </div>
                     </div>
+                    
                   </div>
                 </div>
               </ScrollArea>
@@ -3609,15 +3721,13 @@ export default function ContabilidadApp() {
                     {/* Superior Izquierda */}
                     <div className="border p-4 rounded-md">
                       <div className="col-span-2">
-                        <Label htmlFor="empresaGuardada">Empresa Guardada</Label>
-                        <Input
-                          id="empresaGuardada"
-                          value={empresaGuardada}
-                          onChange={(e) => setEmpresaGuardada(e.target.value)}
-                          placeholder="Ingrese el nombre de la empresa"
-                        />
+                        <Label htmlFor="empresaGuardada">Empresa Emisora:</Label>
+                        <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa emisora" />
                       </div>
-                      <p className="text-sm text-gray-600">{correoEmisor || "Razón Social Emisor"}</p>
+                      <div className="col-span-2 mt-2">
+                        <Label htmlFor="correoEmisorRecibido">Correo Empresa Emisora:</Label>
+                        <Input id="correoEmisorRecibido" placeholder="Ingrese el correo de la empresa emisora" />
+                      </div>
                       <div className="mt-4 pt-4 border-t">
                         <div className="space-y-2">
                           <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
@@ -3715,8 +3825,8 @@ export default function ContabilidadApp() {
                             </td>
                             <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                             <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
+                            <td><Input className="w-full"  type="number" readOnly value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" readOnly value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
                             <td>
                               <Button 
                                 variant="destructive" 
@@ -3753,43 +3863,113 @@ export default function ContabilidadApp() {
                     <div className="border p-4 rounded-md space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
-                        <Input id="SubTotal12IVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal12IVA"
+                          type="number"
+                          value={totales.SubTotal0IVA.toFixed(2)}
+                          placeholder="0.00"
+                          readOnly
+                          onChange={(e) => handleTotalesChange("SubTotal12IVA", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
-                        <Input id="SubTotal0IVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal0IVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotal0IVA.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("SubTotal0IVA", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
-                        <Input id="SubTotalExentoIVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotalExentoIVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotalExentoIVA.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("SubTotalExentoIVA", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
-                        <Input id="SubTotalNoObjetoIVA" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotalNoObjetoIVA"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("SubTotalNoObjetoIVA", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="Descuento">Descuento:</Label>
-                        <Input id="Descuento" type="number" placeholder="0.00" />
+                        <Input
+                          id="Descuento"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.Descuento.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("Descuento", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="SubTotal">Sub Total:</Label>
-                        <Input id="SubTotal" type="number" placeholder="0.00" />
+                        <Input
+                          id="SubTotal"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.SubTotal.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("SubTotal", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ICE">ICE:</Label>
-                        <Input id="ICE" type="number" placeholder="0.00" />
+                        <Input
+                          id="ICE"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.ICE.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("ICE", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="IVA12">IVA 12%:</Label>
-                        <Input id="IVA12" type="number" placeholder="0.00" />
+                        <Input
+                          id="IVA12"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.IVA12.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("IVA12", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="Propina">Propina:</Label>
-                        <Input id="Propina" type="number" placeholder="0.00" />
+                        <Input
+                          id="Propina"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.Propina.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("Propina", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
-                        <Input id="ValorTotalFinal" type="number" placeholder="0.00" />
+                        <Input
+                          id="ValorTotalFinal"
+                          type="number"
+                          placeholder="0.00"
+                          value={totales.ValorTotalFinal.toFixed(2)}
+                          readOnly
+                          onChange={(e) => handleTotalesChange("ValorTotalFinal", e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -4168,11 +4348,13 @@ export default function ContabilidadApp() {
         
         {/* Landing Page */}
         <LandingPage
-          theme={theme || "light"} // Usa 'light' como valor por defecto si theme es undefined
+          theme={theme || "light"}
           user={user}
           setShowLandingPage={setShowLandingPage}
           setIsLoginModalOpen={setIsLoginModalOpen}
           setIsLogOutModalOpen={setIsLogOutModalOpen}
+          setActiveTab={setActiveTab}
+          onUpdateUserType={(newType) => console.log(newType)}
         />
 
       </div>

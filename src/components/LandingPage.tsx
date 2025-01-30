@@ -34,14 +34,17 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 interface LandingPageProps {
-  theme: string
-  user: any
-  setShowLandingPage: (show: boolean) => void
-  setIsLoginModalOpen: (isOpen: boolean) => void
-  setIsLogOutModalOpen: (isOpen: boolean) => void
+  theme: string;
+  user: any;
+  setShowLandingPage: (show: boolean) => void;
+  setIsLoginModalOpen: (isOpen: boolean) => void;
+  setIsLogOutModalOpen: (isOpen: boolean) => void;
+  setActiveTab: (tab: string) => void;
+  onUpdateUserType: (newType: 'personal' | 'empresa') => void; // Añadir aquí
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setIsLoginModalOpen }) => {
+
+const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setActiveTab }) => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showInice, setShowInice] = useState(true)
@@ -262,8 +265,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
                   </Button>
                 </PopoverContent>
               </Popover>
-            </div>
-            
+            </div> 
 
           ) : (
             <div className="mt-6 mb-6">
@@ -331,6 +333,17 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
           )}
         </nav>
       </header>
+
+      <div className="mt-5 mb-1">
+        {/* Aquí estaba el Popover con el avatar y el menú desplegable */}
+        {/* Lo reemplazaremos con el componente UserProfile */}
+        <UserProfile
+          user={user}
+          onUpdateUserType={(newType) => console.log(newType)}
+          setShowLandingPage={setShowLandingPage}
+          setActiveTab={setActiveTab}
+        />
+      </div>
 
       <main className="flex-grow flex items-center justify-center px-4">
         {showInice && (
@@ -453,6 +466,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
           </div>
         </div>
       )}
+    
 
       <footer className={`p-4 text-center text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
         © 2024 Alice. Todos los derechos reservados.
