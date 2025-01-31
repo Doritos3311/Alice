@@ -19,6 +19,7 @@
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
 import styles from "./page.module.css"
+import stylesmodal from "@/components/estilos/modales.module.css"
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
@@ -269,6 +270,9 @@ export default function ContabilidadApp() {
     usoDeItem: "",
     costoDeServicio: "",
   })
+  const [detallesServicio, setDetallesServicio] = useState([
+    { usoDeItem: '', gastosPorItem: '0', cantidad: 1, gastosPorServicio: '0' }
+  ]);
 
   // Estados de edicion de inventario
   const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null)
@@ -1487,6 +1491,37 @@ export default function ContabilidadApp() {
     }
   }
 
+  const agregarNuevaFilaService = () => {
+    setDetallesServicio([...detallesServicio, { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }]);
+  };
+
+  // Función para manejar cambios en los campos de la fila
+const handleDetalleChangeService = (index: number, field: string, value: string) => {
+  const newDetalles = [...detallesServicio];
+  newDetalles[index] = {
+    ...newDetalles[index],
+    [field]: value,
+    gastosPorServicio:
+      field === "cantidad" && newDetalles[index].usoDeItem
+        ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
+        : newDetalles[index].gastosPorServicio,
+  };
+  setDetallesServicio(newDetalles);
+
+  // Actualizar el estado newService si es necesario
+  if (index === 0) {
+    // Suponiendo que solo la primera fila afecta a newService
+    setNewService({
+      ...newService,
+      [field]: value,
+      gastosPorServicio:
+        field === "cantidad" && newDetalles[index].usoDeItem
+          ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
+          : newService.gastosPorServicio,
+    });
+  }
+};
+
   {/* Inicio de Sesion */}
 
   // Función para iniciar sesión con Google
@@ -1677,6 +1712,36 @@ export default function ContabilidadApp() {
         title: "Error",
         description: "Hubo un problema al agregar el servicio al libro diario. Por favor, intenta de nuevo.",
         variant: "destructive",
+      });
+    }
+  };
+
+  // Función para manejar la selección de un ítem del inventario
+  const handleUsoDeItemSelect = (value: any, index: number) => {
+    const selectedItem = inventoryItems.find((item) => item.idElemento === value);
+
+    // Actualizar la fila seleccionada
+    const newDetalles = [...detallesServicio];
+    newDetalles[index] = {
+      ...newDetalles[index],
+      usoDeItem: value,
+      gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
+      gastosPorServicio: selectedItem
+        ? (newDetalles[index].cantidad * selectedItem.precioCompra).toString()
+        : "0",
+    };
+    setDetallesServicio(newDetalles);
+
+    // Actualizar el estado newService si es necesario
+    if (index === 0) {
+      // Suponiendo que solo la primera fila afecta a newService
+      setNewService({
+        ...newService,
+        usoDeItem: value,
+        gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
+        gastosPorServicio: selectedItem
+          ? (newDetalles[index].cantidad * selectedItem.precioCompra).toString()
+          : "0",
       });
     }
   };
@@ -2767,7 +2832,7 @@ export default function ContabilidadApp() {
                             </p>
                             <p className="text-sm flex items-center">
                               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
+                              <span className="font-medium text-muted-foreground">olis:</span>
                               <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
                             </p>
                           </div>
@@ -4038,6 +4103,7 @@ export default function ContabilidadApp() {
           <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
             <DialogContent aria-describedby={undefined}>
               
+              {/* Cabecera */}
               <DialogHeader>
                 <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
                 <DialogDescription>
@@ -4045,111 +4111,110 @@ export default function ContabilidadApp() {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nombre">Nombre del Servicio</Label>
-                  <Input
-                    id="nombre"
-                    value={newService.nombre || ""}
-                    onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
-                  />
+              {/* Contenido */}
+              <div className={stylesmodal.contenidoservicio}>{/* grid grid-cols-2 gap-4 py-4 */}
+                
+                {/* Contenido Izquierdo */}
+                <div className={stylesmodal.contenidoIzquierdoServicio}>{/* space-y-4 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="nombre">Nombre del Servicio</Label>
+                    <Input
+                      id="nombre"
+                      value={newService.nombre || ""}
+                      onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="descripcion">Descripción</Label>
+                    <Input
+                      id="descripcion"
+                      value={newService.descripcion || ""}
+                      onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
+                      className="h-24" // Ajusta la altura de la descripción
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
+                    <Input
+                      id="costoDeServicio"
+                      type="number"
+                      value={newService.costoDeServicio || ""}
+                      onChange={(e) => setNewService({ ...newService, costoDeServicio: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="descripcion">Descripción</Label>
-                  <Input
-                    id="descripcion"
-                    value={newService.descripcion || ""}
-                    onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="usoDeItem">Uso de Item</Label>
-                  <Select
-                    value={newService.usoDeItem || "none"}
-                    onValueChange={(value) => {
-                      if (value === "none") {
-                        setNewService({ 
-                          ...newService, 
-                          usoDeItem: "",
-                          gastosPorItem: "",
-                          cantidad: 1,
-                          gastosPorServicio: "",
-                        });
-                      } else {
-                        const selectedItem = inventoryItems.find(item => item.idElemento === value);
-                        setNewService({ 
-                          ...newService, 
-                          usoDeItem: value,
-                          gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
-                          cantidad: 1,
-                          gastosPorServicio: selectedItem ? selectedItem.precioCompra : "0",
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un item" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Ninguno</SelectItem>
-                      {inventoryItems.map((item) => (
-                        <SelectItem key={item.idElemento} value={item.idElemento}>
-                          {item.idElemento}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {newService.usoDeItem && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="gastosPorItem">Gastos por Item</Label>
-                      <Input
-                        id="gastosPorItem"
-                        type="number"
-                        value={newService.gastosPorItem || ""}
-                        readOnly
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cantidad">Cantidad</Label>
-                      <Input
-                        id="cantidad"
-                        type="number"
-                        value={newService.cantidad || 1}
-                        onChange={(e) => {
-                          const cantidad = parseInt(e.target.value) || 1;
-                          const gastosPorItem = parseFloat(newService.gastosPorItem) || 0;
-                          setNewService({ 
-                            ...newService, 
-                            cantidad: cantidad,
-                            gastosPorServicio: (cantidad * gastosPorItem).toString()
-                          });
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gastosPorServicio">Gastos por Servicio</Label>
-                      <Input
-                        id="gastosPorServicio"
-                        type="number"
-                        value={newService.gastosPorServicio || ""}
-                        readOnly
-                      />
-                    </div>
-                  </>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
-                  <Input
-                    id="costoDeServicio"
-                    type="number"
-                    value={newService.costoDeServicio || ""}
-                    onChange={(e) => setNewService({ ...newService, costoDeServicio: e.target.value })}
-                  />
+
+                {/* Contenido Derecho */}
+                <div className="space-y-4">
+                  <div className="border p-4 rounded-md">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="w-1/4">Uso de Item</th>
+                          <th className="w-1/4">Gastos por Item</th>
+                          <th className="w-1/4">Cantidad</th>
+                          <th className="w-1/4">Gastos por Servicio</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detallesServicio.map((detalle, index) => (
+                          <tr key={index}>
+                            <td>
+                              <Select
+                                value={detalle.usoDeItem || ""}
+                                onValueChange={(value) => handleUsoDeItemSelect(value, index)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Seleccionar item" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Ninguno</SelectItem>
+                                  {inventoryItems.map((item) => (
+                                    <SelectItem key={item.idElemento} value={item.idElemento}>
+                                      {item.idElemento}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td>
+                              <Input
+                                className="w-full"
+                                type="number"
+                                value={detalle.gastosPorItem || ""}
+                                readOnly
+                              />
+                            </td>
+                            <td>
+                              <Input
+                                className="w-full"
+                                type="number"
+                                value={detalle.cantidad || 0}
+                                onChange={(e) =>
+                                  handleDetalleChangeService(index, "cantidad", e.target.value)
+                                }
+                              />
+                            </td>
+                            <td>
+                              <Input
+                                className="w-full"
+                                type="number"
+                                value={detalle.gastosPorServicio || ""}
+                                readOnly
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Button className="mt-2 w-full" onClick={agregarNuevaFilaService}>
+                      Agregar Fila
+                    </Button>
+                  </div>
                 </div>
               </div>
 
+              {/* Footer */}
               <DialogFooter>
                 <Button
                   variant="outline"

@@ -156,7 +156,7 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
 
               {/* Informacion de Empresas */}
               <div className="flex items-center mt-4">
-                <User className="h-7 w-7 mr-2 mr-5" />
+                <User className="h-7 w-7 mr-7" />
                 <div>
                   <p className="font-medium">{userInfo.nombre} (Tu)</p>
                   <p className="text-sm text-gray-500">ID: {userInfo.id.substring(0, 8)}...</p>
@@ -224,9 +224,9 @@ export function EmpresasRegistradas({ userId, onCargarEmpresa }: EmpresasRegistr
                 <CardContent>
                   <div className="flex items-center mt-4">
                     {selectedEmpresa.tipo === 'usuario' ? (
-                      <User className="h-7 w-7 mr-2 mr-5" />
+                      <User className="h-7 w-7 mr-7" />
                     ) : (
-                      <Building className="h-7 w-7 mr-2 mr-5" />
+                      <Building className="h-7 w-7 mr-7" />
                     )}
                     <div>
                       <p className="font-medium">{selectedEmpresa.nombre}{selectedEmpresa.tipo === 'usuario' ? ' (Tu)' : ''}</p>
