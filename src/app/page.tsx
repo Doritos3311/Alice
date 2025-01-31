@@ -18,10 +18,11 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
+import styles from "./page.module.css"
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
-import LandingPage from '@/components/LandingPage';
+import LandingPage from '@/components/Landing Page/LandingPage';
 import UserProfile from '@/components/UserProfile';
 import UsuariosRegistrados from '@/components/UsuariosRegistrados';
 import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
@@ -40,7 +41,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, User, Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -63,7 +64,7 @@ import { IoTrashBinSharp } from "react-icons/io5";
 
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
-import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
+import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth"
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
@@ -106,9 +107,11 @@ auth.onAuthStateChanged((user) => {
 });
 
 interface UserData {
+  user: User;
   displayName: string;
   type: 'personal' | 'empresa';
   companyName?: string; // Ahora es una propiedad opcional
+  rucCI?: string;
 }
 
 {/* Declaracion de Tipados */}
@@ -247,8 +250,6 @@ export default function ContabilidadApp() {
     Propina: 0,
     ValorTotalFinal: 0,
   });
-  const [empresaGuardada, setEmpresaGuardada] = useState("")
-
 
   // Estados Dashboard
   const [dashboardType, setDashboardType] = useState("financial")
@@ -305,6 +306,7 @@ export default function ContabilidadApp() {
   // Estados para visualizacion de cuentas
   const [isCreatingAccountingEntry, setIsCreatingAccountingEntry] = useState(false);
   const [userData, setUserData] = useState<{
+    rucCI?: string;
     type: 'personal' | 'empresa';
     displayName?: string;
     companyName?: string;
@@ -641,12 +643,6 @@ export default function ContabilidadApp() {
       }
     };
     fetchUserData();
-  };
-
-  // Funcion para Analizar el tipo de Usuario
-  const handleUpdateUserType = (newType: 'personal' | 'empresa') => {
-    setUserData({ type: newType });
-    console.log('Usuario registrado como:', newType);
   };
 
   // Funcion Requerimiento Inicio de Sesion
@@ -1089,7 +1085,7 @@ export default function ContabilidadApp() {
         correoEmisorRecibido: (document.getElementById("correoEmisorRecibido") as HTMLInputElement)?.value || "",
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
         nombreEmisor: nombreEmisor,
-        correoEmisor: correoEmisor || user?.email || "Sin correo",
+        correoEmisor: user?.email || correoEmisor || "Sin correo",
         rucEmisor: (document.getElementById("rucEmisor") as HTMLInputElement)?.value || "",
         numeroAutorizacion: (document.getElementById("numeroAutorizacion") as HTMLInputElement)?.value || "",
         numeroFactura: (document.getElementById("numeroFactura") as HTMLInputElement)?.value || "",
@@ -1388,6 +1384,7 @@ export default function ContabilidadApp() {
     setIsCreatingService(true)
   }
   
+  // Funcion guardar servicio
   const handleSaveService = async () => {
     if (!viewingUID || !editingServiceId) return
 
@@ -1416,6 +1413,7 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Funcion borrar servicio
   const handleDeleteService = async () => {
     if (!user?.uid || !serviceToDelete) return
 
@@ -1437,20 +1435,24 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Funcion abrir modal auto generar facturacion
   const handleGenerarFacturacion = (serviceId: string) => {
     setCurrentServiceId(serviceId)
     setIsInvoiceConfirmeModalOpen(true)
   }
 
+  // Funcion abrir modal auto generar asiento contable
   const handleGenerarLibroDiario = (serviceId: string) => {
     setCurrentServiceId(serviceId)
     setIsAccountingEntryModalOpen(true)
   }
 
+  // Funcion auto generar facturacion
   const confirmGenerateInvoice = () => {
     
   }
 
+  // Funcion auto generar asiento contable
   const confirmGenerateAccountingEntry = async () => {
     if (!user?.uid || !currentServiceId) return
 
@@ -1459,12 +1461,12 @@ export default function ContabilidadApp() {
       if (!service) throw new Error("Servicio no encontrado")
 
       const asientoContable = {
-        fecha: new Date().toISOString(),
+        fecha: new Date().toISOString().split('T')[0],
         nombreCuenta: `Servicio ${service.nombre}`,
         descripcion: `Ingreso por servicio: ${service.descripcion}`,
         idElemento: service.usoDeItem || service.nombre,
         debe: Number.parseFloat(service.costoDeServicio),
-        haber: 0,
+        haber: Number.parseFloat(service.gastosPorServicio)
       }
 
       await addDoc(collection(db, `users/${user.uid}/libroDiario`), asientoContable)
@@ -1597,6 +1599,24 @@ export default function ContabilidadApp() {
 
   {/* Vinculacion entre tablas */}
 
+  // Función para Seleccionar Item en Facturacion
+  const handleInventoryItemSelect = (itemId: string, index: number) => {
+    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);
+    if (selectedItem) {
+      const newDetalles = [...detallesFactura];
+      newDetalles[index] = {
+        idElemento: selectedItem.idElemento,
+        cantidad: '0', // Valor por defecto, el usuario puede cambiarlo
+        detalle: selectedItem.descripcion,
+        precioUnitario: selectedItem.precioVenta.toString(),
+        valorTotal: Number(selectedItem.precioVenta.toString()),
+        tipoIVA: "15"
+      };
+      setDetallesFactura(newDetalles);
+      setSelectedInventoryItem(selectedItem);
+    }
+  };
+
   // Función para Seleccionar un Servicio en Facturacion
   const handleServiceSelect = (serviceId: string, index: number) => {
     const selectedService = servicios.find(service => service.id === serviceId);
@@ -1617,31 +1637,11 @@ export default function ContabilidadApp() {
 
   // Función para autocompletar la factura en el libro diario 
   const handleAutoCompleteLibroDiario = async () => {
-    if (!user) {
+    if (!user || !selectedService || !lastCreatedInvoice) {
       console.error("Usuario no autenticado");
       toast({
         title: "Error",
         description: "Debes iniciar sesión para realizar esta acción.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedService) {
-      console.error("No se ha seleccionado un servicio");
-      toast({
-        title: "Error",
-        description: "Por favor, selecciona un servicio.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!lastCreatedInvoice) {
-      console.error("No hay factura creada recientemente");
-      toast({
-        title: "Error",
-        description: "No hay factura reciente para autocompletar en el libro diario.",
         variant: "destructive",
       });
       return;
@@ -1657,7 +1657,7 @@ export default function ContabilidadApp() {
         descripcion: selectedService.descripcion || lastCreatedInvoice.detallesProducto,
         idElemento: selectedService.id || "",
         haber: valorTotal.toFixed(2),
-        debe: "0",
+        debe: "0" 
       };
       
       const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);
@@ -1688,15 +1688,6 @@ export default function ContabilidadApp() {
     }
   }, [activeTab]);
 
-
-  {/* Permisos */}
-  const todosLosPermisosActivos = permisosUsuario.permisoLibroDiario &&
-  permisosUsuario.permisoInventario &&
-  permisosUsuario.permisoFacturacion &&
-  permisosUsuario.permisoDashboard &&
-  permisosUsuario.permisoGenerarRegistros &&
-  permisosUsuario.permisoServicios;
-
   useEffect(() => {
     if (isInvoiceModalOpen && newInvoiceItem.tipoFactura === "recibida") {
       setIdentificacionAdquiriente("v0")
@@ -1716,163 +1707,152 @@ export default function ContabilidadApp() {
 
           {/* Menu Izquierda*/}
           <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(28,28,28)] text-gray-300" : "bg-white text-gray-900"}`}>
-            <div className="p-4">
-              
-              <div className="flex items-center justify-between space-x-2">
-                <h1 className="text-2xl font-bold mb-4 mt-2">Alice</h1>
+            <div className={styles.menucontent}>
+              <div className={styles.menuheader}>
+                <h1 className={styles.apptitle}>Alice</h1>
                 <Button
                   variant={activeTab === "configuracion" ? "default" : "ghost"}
-                  className="ml-10 w-15 justify-end mb-2"
+                  className={styles.configbutton}
                   onClick={() => setActiveTab("configuracion")}
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className={styles.iconconfig} />
                 </Button>
               </div>
 
               {user ? (
-
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="w-full h-100 mb-4 flex items-center justify-start p-2">
-                      <Avatar className="h-10 w-10 mr-2">
+                    <Button variant="ghost" className={styles.userbutton}>
+                      <Avatar className={styles.useravatar}>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
                         <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                       </Avatar>
-                      <span className="font-semibold text-2x1 truncate">{user.displayName || user.email}</span>
+                      <span className={styles.username}>{user.displayName || user.email}</span>
                     </Button>
                   </PopoverTrigger>
 
-                  <PopoverContent className="w-80 p-0 transform translate-x-4 rounded-3xl">
-                    <div className="flex items-center mb-4">
-                      <Avatar className="h-16 w-16 mr-4 ml-4 mt-4">
+                  <PopoverContent className={styles.userpopover}>
+                    <div className={styles.userinfo}>
+                      <Avatar className={styles.useravatarlarge}>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                        <AvatarFallback className="text-lg font-bold">{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                        <AvatarFallback className={styles.avatarfallback}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="text-lg font-semibold mt-4">{user.displayName || "Usuario"}</h3>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <h3 className={styles.userdisplayname}>{user.displayName || "Usuario"}</h3>
+                        <p className={styles.useremail}>{user.email}</p>
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-400"></div>
-
+                    <div className={styles.divider}></div>
 
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start mb-2 my-4"
+                      className={styles.menuitem}
                       onClick={() => setShowLandingPage(false)}
                     >
-                      <Home className="mr-2 h-4 w-4" />
+                      <Home className={styles.icon} />
                       Inicio
                     </Button>
 
-                    <div className="border-t border-gray-400"></div>
+                    <div className={styles.divider}></div>
 
-                    <Button variant="ghost" size="sm" className="w-full justify-start my-4" onClick={() => setIsLogOutModalOpen(true)}>
-                      <LogOut className="mr-2 h-4 w-4" />
+                    <Button variant="ghost" size="sm" className={styles.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
+                      <LogOut className={styles.icon} />
                       Cerrar sesión
                     </Button>
                   </PopoverContent>
                 </Popover>
-
               ) : (
-                <Button className="w-full mb-4" onClick={() => setIsLoginModalOpen(true)}>
+                <Button className={styles.loginbutton} onClick={() => setIsLoginModalOpen(true)}>
                   Iniciar sesión
                 </Button>
               )}
               
-              <nav>
-                {/* Btn Registro de Inventario */}
+              <nav className={styles.mainnav}>
                 <Button
                   variant={activeTab === "servicios" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("servicios")}
                 >
-                  <Handshake className="mr-2 h-4 w-4" />
+                  <Handshake className={styles.icon} />
                   Servicios
                 </Button>
 
-                {/* Btn Registro de Inventario */}
                 <Button
                   variant={activeTab === "inventario" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("inventario")}
                 >
-                  <Package className="mr-2 h-4 w-4" />
+                  <Package className={styles.icon} />
                   Registro de Inventario
                 </Button>
 
-                {/* Btn Registro De Facturacion */}
-                <div className="relative">
+                <div className={styles.navitemgroup}>
                   <Button
                     variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
-                    className="w-full justify-start mb-2"
+                    className={styles.navitem}
                     onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
                   >
-                    <FileText className="mr-2 h-4 w-4" />
+                    <FileText className={styles.icon} />
                     Facturación
-                    {isFacturacionOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+                    {isFacturacionOpen ? <ChevronUp className={styles.iconsmall} /> : <ChevronDown className={styles.iconsmall} />}
                   </Button>
                   {isFacturacionOpen && (
-                    <div className="pl-4 space-y-2 mb-2">
+                    <div className={styles.subnav}>
                       <Button
                         variant={activeTab === "facturacion-emitidas" ? "default" : "ghost"}
-                        className="w-full justify-start"
+                        className={styles.navitem}
                         onClick={() => setActiveTab("facturacion-emitidas")}
                       >
-                        <FileUp className="mr-2 h-4 w-4" />
+                        <FileUp className={styles.icon} />
                         Facturas Emitidas
                       </Button>
                       <Button
                         variant={activeTab === "facturacion-recibidas" ? "default" : "ghost"}
-                        className="w-full justify-start"
+                        className={styles.navitem}
                         onClick={() => setActiveTab("facturacion-recibidas")}
                       >
-                        <FileDown className="mr-2 h-4 w-4" />
+                        <FileDown className={styles.icon} />
                         Facturas Recibidas
                       </Button>
                     </div>
                   )}
                 </div>
 
-                {/* Btn Libro Diario */}
                 <Button
                   variant={activeTab === "libro-diario" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("libro-diario")}
                 >
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  <FileSpreadsheet className={styles.icon} />
                   Libro Diario
                 </Button>
 
-                {/* Btn Dashboard */}
                 <Button
                   variant={activeTab === "dashboard" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("dashboard")}
                 >
-                  <BarChart2 className="mr-2 h-4 w-4" />
+                  <BarChart2 className={styles.icon} />
                   Dashboard
                 </Button>
 
-                {/* Btn Registro De Facturacion */}
                 <Button
                   variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("grupos-trabajo")}
                 >
-                  <Users className="mr-2 h-4 w-4" />
+                  <Users className={styles.icon} />
                   Grupos de Trabajo
                 </Button>
 
-                {/* Btn Generar Registros */}
                 <Button
                   variant={activeTab === "generar-registros" ? "default" : "ghost"}
-                  className="w-full justify-start mb-2"
+                  className={styles.navitem}
                   onClick={() => setActiveTab("generar-registros")}
                 >
-                  <FileDown className="mr-2 h-4 w-4" />
+                  <FileDown className={styles.icon} />
                   Generar Registros
                 </Button>
               </nav>
@@ -2480,7 +2460,7 @@ export default function ContabilidadApp() {
               <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
                <div>
                  <div className="flex justify-between items-center mb-4 mr-10">
-                   <h2 className="text-3xl font-bold">Registro de Facturación</h2>
+                   <h2 className="text-3xl font-bold">Registro de Facturación Emitida</h2>
                  </div>
 
                  <div className="border-t border-gray-400 my-4"></div>
@@ -2539,7 +2519,7 @@ export default function ContabilidadApp() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredInvoiceItems.map((factura) => (
-                        <Card key={factura.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg">
+                        <Card key={factura.id} className="rounded-lg border flex flex-col">
 
                           <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
                             <CardTitle className="text-xl font-bold flex justify-between items-center">
@@ -2555,7 +2535,7 @@ export default function ContabilidadApp() {
                                 <span className="ml-2">{factura.fechaEmision}</span>
                               </p>
                               <p className="text-sm flex items-center">
-                                <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
                                 <span className="font-medium text-muted-foreground">Cliente:</span>
                                 <span className="ml-2 truncate">{factura.nombreCliente}</span>
                               </p>
@@ -2669,7 +2649,7 @@ export default function ContabilidadApp() {
                       {filteredInvoiceItems
                         .filter(factura => factura.tipoFactura === 'recibida')
                         .map((factura) => (
-                          <Card key={factura.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg">
+                          <Card key={factura.id} className="rounded-lg border flex flex-col">
                             <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
                               <CardTitle className="text-xl font-bold flex justify-between items-center">
                                 <span>Factura N°{factura.numeroFactura}</span>
@@ -2684,7 +2664,7 @@ export default function ContabilidadApp() {
                                   <span className="ml-2">{factura.fechaEmision}</span>
                                 </p>
                                 <p className="text-sm flex items-center">
-                                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
                                   <span className="font-medium text-muted-foreground">Cliente:</span>
                                   <span className="ml-2 truncate">{factura.nombreCliente}</span>
                                 </p>
@@ -2692,14 +2672,14 @@ export default function ContabilidadApp() {
                                   <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
                                   <span className="font-medium text-muted-foreground">Emisor:</span>
                                   <span className="ml-2 truncate">
-                                    {factura.nombreEmisor}
+                                    {factura.empresaGuardada}
                                   </span>
                                 </p>
                                 <p className="text-sm flex items-center">
                                   <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
                                   <span className="font-medium text-muted-foreground">Correo:</span>
                                   <span className="ml-2 truncate">
-                                    {factura.correoEmisor}
+                                    {factura.correoEmisorRecibido}
                                   </span>
                                 </p>
                               </div>
@@ -2734,7 +2714,7 @@ export default function ContabilidadApp() {
 
             {/* Registros Interfaz Estilo */}
             {activeTab === "generar-registros" && (
-              <AccesoRestringido tienePermiso={todosLosPermisosActivos}>
+              <AccesoRestringido tienePermiso={permisosUsuario.permisoGenerarRegistros}>
                 <GenerarRegistros 
                 data={data} 
                 inventoryItems={inventoryItems} 
@@ -2761,12 +2741,11 @@ export default function ContabilidadApp() {
 
                   {hayItems(servicios) ? (
                   <>
-                  <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
-                    
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {servicios.map((servicio) => (
                       <Card
                         key={servicio.id}
-                        className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg mt-8"
+                        className="rounded-lg border bg-card text-card-foreground shadow-sm flex flex-col overflow-hidden mt-8"
                       >
                         <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
                           <CardTitle className="text-xl font-bold flex justify-between items-center">
@@ -2774,7 +2753,7 @@ export default function ContabilidadApp() {
                           </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="flex-grow p-4 bg-card">
+                        <CardContent className="flex-grow p-4 bg-card h-auto">
                           <div className="space-y-2">
                             <p className="text-sm flex items-center">
                               <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -2782,7 +2761,7 @@ export default function ContabilidadApp() {
                               <span className="ml-2">{servicio.descripcion}</span>
                             </p>
                             <p className="text-sm flex items-center">
-                              <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
                               <span className="font-medium text-muted-foreground">Uso de Item:</span>
                               <span className="ml-2 truncate">{servicio.usoDeItem}</span>
                             </p>
@@ -2803,7 +2782,7 @@ export default function ContabilidadApp() {
                               Generar Asiento Contable
                             </Button>
                           </div>
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-2 ml-4">
                             <Button size="sm" onClick={() => handleEditService(servicio)}>
                               <RiEditLine className="h-4 w-4" />
                             </Button>
@@ -2811,8 +2790,8 @@ export default function ContabilidadApp() {
                               size="sm"
                               variant="destructive"
                               onClick={() => {
-                                setServiceToDelete(servicio.id)
-                                setIsServiceDeleteModalOpen(true)
+                                setServiceToDelete(servicio.id);
+                                setIsServiceDeleteModalOpen(true);
                               }}
                             >
                               <IoTrashBinSharp className="h-4 w-4" />
@@ -3400,6 +3379,7 @@ export default function ContabilidadApp() {
                               className={`${!isEditingInvoice ? "bg-background" : ""}`}
                               style={!isEditingInvoice ? { color: "white", opacity: 1, cursor: "default" } : {}}
                               disabled={!isEditingInvoice}
+                              readOnly
                             />
                           </div>
                         ))}
@@ -3453,8 +3433,8 @@ export default function ContabilidadApp() {
                         <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"}/>
                       </div>
                       <div className="col-span-2 mt-2">
-                        <Label htmlFor="correoEmisor">Empresa Emisora</Label>
-                        <Input id="correoEmisor" placeholder="Ingrese el nombre de la empresa" value={correoEmisor || "Nombre Comercial"}/>
+                        <Label htmlFor="correoEmisor">Correo Empresa Emisora</Label>
+                        <Input id="correoEmisor" placeholder="Ingrese el nombre de la empresa" value={correoEmisor || "Correo Comercial"}/>
                       </div>
                       <div className="mt-4 pt-4 border-t">
                         <div className="space-y-2">
@@ -3472,7 +3452,7 @@ export default function ContabilidadApp() {
                     <div className="border p-4 rounded-md space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
+                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" value={userData.rucCI} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
@@ -3480,7 +3460,7 @@ export default function ContabilidadApp() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" />
+                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" value={1} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
@@ -3548,7 +3528,7 @@ export default function ContabilidadApp() {
                             </td>
                             <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                             <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} readOnly onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
                             <td><Input className="w-full"  type="number" value={detalle.valorTotal} readOnly/></td>
                             <td>
                               <Button 
@@ -3781,7 +3761,11 @@ export default function ContabilidadApp() {
                     <div className="space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
+                        <Input 
+                          id="rucCi" 
+                          value={userData.rucCI || ''}
+                          placeholder="Ingrese el R.U.C o C.I" 
+                          type="number" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
@@ -3808,16 +3792,16 @@ export default function ContabilidadApp() {
                           <tr key={index}>
                             <td>
                               <Select
-                                value={detalle.idElemento || ""}
-                                onValueChange={(value) => handleServiceSelect(value, index)}
+                                value={detalle.idElemento}
+                                onValueChange={(value) => handleInventoryItemSelect(value, index)}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Seleccionar servicio" />
+                                  <SelectValue placeholder="Seleccionar item" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {servicios.map((servicio) => (
-                                    <SelectItem key={servicio.id} value={servicio.id || `service-${Date.now()}`}>
-                                      {servicio.nombre}
+                                  {inventoryItems.map((item) => (
+                                    <SelectItem key={item.idElemento} value={item.idElemento}>
+                                      {item.idElemento}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -3825,7 +3809,7 @@ export default function ContabilidadApp() {
                             </td>
                             <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                             <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" readOnly value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
                             <td><Input className="w-full"  type="number" readOnly value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
                             <td>
                               <Button 
@@ -3869,7 +3853,6 @@ export default function ContabilidadApp() {
                           value={totales.SubTotal0IVA.toFixed(2)}
                           placeholder="0.00"
                           readOnly
-                          onChange={(e) => handleTotalesChange("SubTotal12IVA", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3880,7 +3863,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.SubTotal0IVA.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("SubTotal0IVA", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3891,7 +3873,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.SubTotalExentoIVA.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("SubTotalExentoIVA", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3902,7 +3883,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.SubTotalNoObjetoIVA.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("SubTotalNoObjetoIVA", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3913,7 +3893,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.Descuento.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("Descuento", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3924,7 +3903,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.SubTotal.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("SubTotal", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3935,7 +3913,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.ICE.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("ICE", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3946,7 +3923,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.IVA12.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("IVA12", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3956,7 +3932,6 @@ export default function ContabilidadApp() {
                           type="number"
                           placeholder="0.00"
                           value={totales.Propina.toFixed(2)}
-                          readOnly
                           onChange={(e) => handleTotalesChange("Propina", e.target.value)}
                         />
                       </div>
@@ -3968,7 +3943,6 @@ export default function ContabilidadApp() {
                           placeholder="0.00"
                           value={totales.ValorTotalFinal.toFixed(2)}
                           readOnly
-                          onChange={(e) => handleTotalesChange("ValorTotalFinal", e.target.value)}
                         />
                       </div>
                     </div>
@@ -4175,6 +4149,7 @@ export default function ContabilidadApp() {
                   />
                 </div>
               </div>
+
               <DialogFooter>
                 <Button
                   variant="outline"
@@ -4199,6 +4174,7 @@ export default function ContabilidadApp() {
                   {editingServiceId ? "Guardar" : "Crear"}
                 </Button>
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
 
@@ -4343,6 +4319,7 @@ export default function ContabilidadApp() {
 
       </div>
     ) : (
+
       //Landing Page
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
         

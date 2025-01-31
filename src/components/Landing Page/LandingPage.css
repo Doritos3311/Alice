@@ -1,0 +1,721 @@
+  /* Agregar al inicio del archivo LandingPage.css */
+  .landing-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background-color: #1E1E1E; /* Fondo oscuro */
+  }
+  
+  #animated-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .landing-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    z-index: 1;
+    background: linear-gradient(-45deg, #1E1E1E, #2E2E2E, #3E3E3E, #4E4E4E);
+    background-size: 400% 400%;
+    animation: waveAnimation 5s ease infinite;
+  }
+
+  .landing-page.dark {
+    background: linear-gradient(-45deg, #1E1E1E, #2E2E2E, #3E3E3E, #4E4E4E);
+    background-size: 400% 400%;
+    animation: waveAnimation 5s ease infinite;
+    color: white;
+  }
+
+  .landing-page.light {
+    background: linear-gradient(-45deg, #e5e7eb, #d1d5db, #f3f4f6, #e5e7eb);
+    background-size: 400% 400%;
+    animation: waveAnimation 5s ease infinite;
+    color: black;
+  }
+  
+  .header {
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .dark .header {
+    background-color: #1E1E1E;
+  }
+  
+  .light .header {
+    background-color: #e5e7eb;
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-left: 2rem;
+  }
+  
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .nav-link {
+    transition: color 0.3s;
+  }
+  
+  .dark .nav-link {
+    color: white;
+  }
+  
+  .light .nav-link {
+    color: black;
+  }
+  
+  .nav-link:hover {
+    color: #a78bfa;
+  }
+  
+  .user-profile {
+    margin-top: 1.25rem;
+    margin-bottom: 0.25rem;
+    margin-right: 20px;
+  }
+
+  .user-button {
+    width: 100%;
+    height: 100%;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0.5rem;
+  }
+  
+  .avatar {
+    height: 2.5rem;
+    width: 2.5rem;
+    margin-right: 0.5rem;
+  }
+  
+  .user-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .popover-content {
+    width: 20rem;
+    padding: 0;
+    transform: translateY(0.75rem);
+    border-radius: 1.5rem;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .avatar-large {
+    height: 4rem;
+    width: 4rem;
+    margin-right: 1rem;
+    margin-left: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .avatar-fallback {
+    font-size: 1.125rem;
+    font-weight: bold;
+  }
+  
+  .user-display-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 1rem;
+  }
+  
+  .user-email {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  .divider {
+    border-top: 1px solid #9ca3af;
+  }
+  
+  .menu-button {
+    border-radius: 0;
+    font-size: 1rem;
+    width: 100%;
+    height: 45px;
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .menuitemlogout {
+    border-radius: 0;
+    font-size: 1rem;
+    width: 100%;
+    height: 45px;
+    justify-content: flex-start;
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+  }
+  
+  .icon {
+    margin-right: 0.5rem;
+    height: 1rem;
+    width: 1rem;
+  }
+  
+  .login-button {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .login-link {
+    background-color: black;
+    color: white;
+    border: 1px solid #4b5563;
+    transition: background-color 0.3s;
+  }
+  
+  .login-link:hover {
+    background-color: #1f2937;
+  }
+  
+  .dark .login-link {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .login-link:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .dialog-content {
+    max-width: 425px;
+  }
+  
+  .dark .dialog-content {
+    color: white;
+  }
+  
+  .light .dialog-content {
+    background-color: #e5e7eb;
+  }
+  
+  .dialog-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .input {
+    width: 100%;
+  }
+  
+  .dark .input {
+    background-color: #2E2E2E;
+    color: white;
+  }
+  
+  .light .input {
+    background-color: #d1d5db;
+    color: black;
+  }
+  
+  .submit-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .dark .submit-button {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .submit-button:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .light .submit-button {
+    background-color: black;
+    color: white;
+  }
+  
+  .light .submit-button:hover {
+    background-color: #1f2937;
+  }
+  
+  .signup-link {
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .signup-button {
+    color: #60a5fa;
+  }
+  
+  .signup-button:hover {
+    color: #3b82f6;
+  }
+  
+  .google-button {
+    margin-top: 1rem;
+  }
+  
+  .google-login {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .dark .google-login {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .google-login:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .light .google-login {
+    background-color: black;
+    color: white;
+  }
+  
+  .light .google-login:hover {
+    background-color: #1f2937;
+  }
+  
+  .google-icon {
+    margin-right: 0.5rem;
+  }
+  
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+  }
+  
+  .inice-content {
+    margin-top: 20vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  .main-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  .content-wrapper {
+    max-width: 56rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  @media (min-width: 768px) {
+    .content-wrapper {
+      flex-direction: row;
+    }
+  }
+  
+  .text-content {
+    flex: 1;
+    text-align: center;
+  }
+  
+  @media (min-width: 768px) {
+    .text-content {
+      text-align: left;
+    }
+  }
+  
+  .description {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .join-section {
+    flex: 1;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    height: 16.5rem;
+  }
+  
+  .dark .join-section {
+    background-color: #1E1E1E;
+  }
+  
+  .light .join-section {
+    background-color: #e5e7eb;
+  }
+  
+  .join-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  .join-description {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .join-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10rem;
+  }
+  
+  .join-link {
+    background-color: black;
+    color: white;
+    border: 1px solid #4b5563;
+    transition: background-color 0.3s;
+  }
+  
+  .join-link:hover {
+    background-color: #1f2937;
+  }
+  
+  .dark .join-link {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .join-link:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .pricing-content {
+    width: 100%;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 4rem 1rem;
+  }
+  
+  .pricing-title {
+    font-size: 3rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 3rem;
+  }
+  
+  @media (min-width: 1024px) {
+    .plans-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  .plan-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .plan-card.highlighted {
+    border: 2px solid black;
+  }
+  
+  .dark .plan-card {
+    background-color: #1E1E1E;
+    color: white;
+  }
+  
+  .card-header {
+    text-align: center;
+    padding-bottom: 2rem;
+  }
+  
+  .plan-name {
+    font-size: 1.875rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .plan-price {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .plan-duration {
+    font-size: 1.25rem;
+  }
+  
+  .card-content {
+    flex-grow: 1;
+  }
+  
+  .features-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+  }
+  
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .check-icon {
+    margin-right: 0.75rem;
+    height: 1.5rem;
+    width: 1.5rem;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+  }
+  
+  .feature-text {
+    font-size: 1.125rem;
+  }
+  
+  .plan-note {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    font-style: italic;
+  }
+  
+  .card-footer {
+    padding-top: 2rem;
+  }
+  
+  .select-plan-button {
+    width: 100%;
+    font-size: 1.25rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    transition: background-color 0.3s;
+  }
+  
+  .dark .select-plan-button {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .select-plan-button:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .light .select-plan-button {
+    background-color: black;
+    color: white;
+  }
+  
+  .light .select-plan-button:hover {
+    background-color: #1f2937;
+  }
+  
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0%;
+    width: 100%;
+    z-index: 1000;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+  
+  .dark .footer {
+    color: #9ca3af;
+  }
+  
+  .light .footer {
+    color: #6b7280;
+  }
+  
+  .logout-dialog {
+    background-color: white;
+    color: black;
+  }
+  
+  .dark .logout-dialog {
+    background-color: #121212;
+    color: white;
+  }
+  
+  .logout-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .logout-description {
+    text-align: center;
+  }
+  
+  .logout-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+  }
+  
+  .confirm-button {
+    background-color: #dc2626;
+    color: white;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  
+  .confirm-button:hover {
+    background-color: #b91c1c;
+  }
+
+  /* Ajustes generales para móviles */
+@media (max-width: 768px) {
+    .landing-page {
+      padding: 1rem;
+    }
+  
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1rem;
+    }
+  
+    .logo {
+      margin-left: 0;
+      margin-bottom: 1rem;
+    }
+  
+    .nav {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  
+    .main-content {
+      padding: 1rem;
+    }
+  
+    .main-title {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+  
+    .description {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+  
+    .content-wrapper {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .text-content {
+      text-align: center;
+    }
+  
+    .join-section {
+      padding: 1rem;
+      height: auto;
+    }
+  
+    .join-title {
+      font-size: 1.25rem;
+    }
+  
+    .join-description {
+      font-size: 1rem;
+    }
+  
+    .join-button {
+      margin-bottom: 1rem;
+    }
+  
+    .pricing-content {
+      padding: 2rem 1rem;
+    }
+  
+    .pricing-title {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+  
+    .plans-grid {
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1.5rem;
+    }
+  
+    .plan-card {
+      padding: 1rem;
+    }
+  
+    .plan-name {
+      font-size: 1.5rem;
+    }
+  
+    .plan-price {
+      font-size: 2rem;
+    }
+  
+    .plan-duration {
+      font-size: 1rem;
+    }
+  
+    .feature-text {
+      font-size: 1rem;
+    }
+  
+    .select-plan-button {
+      font-size: 1rem;
+      padding: 1rem;
+    }
+  
+    .footer {
+      padding: 0.5rem;
+      font-size: 0.75rem;
+    }
+  }

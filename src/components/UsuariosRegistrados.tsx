@@ -260,7 +260,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
         <Card key={userData.id} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
           <CardContent className="flex justify-between items-center">
             <div className="flex items-center mt-4">
-                <Building className="h-7 w-7 mr-2 mr-5" />
+                <Building className="h-7 w-7 mr-7" />
               <div>
                 <p className="font-medium">{userData.nombre} (Tu)</p>
                 <p className="text-sm text-gray-500">ID: {userData.id.substring(0, 8)}...</p>
@@ -276,7 +276,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
           <Card key={index} className={`p-4 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
             <CardContent className="flex justify-between items-center">
               <div className="flex items-center mt-4">
-                <CircleUserRound className="h-7 w-7 mr-2 mr-5" />
+                <CircleUserRound className="h-7 w-7 mr-7" />
                 <div>
                   <p className="font-medium">{loggedUser.name}</p>
                   <p className="text-sm text-gray-500">ID: {loggedUser.uid.substring(0, 8)}...</p>

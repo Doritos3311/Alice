@@ -108,8 +108,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLa
   return (
     <div className="flex h-screen p-6 space-x-6">
       {/* Sección izquierda: Perfil del usuario */}
-      <Card className="w-full max-w-sm h-auto
-      ">
+      <Card className="w-full max-w-sm h-auto">
 
         {/* Recuadro de Usuario */}
         <CardContent className="flex flex-col items-center p-6">
