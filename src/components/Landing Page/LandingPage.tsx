@@ -67,7 +67,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let particles: { x: number; y: number; r: number; speedX: number; speedY: number }[] = [];
+    const particles: { x: number; y: number; r: number; speedX: number; speedY: number }[] = [];
 
     for (let i = 0; i < 100; i++) {
       particles.push({
@@ -230,7 +230,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
 
   return (
     <div className={`landing-page ${theme}`}>
-      
+
       {/* Nanvar */}
       <header className="header">
         <div className="logo">Alice</div>
