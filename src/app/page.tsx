@@ -18,13 +18,14 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
-import styles from "./page.module.css"
-import stylesmodal from "@/components/estilos/modales.module.css"
+
+//Estilos
+import stylesMenu from "@/components/estilos/menu.module.css"
+import stylesService from "@/components/estilos/servicio.module.css"
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
 import LandingPage from '@/components/Landing Page/LandingPage';
-import UserProfile from '@/components/UserProfile';
 import UsuariosRegistrados from '@/components/UsuariosRegistrados';
 import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
 import SolicitudIngreso from '@/components/SolicitudIngreso';
@@ -332,7 +333,8 @@ export default function ContabilidadApp() {
 
   // Estados para Autocompletar Campos
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
-  const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
+  const [showInvoiceRecibedAutoCompleteModal, setShowInvoiceRecibedAutoCompleteModal] = useState(false)
+  const [showInvoiceEmitedAutoCompleteModal, setShowInvoiceEmitedAutoCompleteModal] = useState(false)
   const [lastCreatedInvoice, setLastCreatedInvoice] = useState<InvoiceItem | null>(null);
 
   // Estado de autenticación Landing Page
@@ -1116,7 +1118,13 @@ export default function ContabilidadApp() {
   
       // Limpiar el formulario y cerrar el modal
       setNewInvoiceItem({} as InvoiceItem);
-      setIsInvoiceModalOpen(false);
+      if (tipo == 'recibida') {
+        setIsInvoiceReceivedModalOpen(false);
+        
+      }
+      else {
+        setIsInvoiceModalOpen(false);
+      }
       setDetallesFactura([{ idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }]);
       setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
   
@@ -1124,9 +1132,18 @@ export default function ContabilidadApp() {
         title: "Éxito",
         description: "La factura se ha guardado correctamente.",
       });
+
+      console.log(tipo);
   
       // Opcional: Mostrar modal de autocompletar
-      setShowAutoCompleteModal(true);
+      if (tipo == 'recibida') {
+        setShowInvoiceRecibedAutoCompleteModal(true);
+        
+      }
+      else {
+        setShowInvoiceEmitedAutoCompleteModal(true);
+      }
+      
     } catch (error) {
       console.error("Error al agregar factura:", error);
       toast({
@@ -1470,7 +1487,7 @@ export default function ContabilidadApp() {
         descripcion: `Ingreso por servicio: ${service.descripcion}`,
         idElemento: service.usoDeItem || service.nombre,
         debe: Number.parseFloat(service.costoDeServicio),
-        haber: Number.parseFloat(service.gastosPorServicio)
+        haber: Number.parseFloat(service.gastosTotalesPorServicio) || 0
       }
 
       await addDoc(collection(db, `users/${user.uid}/libroDiario`), asientoContable)
@@ -1496,31 +1513,31 @@ export default function ContabilidadApp() {
   };
 
   // Función para manejar cambios en los campos de la fila
-const handleDetalleChangeService = (index: number, field: string, value: string) => {
-  const newDetalles = [...detallesServicio];
-  newDetalles[index] = {
-    ...newDetalles[index],
-    [field]: value,
-    gastosPorServicio:
-      field === "cantidad" && newDetalles[index].usoDeItem
-        ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
-        : newDetalles[index].gastosPorServicio,
-  };
-  setDetallesServicio(newDetalles);
-
-  // Actualizar el estado newService si es necesario
-  if (index === 0) {
-    // Suponiendo que solo la primera fila afecta a newService
-    setNewService({
-      ...newService,
+  const handleDetalleChangeService = (index: number, field: string, value: string) => {
+    const newDetalles = [...detallesServicio];
+    newDetalles[index] = {
+      ...newDetalles[index],
       [field]: value,
       gastosPorServicio:
         field === "cantidad" && newDetalles[index].usoDeItem
           ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
-          : newService.gastosPorServicio,
-    });
-  }
-};
+          : newDetalles[index].gastosPorServicio,
+    };
+    setDetallesServicio(newDetalles);
+
+    // Actualizar el estado newService si es necesario
+    if (index === 0) {
+      // Suponiendo que solo la primera fila afecta a newService
+      setNewService({
+        ...newService,
+        [field]: value,
+        gastosPorServicio:
+          field === "cantidad" && newDetalles[index].usoDeItem
+            ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
+            : newService.gastosPorServicio,
+      });
+    }
+  };
 
   {/* Inicio de Sesion */}
 
@@ -1670,13 +1687,100 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
     }
   };
 
-  // Función para autocompletar la factura en el libro diario 
-  const handleAutoCompleteLibroDiario = async () => {
-    if (!user || !selectedService || !lastCreatedInvoice) {
-      console.error("Usuario no autenticado");
-      toast({
+  // Función para autocompletar la factura recibida en el libro diario 
+  const handleInvoiceRecibedAutoCompleteLibroDiario = async () => {
+  
+    if (!user) {// Si usuario no existe
+      console.error("Usuario no autenticado"); // Consola error
+      toast({// error detallado
         title: "Error",
         description: "Debes iniciar sesión para realizar esta acción.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!selectedInventoryItem) { //si item seleccionado no existe
+      console.error("No se ha seleccionado un ítem del inventario"); //error
+      toast({// error
+        title: "Error",
+        description: "Por favor, selecciona un ítem del inventario.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!lastCreatedInvoice) { //si ultimo item seleccionado no existe
+      console.error("No hay factura creada recientemente"); //error
+      toast({ //error
+        title: "Error",
+        description: "No hay factura reciente para autocompletar en el libro diario.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    try {// Intentar
+      const valorTotal = lastCreatedInvoice.detalles.reduce((total: number, detalle: { valorTotal: string; }) => 
+        total + parseFloat(detalle.valorTotal), 0);
+
+      const newLibroDiarioItem = { // Crear un metodo con los datos para una nueva tabla
+        fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0], // Valor fecha segun fecha de facturacion
+        nombreCuenta: "Venta "+`Factura #${lastCreatedInvoice.numeroFactura}`, // Nombre de cuenta vacio
+        descripcion: lastCreatedInvoice.detallesProducto || selectedInventoryItem.descripcion, // Descriocion segun descripcion facturacion
+        idElemento: selectedInventoryItem.idElemento || "", // IdElemento segun idElemento de inventario
+        haber: valorTotal.toFixed(2), // Haber 0
+        debe: 0 // Debe segun total de facturacion o 0
+      };
+      
+      const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);// Agrega a la base de datos el nuevo documento
+      console.log("Documento agregado con ID:", docRef.id); // Control de funcionamiento
+    
+      toast({ //error detallado
+        title: "Éxito",
+        description: "Se ha agregado el ítem al libro diario.",
+      });
+  
+      setShowInvoiceRecibedAutoCompleteModal(false); // Cerrar el modal de autocompletar 
+      setSelectedInventoryItem(null); // Vacia la funcion setSelectedInventoryItem
+      setLastCreatedInvoice(null); // Vacia la funcion setLastCreatedInvoice
+    } catch (error) { //error
+      console.error("Error al agregar ítem al libro diario:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el ítem al libro diario. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para autocompletar la factura emitida en el libro diario 
+  const handleAutoCompleteLibroDiario = async () => {
+    if (!user) {// Si usuario no existe
+      console.error("Usuario no autenticado"); // Consola error
+      toast({// error detallado
+        title: "Error",
+        description: "Debes iniciar sesión para realizar esta acción.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!selectedService) { //si item seleccionado no existe
+      console.error("No se ha seleccionado un servicio"); //error
+      toast({// error
+        title: "Error",
+        description: "Por favor, selecciona un ítem del inventario.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!lastCreatedInvoice) { //si ultimo item seleccionado no existe
+      console.error("No hay factura creada recientemente"); //error
+      toast({ //error
+        title: "Error",
+        description: "No hay factura reciente para autocompletar en el libro diario.",
         variant: "destructive",
       });
       return;
@@ -1688,11 +1792,11 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
 
       const newLibroDiarioItem = {
         fecha: lastCreatedInvoice.fechaEmision || new Date().toISOString().split('T')[0],
-        nombreCuenta: `Venta Servicio - Factura #${lastCreatedInvoice.numeroFactura}`,
+        nombreCuenta: `Compra Item - Factura #${lastCreatedInvoice.numeroFactura}`,
         descripcion: selectedService.descripcion || lastCreatedInvoice.detallesProducto,
         idElemento: selectedService.id || "",
-        haber: valorTotal.toFixed(2),
-        debe: "0" 
+        haber: 0,
+        debe: valorTotal.toFixed(2)
       };
       
       const docRef = await addDoc(collection(db, `users/${user.uid}/libroDiario`), newLibroDiarioItem);
@@ -1703,7 +1807,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
         description: "Se ha agregado el servicio al libro diario.",
       });
 
-      setShowAutoCompleteModal(false);
+      setShowInvoiceEmitedAutoCompleteModal(false);
       setSelectedService(null);
       setLastCreatedInvoice(null);
     } catch (error) {
@@ -1772,113 +1876,123 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
 
           {/* Menu Izquierda*/}
           <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(28,28,28)] text-gray-300" : "bg-white text-gray-900"}`}>
-            <div className={styles.menucontent}>
-              <div className={styles.menuheader}>
-                <h1 className={styles.apptitle}>Alice</h1>
+            <div className={stylesMenu.menucontent}>
+
+              <div className={stylesMenu.menuheader}>
+                <h1 className={stylesMenu.apptitle}>Alice</h1>
                 <Button
                   variant={activeTab === "configuracion" ? "default" : "ghost"}
-                  className={styles.configbutton}
+                  className={stylesMenu.configbutton}
                   onClick={() => setActiveTab("configuracion")}
                 >
-                  <Settings className={styles.iconconfig} />
+                  <Settings className={stylesMenu.iconconfig} />
                 </Button>
               </div>
 
               {user ? (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className={styles.userbutton}>
-                      <Avatar className={styles.useravatar}>
+                    <Button variant="ghost" className={stylesMenu.userbutton}>
+                      <Avatar className={stylesMenu.useravatar}>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
                         <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                       </Avatar>
-                      <span className={styles.username}>{user.displayName || user.email}</span>
+                      <span className={stylesMenu.username}>{user.displayName || user.email}</span>
                     </Button>
                   </PopoverTrigger>
 
-                  <PopoverContent className={styles.userpopover}>
-                    <div className={styles.userinfo}>
-                      <Avatar className={styles.useravatarlarge}>
+                  <PopoverContent className={stylesMenu.userpopover}>
+                    <div className={stylesMenu.userinfo}>
+                      <Avatar className={stylesMenu.useravatarlarge}>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                        <AvatarFallback className={styles.avatarfallback}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                        <AvatarFallback className={stylesMenu.avatarfallback}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className={styles.userdisplayname}>{user.displayName || "Usuario"}</h3>
-                        <p className={styles.useremail}>{user.email}</p>
+                        <h3 className={stylesMenu.userdisplayname}>{user.displayName || "Usuario"}</h3>
+                        <p className={stylesMenu.useremail}>{user.email}</p>
                       </div>
                     </div>
 
-                    <div className={styles.divider}></div>
+                    <div className={stylesMenu.divider}></div>
 
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={styles.menuitem}
+                      className={stylesMenu.menuitem}
                       onClick={() => setShowLandingPage(false)}
                     >
-                      <Home className={styles.icon} />
+                      <Home className={stylesMenu.icon} />
                       Inicio
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={stylesMenu.menuitem}
+                      onClick={() => setActiveTab("configuracion")}
+                    >
+                      <Settings className={stylesMenu.icon} />
+                      Configuracion
+                    </Button>
 
-                    <div className={styles.divider}></div>
+                    <div className={stylesMenu.divider}></div>
 
-                    <Button variant="ghost" size="sm" className={styles.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
-                      <LogOut className={styles.icon} />
+                    <Button variant="ghost" size="sm" className={stylesMenu.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
+                      <LogOut className={stylesMenu.icon} />
                       Cerrar sesión
                     </Button>
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Button className={styles.loginbutton} onClick={() => setIsLoginModalOpen(true)}>
+                <Button className={stylesMenu.loginbutton} onClick={() => setIsLoginModalOpen(true)}>
                   Iniciar sesión
                 </Button>
               )}
               
-              <nav className={styles.mainnav}>
+              <nav className={stylesMenu.mainnav}>
                 <Button
                   variant={activeTab === "servicios" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("servicios")}
                 >
-                  <Handshake className={styles.icon} />
+                  <Handshake className={stylesMenu.icon} />
                   Servicios
                 </Button>
 
                 <Button
                   variant={activeTab === "inventario" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("inventario")}
                 >
-                  <Package className={styles.icon} />
+                  <Package className={stylesMenu.icon} />
                   Registro de Inventario
                 </Button>
 
-                <div className={styles.navitemgroup}>
+                <div className={stylesMenu.navitemgroup}>
                   <Button
                     variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
-                    className={styles.navitem}
+                    className={stylesMenu.navitem}
                     onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
                   >
-                    <FileText className={styles.icon} />
+                    <FileText className={stylesMenu.icon} />
                     Facturación
-                    {isFacturacionOpen ? <ChevronUp className={styles.iconsmall} /> : <ChevronDown className={styles.iconsmall} />}
+                    {isFacturacionOpen ? <ChevronUp className={stylesMenu.iconsmall} /> : <ChevronDown className={stylesMenu.iconsmall} />}
                   </Button>
                   {isFacturacionOpen && (
-                    <div className={styles.subnav}>
+                    <div className={stylesMenu.subnav}>
                       <Button
                         variant={activeTab === "facturacion-emitidas" ? "default" : "ghost"}
-                        className={styles.navitem}
+                        className={stylesMenu.navitem}
                         onClick={() => setActiveTab("facturacion-emitidas")}
                       >
-                        <FileUp className={styles.icon} />
+                        <FileUp className={stylesMenu.icon} />
                         Facturas Emitidas
                       </Button>
                       <Button
                         variant={activeTab === "facturacion-recibidas" ? "default" : "ghost"}
-                        className={styles.navitem}
+                        className={stylesMenu.navitem}
                         onClick={() => setActiveTab("facturacion-recibidas")}
                       >
-                        <FileDown className={styles.icon} />
+                        <FileDown className={stylesMenu.icon} />
                         Facturas Recibidas
                       </Button>
                     </div>
@@ -1887,40 +2001,41 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
 
                 <Button
                   variant={activeTab === "libro-diario" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("libro-diario")}
                 >
-                  <FileSpreadsheet className={styles.icon} />
+                  <FileSpreadsheet className={stylesMenu.icon} />
                   Libro Diario
                 </Button>
 
                 <Button
                   variant={activeTab === "dashboard" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("dashboard")}
                 >
-                  <BarChart2 className={styles.icon} />
+                  <BarChart2 className={stylesMenu.icon} />
                   Dashboard
                 </Button>
 
                 <Button
                   variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("grupos-trabajo")}
                 >
-                  <Users className={styles.icon} />
+                  <Users className={stylesMenu.icon} />
                   Grupos de Trabajo
                 </Button>
 
                 <Button
                   variant={activeTab === "generar-registros" ? "default" : "ghost"}
-                  className={styles.navitem}
+                  className={stylesMenu.navitem}
                   onClick={() => setActiveTab("generar-registros")}
                 >
-                  <FileDown className={styles.icon} />
+                  <FileDown className={stylesMenu.icon} />
                   Generar Registros
                 </Button>
               </nav>
+
             </div>
           </div>
 
@@ -1938,12 +2053,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                 <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
                 {user && (
                   <>
-                    <UserProfile
-                      user={user}
-                      onUpdateUserType={(newType) => console.log(newType)}
-                      setActiveTab={setActiveTab}
-                      setShowLandingPage={setShowLandingPage}
-                    />
+
                     {userData.type === 'personal' ? (
                       <div className="mt-8">
 
@@ -2792,7 +2902,8 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
             {activeTab === "servicios" && (
               <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
                 <div>
-                  <div className="flex justify-between items-center mb-4">
+
+                  <div className={stylesService.serviciosContainer}>
                     <h2 className="text-3xl font-bold">Servicios</h2>
                   </div>
 
@@ -2806,11 +2917,11 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
 
                   {hayItems(servicios) ? (
                   <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className={stylesService.serviciosContentent}>
                     {servicios.map((servicio) => (
                       <Card
                         key={servicio.id}
-                        className="rounded-lg border bg-card text-card-foreground shadow-sm flex flex-col overflow-hidden mt-8"
+                        className="rounded-lg border bg-card text-card-foreground flex flex-col mt-8"
                       >
                         <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
                           <CardTitle className="text-xl font-bold flex justify-between items-center">
@@ -2832,7 +2943,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                             </p>
                             <p className="text-sm flex items-center">
                               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="font-medium text-muted-foreground">olis:</span>
+                              <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
                               <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
                             </p>
                           </div>
@@ -3110,15 +3221,29 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
             </DialogContent>
           </Dialog>
 
-          {/* Modal de Autocompletar */}
-          <Dialog open={showAutoCompleteModal} onOpenChange={setShowAutoCompleteModal}>
+          {/* Modal de Autocompletar Factura Recibida */}
+          <Dialog open={showInvoiceRecibedAutoCompleteModal} onOpenChange={setShowInvoiceRecibedAutoCompleteModal}>
             <DialogContent aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Autocompletar Libro Diario</DialogTitle>
               </DialogHeader>
               <p>¿Desea autocompletar este ítem en el libro diario?</p>
               <DialogFooter>
-                <Button onClick={() => setShowAutoCompleteModal(false)}>Cancelar</Button>
+                <Button onClick={() => setShowInvoiceRecibedAutoCompleteModal(false)}>Cancelar</Button>
+                <Button onClick={handleInvoiceRecibedAutoCompleteLibroDiario}>Aceptar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal de Autocompletar Factura Emitida */}
+          <Dialog open={showInvoiceEmitedAutoCompleteModal} onOpenChange={setShowInvoiceEmitedAutoCompleteModal}>
+            <DialogContent aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>Autocompletar Libro Diario</DialogTitle>
+              </DialogHeader>
+              <p>¿Desea autocompletar este ítem en el libro diario?</p>
+              <DialogFooter>
+                <Button onClick={() => setShowInvoiceEmitedAutoCompleteModal(false)}>Cancelar</Button>
                 <Button onClick={handleAutoCompleteLibroDiario}>Aceptar</Button>
               </DialogFooter>
             </DialogContent>
@@ -3757,7 +3882,6 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
               </DialogTitle>
             </DialogHeader>
 
-              {/* ... (contenido del formulario) ... */}
               <ScrollArea className="max-h-[80vh]">
                 <div className="space-y-4 p-4">
                   {/* Cabecera */}
@@ -3915,8 +4039,8 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                         <Input
                           id="SubTotal12IVA"
                           type="number"
-                          value={totales.SubTotal0IVA.toFixed(2)}
                           placeholder="0.00"
+                          value={totales.SubTotal12IVA.toFixed(2)}
                           readOnly
                         />
                       </div>
@@ -4101,7 +4225,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
 
           {/* Modal para crear servicio */}
           <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
-            <DialogContent aria-describedby={undefined}>
+            <DialogContent aria-describedby={undefined} className={stylesService.DialogContent}>
               
               {/* Cabecera */}
               <DialogHeader>
@@ -4112,11 +4236,11 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
               </DialogHeader>
 
               {/* Contenido */}
-              <div className={stylesmodal.contenidoservicio}>{/* grid grid-cols-2 gap-4 py-4 */}
+              <div className={stylesService.contenidoservicio}>
                 
                 {/* Contenido Izquierdo */}
-                <div className={stylesmodal.contenidoIzquierdoServicio}>{/* space-y-4 */}
-                  <div className="space-y-2">
+                <div className={stylesService.contenidoIzquierdoServicio}>
+                  <div className={stylesService.camposIzq}>
                     <Label htmlFor="nombre">Nombre del Servicio</Label>
                     <Input
                       id="nombre"
@@ -4124,16 +4248,15 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                       onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className={stylesService.camposIzq}>
                     <Label htmlFor="descripcion">Descripción</Label>
                     <Input
                       id="descripcion"
                       value={newService.descripcion || ""}
                       onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
-                      className="h-24" // Ajusta la altura de la descripción
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className={stylesService.camposIzq}>
                     <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
                     <Input
                       id="costoDeServicio"
@@ -4145,15 +4268,15 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                 </div>
 
                 {/* Contenido Derecho */}
-                <div className="space-y-4">
-                  <div className="border p-4 rounded-md">
-                    <table className="w-full">
+                <div className={stylesService.contenidoDerechoServicio}>
+                  <div className={stylesService.contenedorTabla}>
+                    <table className={stylesService.tabla}>
                       <thead>
                         <tr>
-                          <th className="w-1/4">Uso de Item</th>
-                          <th className="w-1/4">Gastos por Item</th>
-                          <th className="w-1/4">Cantidad</th>
-                          <th className="w-1/4">Gastos por Servicio</th>
+                          <th className={stylesService.camposDere}>Uso de Item</th>
+                          <th className={stylesService.camposDere}>Gastos por Item</th>
+                          <th className={stylesService.camposDere}>Cantidad</th>
+                          <th className={stylesService.camposDere}>Gastos Servicio</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4164,7 +4287,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                                 value={detalle.usoDeItem || ""}
                                 onValueChange={(value) => handleUsoDeItemSelect(value, index)}
                               >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className={stylesService.SelectTrigger}>
                                   <SelectValue placeholder="Seleccionar item" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -4179,7 +4302,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                             </td>
                             <td>
                               <Input
-                                className="w-full"
+                                className={stylesService.inputDetalle}
                                 type="number"
                                 value={detalle.gastosPorItem || ""}
                                 readOnly
@@ -4187,7 +4310,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                             </td>
                             <td>
                               <Input
-                                className="w-full"
+                                className={stylesService.inputDetalle}
                                 type="number"
                                 value={detalle.cantidad || 0}
                                 onChange={(e) =>
@@ -4197,7 +4320,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                             </td>
                             <td>
                               <Input
-                                className="w-full"
+                                className={stylesService.inputDetalle}
                                 type="number"
                                 value={detalle.gastosPorServicio || ""}
                                 readOnly
@@ -4207,7 +4330,7 @@ const handleDetalleChangeService = (index: number, field: string, value: string)
                         ))}
                       </tbody>
                     </table>
-                    <Button className="mt-2 w-full" onClick={agregarNuevaFilaService}>
+                    <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
                       Agregar Fila
                     </Button>
                   </div>

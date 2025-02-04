@@ -1,0 +1,103 @@
+.serviciosContainer {
+    display: flex; /* flex */
+    justify-content: space-between; /* justify-between */
+    align-items: center; /* items-center */
+    margin-bottom: 1rem; /* mb-4 */
+}
+
+.serviciosContentent {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan en múltiples líneas */
+    gap: 1.5rem; /* gap-6 (1.5rem = 24px) */
+}
+
+.DialogContent {
+    width: auto; /* Se ajusta dinámicamente al contenido */
+    max-width: 800px; /* No se expande demasiado en pantallas grandes */
+    max-height: 90vh; /* Evita que se corte en pantallas pequeñas */
+    overflow-y: auto; /* Scroll solo si es necesario */
+    padding: 1.5rem;
+}
+
+.contenidoservicio {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Más espacio para el lado derecho */
+    gap: 1.5rem; /* Aumentamos el espacio entre las columnas */
+    padding: 1rem 0;
+}
+
+.contenidoIzquierdoServicio {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Reducimos el espacio entre los campos */
+}
+
+.camposIzq {
+    width: 100%; /* Ocupa todo el ancho disponible */
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem; /* Reducimos el espacio entre los elementos */
+}
+
+.contenidoDerechoServicio {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Aumentamos el espacio entre los elementos */
+}
+
+.contenedorTabla {
+    border: 1px solid;
+    padding: 1.5rem; /* Aumentamos el padding */
+    border-radius: 0.375rem; /* Equivalente a rounded-md */
+    overflow-x: auto; /* Permite scroll horizontal si es necesario */
+}
+
+.tabla {
+    width: 100%;
+}
+
+/* Asegurar que los th tengan el mismo estilo que los campos de la izquierda */
+.camposDere {
+    width: 25%;
+    margin-right: 1rem;
+    padding: 0.75rem; /* Aumentamos el padding en los encabezados */
+    font-family: inherit; /* Heredar la fuente del contenedor */
+    font-size: 0.875rem; /* Tamaño de fuente similar a los campos de la izquierda */
+    font-weight: 500; /* Peso de la fuente (medium) */
+    text-align: left; /* Alinear texto a la izquierda */
+}
+
+.SelectTrigger {
+    width: 100%;
+    padding: 0.75rem; /* Aumentamos el padding */
+}
+
+.inputDetalle {
+    width: 100%;
+    margin-right: 1rem;
+    padding: 0.75rem; /* Aumentamos el padding */
+}
+
+.botonAdd {
+    margin-top: 0.75rem; /* Aumentamos el margen superior */
+    width: 100%;
+    padding: 0.75rem; /* Aumentamos el padding */
+}
+
+/* Adaptación a móviles */
+@media (max-width: 768px) {
+    .contenidoservicio {
+        grid-template-columns: 1fr;
+    }
+
+    .flex-item {
+        flex: 1 1 calc(50% - 1.5rem); /* 2 columnas con gap */
+    }
+}
+
+/* Pantallas grandes (lg) - 3 columnas */
+@media (min-width: 1024px) {
+    .flex-item {
+        flex: 1 1 calc(33.333% - 1.5rem); /* 3 columnas con gap */
+    }
+}

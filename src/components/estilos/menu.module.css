@@ -1,3 +1,21 @@
+/* Estilos base */
+.menuContentPrincipal {
+  width: 16rem; /* w-64 */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+}
+
+/* Estilos para el tema claro */
+.menuContentPrincipal.light {
+  background-color: rgb(250, 137, 137); /* bg-white */
+  color: rgb(17, 24, 39); /* text-gray-900 */
+}
+
+/* Estilos para el tema oscuro */
+.menuContentPrincipal.dark {
+  background-color: #1c1c1c; /* bg-[rgb(28,28,28)] */
+  color: rgb(209, 213, 219); /* text-gray-300 */
+}
+
 .dashboard {
   display: flex;
   min-height: 100vh;
@@ -88,7 +106,7 @@
 
 .divider {
   border-top: 1px solid #9ca3af;
-  margin: 0.5rem 0;
+  margin: 1rem 0;
 }
 
 .loginbutton {
@@ -113,8 +131,6 @@
   width: 100%;
   height: 45px;
   justify-content: flex-start;
-  margin-bottom: 0.5rem;
-  margin-top: 0.5rem;
 }
 
 .menuitemlogout {
@@ -124,7 +140,6 @@
   height: 45px;
   justify-content: flex-start;
   margin-bottom: 1rem;
-  margin-top: 0.5rem;
 }
 
 
