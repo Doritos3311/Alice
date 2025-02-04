@@ -233,7 +233,12 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
 
       {/* Nanvar */}
       <header className="header">
-        <div className="logo">Alice</div>
+        {user ? (
+          <div className="logo">Alice</div>
+        ) : (
+          <div className="logo">A</div>
+        )}
+
         <nav className="nav">
           <Button onClick={handleShowInice} variant="link" className="nav-link">
             Inicio
@@ -337,110 +342,58 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
         </nav>
       </header>
 
-      <canvas ref={canvasRef} id="animated-background"></canvas>
-
       {/* Contenido Principal */}
       <main className="main-content">
 
-        {/* Descripcion */}
-        {showInice && (
-          <div className="inice-content">
-            <h1 className="main-title">Simplifica tu Contabilidad y Administración</h1>
-            <div className="content-wrapper">
-              <div className="text-content">
-                <p className="description">
-                  Una herramienta accesible y personalizable diseñada para microemprendedores, que transforma la gestión
-                  financiera en una tarea sencilla y efectiva.
-                </p>
-              </div>
-              <div className="join-section">
-                <h2 className="join-title">Únete a nosotros</h2>
-                <p className="join-description">
-                  Con Alice, lleva tu negocio hacia adelante con un buen manejo de contabilidad.
-                </p>
-                <div className="join-button">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button onClick={handleShowLogIn} variant="link" className="join-link">
-                        Comienza Ya
-                      </Button>
-                    </DialogTrigger>
-                    {showLogIn && (
-                      <DialogContent className="dialog-content">
-                        <DialogHeader>
-                          <DialogTitle className="dialog-title">Iniciar Sesión</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleSignIn} className="login-form">
-                          <Input
-                            type="email"
-                            placeholder="Correo electrónico"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="input"
-                          />
-                          <Input
-                            type="password"
-                            placeholder="Contraseña"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="input"
-                          />
-                          <Button type="submit" className="submit-button">
-                            Iniciar Sesión
-                          </Button>
-                        </form>
-                        <div className="signup-link">
-                          <p>¿No tienes una cuenta?</p>
-                          <Button variant="link" onClick={handleSignUp} className="signup-button">
-                            Registrarse
-                          </Button>
-                        </div>
-                        <div className="google-button">
-                          <Button onClick={handleGoogleLogin} variant="outline" className="google-login">
-                            <FcGoogle className="google-icon" />
-                            Continuar con Google
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    )}
-                  </Dialog>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <header className="hero">
+          <h1 className="hero-title">Alice: Tu Software de Contabilidad</h1>
+          <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
+          <Button className="cta-button">Explorar Funciones</Button>
+        </header>
 
-        {/* Planes */}
-        {showPricing && (
-          <div className="pricing-content">
-            <h1 className="pricing-title">Nuestros Planes</h1>
-            <div className="plans-grid">
-              {plans.map((plan, index) => (
-                <Card key={index} className={`plan-card ${index === 1 ? "highlighted" : ""}`}>
-                  <CardHeader className="card-header">
-                    <CardTitle className="plan-name">{plan.name}</CardTitle>
-                    <p className="plan-price">{plan.price}</p>
-                    <p className="plan-duration">{plan.duration}</p>
-                  </CardHeader>
-                  <CardContent className="card-content">
-                    <ul className="features-list">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="feature-item">
-                          <Check className="check-icon" />
-                          <span className="feature-text">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    {plan.note && <p className="plan-note">{plan.note}</p>}
-                  </CardContent>
-                  <CardFooter className="card-footer">
-                    <Button className="select-plan-button">Seleccionar Plan</Button>
-                  </CardFooter>
-                </Card>
-              ))}
+        <section className="features">
+          <h2>Funciones Principales</h2>
+          <div className="feature-grid">
+            <div className="feature-card">
+              <h3>Registro de Inventario</h3>
+              <p>Controla el stock de tu negocio en tiempo real.</p>
+              <div className="image-placeholder"></div>
+            </div>
+            <div className="feature-card">
+              <h3>Facturación</h3>
+              <p>Genera y administra facturas de forma automatizada.</p>
+              <div className="image-placeholder"></div>
+            </div>
+            <div className="feature-card">
+              <h3>Libro Diario</h3>
+              <p>Registra todas tus transacciones de manera organizada.</p>
+              <div className="image-placeholder"></div>
+            </div>
+            <div className="feature-card">
+              <h3>Registro de Servicios</h3>
+              <p>Gestiona los servicios ofrecidos con información detallada.</p>
+              <div className="image-placeholder"></div>
             </div>
           </div>
-        )}
+        </section>
+
+        <section className="pricing">
+          <h2>Planes de Precios</h2>
+          <div className="pricing-grid">
+            <div className="plan-card">
+              <h3>Plan Gratuito</h3>
+              <p>Prueba todas las funciones durante 7 días sin costo.</p>
+            </div>
+            <div className="plan-card">
+              <h3>Plan Mensual</h3>
+              <p>Accede a todas las funciones por $10 al mes.</p>
+            </div>
+            <div className="plan-card">
+              <h3>Plan Anual</h3>
+              <p>Obtén un descuento especial pagando $100 al año.</p>
+            </div>
+          </div>
+        </section>
 
       </main>
 

@@ -2,6 +2,8 @@
 .menuContentPrincipal {
   width: 16rem; /* w-64 */
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+  overflow-y: auto; /* Hace que el contenido sea desplazable verticalmente */
+  max-height: 100vh; /* Limita la altura al 100% del viewport */
 }
 
 /* Estilos para el tema claro */

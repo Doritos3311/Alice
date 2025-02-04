@@ -2040,7 +2040,7 @@ export default function ContabilidadApp() {
           </div>
 
           {/* Contenido principal */}
-          <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : "bg-[rgb(85, 85, 85)] text-gray-900"}`}>
+          <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : " bg-[rgb(85, 85, 85)] text-gray-900"}`}>
 
             {/* Configuracion Interfaz Estilo */}
             {activeTab === "configuracion" && (

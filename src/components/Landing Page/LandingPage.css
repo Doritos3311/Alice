@@ -21,26 +21,21 @@
     min-height: 100vh;
     overflow: hidden;
     z-index: 1;
-    background: linear-gradient(-45deg, #1E1E1E, #2E2E2E, #3E3E3E, #4E4E4E);
-    background-size: 400% 400%;
-    animation: waveAnimation 5s ease infinite;
   }
 
   .landing-page.dark {
-    background: linear-gradient(-45deg, #1E1E1E, #2E2E2E, #3E3E3E, #4E4E4E);
-    background-size: 400% 400%;
-    animation: waveAnimation 5s ease infinite;
+    background-color: rgb(15 15 15);
     color: white;
   }
 
   .landing-page.light {
-    background: linear-gradient(-45deg, #e5e7eb, #d1d5db, #f3f4f6, #e5e7eb);
-    background-size: 400% 400%;
-    animation: waveAnimation 5s ease infinite;
+    background-color: rgb(243 244 246);
     color: black;
   }
   
   .header {
+    width: 100%;
+    position: fixed;
     padding: 0;
     display: flex;
     justify-content: space-between;
@@ -53,7 +48,7 @@
   }
   
   .light .header {
-    background-color: #e5e7eb;
+    background-color: rgb(255 255 255);
   }
   
   .logo {
@@ -190,6 +185,7 @@
     color: white;
     border: 1px solid #4b5563;
     transition: background-color 0.3s;
+    margin-right: 20px;
   }
   
   .login-link:hover {
@@ -215,6 +211,82 @@
   
   .light .dialog-content {
     background-color: #e5e7eb;
+  }
+
+  .hero {
+    padding: 5rem 2rem;
+    background: linear-gradient(135deg, #222, #333);
+    width: 100%;
+    border-radius: 12px;
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .cta-button {
+    margin-top: 1rem;
+    background-color: #a78bfa;
+    color: black;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .cta-button:hover {
+    background-color: #6d28d9;
+  }
+  
+  .features {
+    margin-top: 3rem;
+    width: 100%;
+  }
+  
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    margin-top: 2rem;
+  }
+  
+  .feature-card {
+    background: #292929;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .image-placeholder {
+    width: 100%;
+    height: 200px;
+    background: #444;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+  
+  .pricing {
+    margin-top: 5rem;
+    width: 100%;
+  }
+  
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .plan-card {
+    background: #292929;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
   }
   
   .dialog-title {
@@ -315,15 +387,12 @@
   }
   
   .main-content {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 0 1rem;
+    margin-top: 9%;
   }
   
   .inice-content {
-    margin-top: 20vh;
+    margin-top: 5vh;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -347,12 +416,6 @@
     gap: 2rem;
   }
   
-  @media (min-width: 768px) {
-    .content-wrapper {
-      flex-direction: row;
-    }
-  }
-  
   .text-content {
     flex: 1;
     text-align: center;
@@ -361,6 +424,10 @@
   @media (min-width: 768px) {
     .text-content {
       text-align: left;
+    }
+
+    .content-wrapper {
+      flex-direction: row;
     }
   }
   
@@ -614,29 +681,50 @@
   }
 
   /* Ajustes generales para móviles */
-@media (max-width: 768px) {
-    .landing-page {
-      padding: 1rem;
+  @media (max-width: 768px) {
+
+    .inice-content {
+      margin-top: 3vh;
     }
   
     .header {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 1rem;
+    }
+
+    .user-button {
+      justify-content: center;
+      padding-right: 0;
+      margin-bottom: 0.5rem;
     }
   
     .logo {
       margin-left: 0;
-      margin-bottom: 1rem;
+      font-size: 1.4rem;
+    }
+
+    .nav-link {
+      font-size: 0.7rem;
+      padding: 0.6rem;
+    }
+
+    .user-name {
+      display: none;
+    }
+
+    .user-profile {
+      margin-top: 0.8rem;
     }
   
     .nav {
-      flex-direction: column;
-      gap: 0.5rem;
+      gap: 0rem;
     }
   
     .main-content {
       padding: 1rem;
+      margin-top: 24%;
     }
   
     .main-title {
@@ -712,6 +800,15 @@
     .select-plan-button {
       font-size: 1rem;
       padding: 1rem;
+    }
+
+    .dialog-content {
+      max-width: 325px;
+      border-radius: 0.4rem;
+    }
+
+    .signup-link {
+      margin-top: 0.2rem;
     }
   
     .footer {
