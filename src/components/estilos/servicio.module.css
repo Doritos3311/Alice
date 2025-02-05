@@ -84,6 +84,101 @@
     padding: 0.75rem; /* Aumentamos el padding */
 }
 
+
+
+
+/* Estilos para la tarjeta (Card) */
+.card {
+    border-radius: 0.5rem; /* rounded-lg */
+    color: var(--card-foreground); /* text-card-foreground */
+    display: flex;
+    flex-direction: column;
+    margin-top: 2rem; /* mt-8 */
+  }
+  
+  /* Estilos para el encabezado de la tarjeta (CardHeader) */
+  .cardHeader {
+    background-color: white;
+    padding: 1rem; /* equivalente a p-4 */
+    border-top-left-radius: 0.5rem; /* Radio de esquina superior izquierda */
+    border-top-right-radius: 0.5rem; /* Radio de esquina superior derecha */
+  }
+
+  .themeLight {
+    color: rgb(209, 213, 219);
+  }
+  
+  /* Estilos para el tema oscuro */
+  .themeDark {
+    color: rgb(17, 24, 39);
+  }
+  
+  /* Estilos para el título de la tarjeta (CardTitle) */
+  .cardTitle {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: bold; /* font-bold */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Estilos para el contenido de la tarjeta (CardContent) */
+  .cardContent {
+    flex-grow: 1; /* flex-grow */
+    padding: 1rem; /* p-4 */
+    background-color: var(--card-background); /* bg-card */
+    height: auto; /* h-auto */
+  }
+  
+  /* Estilos para los elementos dentro del contenido */
+  .cardContent p {
+    font-size: 0.875rem; /* text-sm */
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem; /* space-y-2 */
+  }
+  
+  .cardContent span {
+    font-weight: 500; /* font-medium */
+  }
+  
+  .cardContent svg {
+    height: 1rem; /* h-4 */
+    width: 1rem; /* w-4 */
+    margin-right: 0.5rem; /* mr-2 */
+    color: var(--muted-foreground); /* text-muted-foreground */
+  }
+  
+  /* Estilos para el pie de la tarjeta (CardFooter) */
+  .cardFooter {
+    background-color: rgb(28, 28, 28);
+    padding: 1rem;
+    padding-left: 0.5rem; /* p-4 */
+    padding-right: 0.5rem; /* p-4 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Estilos para los botones en el pie de la tarjeta */
+  .cardFooter button {
+    margin-left: 0.4rem;
+    font-size: 0.875rem; /* text-sm */
+  }
+  
+  .cardFooter button svg {
+    height: 1rem; /* h-4 */
+    width: 1rem; /* w-4 */
+  }
+
+  .buttonGroupA{
+    margin-right: 1rem;
+  }
+
+  .buttonGroupB{
+    margin-right: 0.34rem;
+  }
+
 /* Adaptación a móviles */
 @media (max-width: 768px) {
     .contenidoservicio {

@@ -62,7 +62,7 @@ import { FcGoogle } from "react-icons/fc";
 import { TfiEmail } from "react-icons/tfi";
 import { RiEditLine } from "react-icons/ri";
 import { IoIosSave } from "react-icons/io";
-import { IoTrashBinSharp } from "react-icons/io5";
+import { IoMenu, IoTrashBinSharp } from "react-icons/io5";
 
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
@@ -214,6 +214,7 @@ export default function ContabilidadApp() {
   // Estado de Inicio de Aplicacion
   const [activeTab, setActiveTab] = useState("grupos-trabajo")
   const [identificacionAdquiriente, setIdentificacionAdquiriente] = useState("v0")
+  const [isMenuExpanded, setIsMenuExpanded] = useState(true); // Estado para controlar si el menú está expandido
 
   {/* Estado de tipo de Data */}
 
@@ -408,6 +409,10 @@ export default function ContabilidadApp() {
       }
     };
   }, [user, viewingUID])  
+
+  const toggleMenu = () => {
+    setIsMenuExpanded(!isMenuExpanded); // Cambia el estado al hacer clic en el botón
+  };
 
   {/* Carga de Datos */}
 
@@ -1875,17 +1880,18 @@ export default function ContabilidadApp() {
         
 
           {/* Menu Izquierda*/}
-          <div className={`w-64 shadow-md ${theme === "dark" ? "bg-[rgb(28,28,28)] text-gray-300" : "bg-white text-gray-900"}`}>
-            <div className={stylesMenu.menucontent}>
+          <div className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
+            <div className={`${stylesMenu.menucontent} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
 
               <div className={stylesMenu.menuheader}>
                 <h1 className={stylesMenu.apptitle}>Alice</h1>
+                
                 <Button
-                  variant={activeTab === "configuracion" ? "default" : "ghost"}
-                  className={stylesMenu.configbutton}
-                  onClick={() => setActiveTab("configuracion")}
+                  size="icon"
+                  className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+                  onClick={toggleMenu} // Controla la apertura/cierre del menú
                 >
-                  <Settings className={stylesMenu.iconconfig} />
+                  <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
                 </Button>
               </div>
 
@@ -2037,6 +2043,14 @@ export default function ContabilidadApp() {
               </nav>
 
             </div>
+            <Button
+
+              size="icon"
+              className={`${stylesMenu.menudesplegable2} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+              onClick={toggleMenu} // Controla la apertura/cierre del menú
+            >
+              <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
+            </Button>
           </div>
 
           {/* Contenido principal */}
@@ -2919,62 +2933,62 @@ export default function ContabilidadApp() {
                   <>
                   <div className={stylesService.serviciosContentent}>
                     {servicios.map((servicio) => (
-                      <Card
-                        key={servicio.id}
-                        className="rounded-lg border bg-card text-card-foreground flex flex-col mt-8"
-                      >
-                        <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                          <CardTitle className="text-xl font-bold flex justify-between items-center">
-                            <span>{servicio.nombre}</span>
-                          </CardTitle>
-                        </CardHeader>
 
-                        <CardContent className="flex-grow p-4 bg-card h-auto">
-                          <div className="space-y-2">
-                            <p className="text-sm flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="font-medium text-muted-foreground">Descripción:</span>
-                              <span className="ml-2">{servicio.descripcion}</span>
-                            </p>
-                            <p className="text-sm flex items-center">
-                              <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="font-medium text-muted-foreground">Uso de Item:</span>
-                              <span className="ml-2 truncate">{servicio.usoDeItem}</span>
-                            </p>
-                            <p className="text-sm flex items-center">
-                              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
-                              <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
-                            </p>
-                          </div>
-                        </CardContent>
+                    <Card key={servicio.id} className={stylesService.card}>
 
-                        <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                          <div className="flex space-x-2">
-                            <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
-                              Generar Facturación
-                            </Button>
-                            <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
-                              Generar Asiento Contable
-                            </Button>
-                          </div>
-                          <div className="flex space-x-2 ml-4">
-                            <Button size="sm" onClick={() => handleEditService(servicio)}>
-                              <RiEditLine className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => {
-                                setServiceToDelete(servicio.id);
-                                setIsServiceDeleteModalOpen(true);
-                              }}
-                            >
-                              <IoTrashBinSharp className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardFooter>
-                      </Card>
+                      <CardHeader className={`${stylesService.cardHeader} bg-gradient-to-r`}>
+                        <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.themeLight : stylesService.themeDark}`} >
+                          <span>{servicio.nombre}</span>
+                        </CardTitle>
+                      </CardHeader>
+
+                      <CardContent className={stylesService.cardContent}>
+                        <div className={stylesService.cardContentInner}>
+                          <p>
+                            <Calendar className={stylesService.icon} />
+                            <span className="font-medium text-muted-foreground">Descripción:</span>
+                            <span className="ml-2 truncate">{servicio.descripcion}</span>
+                          </p>
+                          <p>
+                            <CircleUserRound className={stylesService.icon} />
+                            <span className="font-medium text-muted-foreground">Uso de Item:</span>
+                            <span className="ml-2 truncate">{servicio.usoDeItem}</span>
+                          </p>
+                          <p>
+                            <DollarSign className={stylesService.icon} />
+                            <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
+                            <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+
+                      <CardFooter className={stylesService.cardFooter}>
+                        <div className={stylesService.buttonGroupA}>
+                          <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
+                            Generar Facturación
+                          </Button>
+                          <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
+                            Generar Asiento Contable
+                          </Button>
+                        </div>
+                        <div className={stylesService.buttonGroupB}>
+                          <Button size="sm" onClick={() => handleEditService(servicio)}>
+                            <RiEditLine className={stylesService.icon} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setServiceToDelete(servicio.id);
+                              setIsServiceDeleteModalOpen(true);
+                            }}
+                          >
+                            <IoTrashBinSharp className={stylesService.icon} />
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+
                     ))}
                   </div>
                   </>
@@ -2995,6 +3009,26 @@ export default function ContabilidadApp() {
 
           {/* Panel de IA desplegable */}
           <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
+
+          {/* Btn Configuracion */}
+          {isIAOpen ? (
+            <Button
+              variant={activeTab === "configuracion" ? "default" : "ghost"}
+              className={`${stylesMenu.configbutton}`} // Clase cuando el botón está visible
+              onClick={() => setActiveTab("configuracion")}
+            >
+              <Settings className={stylesMenu.iconconfig} />
+            </Button>
+          ) : (
+            <Button
+              variant={activeTab === "configuracion" ? "default" : "ghost"}
+              className={`${stylesMenu.configbutton} ${stylesMenu.hidden}`} // Clase cuando el botón está oculto
+              onClick={() => setActiveTab("configuracion")}
+            >
+              <Settings className={stylesMenu.iconconfig} />
+            </Button>
+          )}
+          
 
             {/* Btn Desplegar Panel */}
             <Button

@@ -1,30 +1,71 @@
 /* Estilos base */
 .menuContentPrincipal {
+  transition: width 0.3s ease-in-out;
+  display: flex;
   width: 16rem; /* w-64 */
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
-  overflow-y: auto; /* Hace que el contenido sea desplazable verticalmente */
   max-height: 100vh; /* Limita la altura al 100% del viewport */
 }
 
 /* Estilos para el tema claro */
-.menuContentPrincipal.light {
-  background-color: rgb(250, 137, 137); /* bg-white */
-  color: rgb(17, 24, 39); /* text-gray-900 */
+.themeLight {
+  background-color: rgb(248, 248, 248);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  color: rgb(17, 24, 39);
 }
 
 /* Estilos para el tema oscuro */
-.menuContentPrincipal.dark {
-  background-color: #1c1c1c; /* bg-[rgb(28,28,28)] */
-  color: rgb(209, 213, 219); /* text-gray-300 */
+.themeDark {
+  background-color: rgb(28, 28, 28);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  color: rgb(209, 213, 219);
 }
 
-.dashboard {
+/* Estilos para el tema oscuro */
+.menuContentPrincipal.collapsed {
+  padding: 0.9rem;
+  padding-top: 1.3rem;
+  width: 4.4rem;
+}
+
+.menucontent.collapsed {
+  padding: 0;
+  width: 0;
+  margin-top: 0.5rem;
+  transition: width 0.2s ease-in-out;
+}
+
+.menudesplegable1.collapsed {
+  display: none;
+}
+
+.menudesplegable2.collapsed {
   display: flex;
-  min-height: 100vh;
+  visibility: visible; /* Hace el botón visible */
+  opacity: 1; /* Hace el botón completamente visible */
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
 }
 
 .menucontent {
-  padding: 1rem;
+  padding: 1.1rem;
+  overflow-y: auto;
+  max-height: 100vh;
+  height: 100vh;
+  width: 16rem;
+}
+
+/* Estilos para el botón de menú desplegable */
+.menudesplegable1 {
+  display: flex; /* Muestra el botón por defecto */
+  justify-content: center;
+  margin-top: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.menudesplegable2 {
+  display: none; /* Oculta el botón por defecto */
+  visibility: hidden;
+  justify-content: center;
+  margin-bottom: 0.2rem;
 }
 
 .menuheader {
@@ -39,7 +80,21 @@
   font-weight: bold;
 }
 
+/* Estilos para el botón cuando está visible */
 .configbutton {
+  display: none;
+  position: absolute; /* Posicionamiento absoluto */
+  top: 5rem; /* top-20 */
+  left: 0.5rem; /* left-2 */
+}
+
+/* Estilos para ocultar el botón */
+.configbutton.hidden {
+  display: flex; /* Oculta el botón */
+}
+
+.menudesplegable {
+  display: none;
   margin-left: 2.5rem;
   justify-content: flex-end;
   margin-top: 0.3rem;
@@ -301,4 +356,14 @@
 .messagecontent.light.assistant {
   background-color: #e5e7eb;
   color: #1f2937;
+}
+
+@media (max-width: 768px) {
+  .menudesplegable {
+    display: flex;
+    margin-left: 2.5rem;
+    justify-content: flex-end;
+    margin-top: 0.3rem;
+    margin-bottom: 0.2rem;
+  }
 }
