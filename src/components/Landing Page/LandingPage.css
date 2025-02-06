@@ -61,9 +61,10 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-  }
+  } 
   
   .nav-link {
+    display: flex;
     transition: color 0.3s;
   }
   
@@ -213,8 +214,17 @@
     background-color: #e5e7eb;
   }
 
+  .sectionIniced {
+    display: flex;
+    align-items: center;
+    max-height: 850px;
+    height: 850px;
+    padding: 5.5rem;
+    background-attachment: fixed;
+    background-image: url(https://cards.algoreducation.com/_next/image?url=https%3A%2F%2Ffiles.algoreducation.com%2Fproduction-ts%2F__S3__c12cb0e6-06a3-4c90-a541-1cc29bb8a6c9&w=3840&q=75);
+  }
+
   .hero {
-    padding: 5rem 2rem;
     width: 100%;
     border-radius: 12px;
   }
@@ -226,7 +236,7 @@
   }
 
   .dark .hero {
-    background-color: rgb(255 255 255);
+    background-color: rgb(255, 255, 255, 0.25);
     padding: 5rem 2rem;
     width: 100%;
   }
@@ -395,11 +405,6 @@
   
   .google-icon {
     margin-right: 0.5rem;
-  }
-  
-  .main-content {
-    padding: 0 1rem;
-    margin-top: 9%;
   }
   
   .inice-content {
@@ -717,6 +722,7 @@
     }
 
     .nav-link {
+      display: none;
       font-size: 0.7rem;
       padding: 0.6rem;
     }
@@ -733,11 +739,6 @@
       gap: 0;
       overflow-x: auto; /* Hace que el contenido sea desplazable horizontalmente */
       white-space: nowrap; /* Evita que los elementos se envuelvan a la siguiente línea */
-    }
-  
-    .main-content {
-      padding: 1rem;
-      margin-top: 24%;
     }
   
     .main-title {

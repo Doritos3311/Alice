@@ -345,11 +345,13 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
       {/* Contenido Principal */}
       <main className="main-content">
 
-        <header className="hero">
-          <h1 className="hero-title">Alice: Tu Software de Contabilidad</h1>
-          <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
-          <Button className="cta-button">Explorar Funciones</Button>
-        </header>
+        <div className="sectionIniced">
+          <section className="hero">
+            <h1 className="hero-title">Alice: Tu Software de Contabilidad</h1>
+            <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
+            <Button className="cta-button">Explorar Funciones</Button>
+          </section>
+        </div>
 
         <section className="features">
           <h2>Funciones Principales</h2>

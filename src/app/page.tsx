@@ -63,6 +63,7 @@ import { TfiEmail } from "react-icons/tfi";
 import { RiEditLine } from "react-icons/ri";
 import { IoIosSave } from "react-icons/io";
 import { IoMenu, IoTrashBinSharp } from "react-icons/io5";
+import { grid } from 'ldrs';
 
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
@@ -76,6 +77,8 @@ import { useTheme } from "next-themes"
 // Importaciones Archivo de Exel
 import { FileDown } from 'lucide-react'
 import GenerarRegistros from '@/components/GenerarRegistros';
+
+grid.register()
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -379,11 +382,22 @@ export default function ContabilidadApp() {
     permisoServicios: true
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
   const hayItems = (items: any[]): boolean => {
     return items.length > 0
   }
 
   {/* Funciones */}
+
+  // Simula un tiempo de carga
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000); // 2 segundos de carga
+
+    return () => clearTimeout(timer); // Limpia el timer al desmontar el componente
+  }, []);
 
   // Efecto para cargar datos cuando el usuario inicia sesión
   useEffect(() => {
@@ -1872,2693 +1886,2705 @@ export default function ContabilidadApp() {
 
   return (
     <>
-    {showLandingPage ? (
-      // Aplicaccion 
-      <div className={`flex h-screen ${theme === 'dark' ? 'bg-black text-gray-200' : 'bg-gray-100 text-gray-900'}`}>
+    {isLoading ? (
 
-        {/* Visualizador */}
-        
+      // Muestra la pantalla de carga
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <l-grid size="160" speed="1.5" color="white"></l-grid>
+      </div>
+    ) : (
 
-          {/* Menu Izquierda*/}
-          <div className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
-            <div className={`${stylesMenu.menucontent} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
+      // Muestra el contenido principal de la aplicación
+      <div>
+        {showLandingPage ? (
+          // Aplicaccion 
+          <div className={`flex h-screen ${theme === 'dark' ? 'bg-black text-gray-200' : 'bg-gray-100 text-gray-900'}`}>
 
-              <div className={stylesMenu.menuheader}>
-                <h1 className={stylesMenu.apptitle}>Alice</h1>
-                
+            {/* Visualizador */}
+            
+
+              {/* Menu Izquierda*/}
+              <div className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
+                <div className={`${stylesMenu.menucontent} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
+
+                  <div className={stylesMenu.menuheader}>
+                    <h1 className={stylesMenu.apptitle}>Alice</h1>
+                    
+                    <Button
+                      size="icon"
+                      className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+                      onClick={toggleMenu} // Controla la apertura/cierre del menú
+                    >
+                      <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
+                    </Button>
+                  </div>
+
+                  {user ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" className={stylesMenu.userbutton}>
+                          <Avatar className={stylesMenu.useravatar}>
+                            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                            <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                          </Avatar>
+                          <span className={stylesMenu.username}>{user.displayName || user.email}</span>
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className={stylesMenu.userpopover}>
+                        <div className={stylesMenu.userinfo}>
+                          <Avatar className={stylesMenu.useravatarlarge}>
+                            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                            <AvatarFallback className={stylesMenu.avatarfallback}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className={stylesMenu.userdisplayname}>{user.displayName || "Usuario"}</h3>
+                            <p className={stylesMenu.useremail}>{user.email}</p>
+                          </div>
+                        </div>
+
+                        <div className={stylesMenu.divider}></div>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={stylesMenu.menuitem}
+                          onClick={() => setShowLandingPage(false)}
+                        >
+                          <Home className={stylesMenu.icon} />
+                          Inicio
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={stylesMenu.menuitem}
+                          onClick={() => setActiveTab("configuracion")}
+                        >
+                          <Settings className={stylesMenu.icon} />
+                          Configuracion
+                        </Button>
+
+                        <div className={stylesMenu.divider}></div>
+
+                        <Button variant="ghost" size="sm" className={stylesMenu.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
+                          <LogOut className={stylesMenu.icon} />
+                          Cerrar sesión
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <Button className={stylesMenu.loginbutton} onClick={() => setIsLoginModalOpen(true)}>
+                      Iniciar sesión
+                    </Button>
+                  )}
+                  
+                  <nav className={stylesMenu.mainnav}>
+                    <Button
+                      variant={activeTab === "servicios" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("servicios")}
+                    >
+                      <Handshake className={stylesMenu.icon} />
+                      Servicios
+                    </Button>
+
+                    <Button
+                      variant={activeTab === "inventario" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("inventario")}
+                    >
+                      <Package className={stylesMenu.icon} />
+                      Registro de Inventario
+                    </Button>
+
+                    <div className={stylesMenu.navitemgroup}>
+                      <Button
+                        variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
+                        className={stylesMenu.navitem}
+                        onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
+                      >
+                        <FileText className={stylesMenu.icon} />
+                        Facturación
+                        {isFacturacionOpen ? <ChevronUp className={stylesMenu.iconsmall} /> : <ChevronDown className={stylesMenu.iconsmall} />}
+                      </Button>
+                      {isFacturacionOpen && (
+                        <div className={stylesMenu.subnav}>
+                          <Button
+                            variant={activeTab === "facturacion-emitidas" ? "default" : "ghost"}
+                            className={stylesMenu.navitem}
+                            onClick={() => setActiveTab("facturacion-emitidas")}
+                          >
+                            <FileUp className={stylesMenu.icon} />
+                            Facturas Emitidas
+                          </Button>
+                          <Button
+                            variant={activeTab === "facturacion-recibidas" ? "default" : "ghost"}
+                            className={stylesMenu.navitem}
+                            onClick={() => setActiveTab("facturacion-recibidas")}
+                          >
+                            <FileDown className={stylesMenu.icon} />
+                            Facturas Recibidas
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      variant={activeTab === "libro-diario" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("libro-diario")}
+                    >
+                      <FileSpreadsheet className={stylesMenu.icon} />
+                      Libro Diario
+                    </Button>
+
+                    <Button
+                      variant={activeTab === "dashboard" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("dashboard")}
+                    >
+                      <BarChart2 className={stylesMenu.icon} />
+                      Dashboard
+                    </Button>
+
+                    <Button
+                      variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("grupos-trabajo")}
+                    >
+                      <Users className={stylesMenu.icon} />
+                      Grupos de Trabajo
+                    </Button>
+
+                    <Button
+                      variant={activeTab === "generar-registros" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("generar-registros")}
+                    >
+                      <FileDown className={stylesMenu.icon} />
+                      Generar Registros
+                    </Button>
+                  </nav>
+
+                </div>
                 <Button
+
                   size="icon"
-                  className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+                  className={`${stylesMenu.menudesplegable2} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
                   onClick={toggleMenu} // Controla la apertura/cierre del menú
                 >
                   <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
                 </Button>
               </div>
 
-              {user ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" className={stylesMenu.userbutton}>
-                      <Avatar className={stylesMenu.useravatar}>
-                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                        <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
-                      </Avatar>
-                      <span className={stylesMenu.username}>{user.displayName || user.email}</span>
-                    </Button>
-                  </PopoverTrigger>
+              {/* Contenido principal */}
+              <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : " bg-[rgb(85, 85, 85)] text-gray-900"}`}>
 
-                  <PopoverContent className={stylesMenu.userpopover}>
-                    <div className={stylesMenu.userinfo}>
-                      <Avatar className={stylesMenu.useravatarlarge}>
-                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                        <AvatarFallback className={stylesMenu.avatarfallback}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className={stylesMenu.userdisplayname}>{user.displayName || "Usuario"}</h3>
-                        <p className={stylesMenu.useremail}>{user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className={stylesMenu.divider}></div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={stylesMenu.menuitem}
-                      onClick={() => setShowLandingPage(false)}
-                    >
-                      <Home className={stylesMenu.icon} />
-                      Inicio
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={stylesMenu.menuitem}
-                      onClick={() => setActiveTab("configuracion")}
-                    >
-                      <Settings className={stylesMenu.icon} />
-                      Configuracion
-                    </Button>
-
-                    <div className={stylesMenu.divider}></div>
-
-                    <Button variant="ghost" size="sm" className={stylesMenu.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
-                      <LogOut className={stylesMenu.icon} />
-                      Cerrar sesión
-                    </Button>
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <Button className={stylesMenu.loginbutton} onClick={() => setIsLoginModalOpen(true)}>
-                  Iniciar sesión
-                </Button>
-              )}
-              
-              <nav className={stylesMenu.mainnav}>
-                <Button
-                  variant={activeTab === "servicios" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("servicios")}
-                >
-                  <Handshake className={stylesMenu.icon} />
-                  Servicios
-                </Button>
-
-                <Button
-                  variant={activeTab === "inventario" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("inventario")}
-                >
-                  <Package className={stylesMenu.icon} />
-                  Registro de Inventario
-                </Button>
-
-                <div className={stylesMenu.navitemgroup}>
-                  <Button
-                    variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
-                    className={stylesMenu.navitem}
-                    onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
-                  >
-                    <FileText className={stylesMenu.icon} />
-                    Facturación
-                    {isFacturacionOpen ? <ChevronUp className={stylesMenu.iconsmall} /> : <ChevronDown className={stylesMenu.iconsmall} />}
-                  </Button>
-                  {isFacturacionOpen && (
-                    <div className={stylesMenu.subnav}>
-                      <Button
-                        variant={activeTab === "facturacion-emitidas" ? "default" : "ghost"}
-                        className={stylesMenu.navitem}
-                        onClick={() => setActiveTab("facturacion-emitidas")}
-                      >
-                        <FileUp className={stylesMenu.icon} />
-                        Facturas Emitidas
-                      </Button>
-                      <Button
-                        variant={activeTab === "facturacion-recibidas" ? "default" : "ghost"}
-                        className={stylesMenu.navitem}
-                        onClick={() => setActiveTab("facturacion-recibidas")}
-                      >
-                        <FileDown className={stylesMenu.icon} />
-                        Facturas Recibidas
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  variant={activeTab === "libro-diario" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("libro-diario")}
-                >
-                  <FileSpreadsheet className={stylesMenu.icon} />
-                  Libro Diario
-                </Button>
-
-                <Button
-                  variant={activeTab === "dashboard" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("dashboard")}
-                >
-                  <BarChart2 className={stylesMenu.icon} />
-                  Dashboard
-                </Button>
-
-                <Button
-                  variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("grupos-trabajo")}
-                >
-                  <Users className={stylesMenu.icon} />
-                  Grupos de Trabajo
-                </Button>
-
-                <Button
-                  variant={activeTab === "generar-registros" ? "default" : "ghost"}
-                  className={stylesMenu.navitem}
-                  onClick={() => setActiveTab("generar-registros")}
-                >
-                  <FileDown className={stylesMenu.icon} />
-                  Generar Registros
-                </Button>
-              </nav>
-
-            </div>
-            <Button
-
-              size="icon"
-              className={`${stylesMenu.menudesplegable2} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
-              onClick={toggleMenu} // Controla la apertura/cierre del menú
-            >
-              <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
-            </Button>
-          </div>
-
-          {/* Contenido principal */}
-          <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : " bg-[rgb(85, 85, 85)] text-gray-900"}`}>
-
-            {/* Configuracion Interfaz Estilo */}
-            {activeTab === "configuracion" && (
-              <ConfiguracionPage />
-            )}
-
-            {/* Grupos de Trabajo Interfaz Estilo */}
-            {activeTab === "grupos-trabajo" && (
-              <div>
-                <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
-                {user && (
-                  <>
-
-                    {userData.type === 'personal' ? (
-                      <div className="mt-8">
-
-                        <Card className="rounded-lg shadow-lg p-6">
-                          <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
-                          <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
-                          <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
-
-                          <SolicitudIngreso userId={user.uid} />
-                        </Card>
-                        
-                      </div>
-                    ) : (
-                      <div className="mt-8">
-
-                        <Card className="rounded-lg shadow-lg p-6">
-                          <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
-                          <UsuariosRegistrados user={user} />
-
-                          <SolicitudPendiente userId={user.uid} />
-                        </Card>
-
-                      </div>
-                    )}
-                  </>
+                {/* Configuracion Interfaz Estilo */}
+                {activeTab === "configuracion" && (
+                  <ConfiguracionPage />
                 )}
-              </div>
-            )}
 
-            {/* Libro Diario Interfaz Estilo */}
-            {activeTab === "libro-diario" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoLibroDiario}>
-                <div>
-                  {/* Titulo */}
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-3xl font-bold">Libro Diario</h2>
-                  </div>
+                {/* Grupos de Trabajo Interfaz Estilo */}
+                {activeTab === "grupos-trabajo" && (
+                  <div>
+                    <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
+                    {user && (
+                      <>
 
-                  <div className="border-t border-gray-400 my-4"></div>
+                        {userData.type === 'personal' ? (
+                          <div className="mt-8">
 
-                  <div className="mb-4 flex items-center space-x-4">
+                            <Card className="rounded-lg shadow-lg p-6">
+                              <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
+                              <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
+                              <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
 
-                    {/* Nav */}
-                    <Button onClick={() => openFieldEditor('libroDiario')}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar Campos
-                    </Button>
-                    <Button onClick={() => setIsCreatingAccountingEntry(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Crear Asiento Contable
-                    </Button>
+                              <SolicitudIngreso userId={user.uid} />
+                            </Card>
+                            
+                          </div>
+                        ) : (
+                          <div className="mt-8">
 
-                    {/* Seleccion De Fecha */}
-                    <Select value={timeFrame} onValueChange={setTimeFrame}>
-                      <SelectTrigger className="w-[180px] ml-4">
-                        <SelectValue placeholder="Seleccionar período" />
-                      </SelectTrigger>
+                            <Card className="rounded-lg shadow-lg p-6">
+                              <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
+                              <UsuariosRegistrados user={user} />
 
-                      <SelectContent>
-                        <SelectItem value="diario">Diario</SelectItem>
-                        <SelectItem value="mensual">Mensual</SelectItem>
-                        <SelectItem value="anual">Anual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {timeFrame === "diario" && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={`w-[280px] justify-start text-left font-normal`}
-                          >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <CalendarComponent
-                            mode="single"
-                            selected={selectedDate ? new Date(selectedDate) : undefined}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Sumar un día a la fecha seleccionada
-                                const adjustedDate = new Date(date);
-                                adjustedDate.setDate(adjustedDate.getDate() + 1); // Sumar un día
+                              <SolicitudPendiente userId={user.uid} />
+                            </Card>
 
-                                // Formatear la fecha ajustada a 'YYYY-MM-DD'
-                                const localDate = adjustedDate.toLocaleDateString('en-CA'); 
-                                setSelectedDate(localDate);
-                              }
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                    {timeFrame === "mensual" && (
-                      <Input
-                        type="month"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="w-[180px]" />
-                        
-                    )}
-                    {timeFrame === "anual" && (
-                      <Input
-                        type="number"
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
-                        min="1900"
-                        max="2099"
-                        step="1"
-                        className="w-[180px]" />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
+                )}
 
-                  {/* Tablas de Libro Diario */}
-                  {hayItems(filteredData) ? (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
-                            <TableHead key={categoria}>{appConfig.libroDiario[categoria]?.name || categoria}</TableHead>
-                          ))}
-                          <TableHead>Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                      {filteredData.map((row) => (
-                        <TableRow key={row.id}>
-                          {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
-                            <TableCell key={categoria}>
-                              {editingId === row.id ? (
-                                <Input
-                                  type={appConfig.libroDiario[categoria]?.type || "text"}
-                                  value={row[categoria] || ""}
-                                  onChange={(e) => handleInputChange(row.id, categoria, e.target.value)}
-                                />
-                              ) : (
-                                row[categoria]
-                              )}
-                            </TableCell>
-                          ))}
-                          <TableCell>
-                            {editingId === row.id ? (
-                              <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
-                                <IoIosSave size={20} />
-                              </Button>
-                            ) : (
-                              <Button onClick={() => handleEditRow(row.id)} className="mr-4">
-                                <RiEditLine size={20} />
-                              </Button>
-                            )}
-                            <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
-                              <IoTrashBinSharp size={20} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <div className="mt-4">
-                      <Card className="col-span-2">
-
-                        <CardHeader>
-                          <div className="text-center">
-                            <CardTitle>Resumen Financiero</CardTitle>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="flex justify-around items-center">
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
-                            <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
-                            <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
-                            <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </>
-                  ) : (
-                    <div className="flex justify-center items-center h-[calc(65vh)]">
-                      <MensajeNoItems
-                      mensaje="Aún no has agregado ningún asiento contable."
-                      accion={() => setIsCreatingAccountingEntry(true)}
-                      textoBoton="Agregar Asiento Contable"
-                      />
-                    </div>
-                  )}
-                </div>
-              </AccesoRestringido>
-            )}
-
-            {/* Dashboard Interfaz Estilo */}
-            {activeTab === "dashboard" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoDashboard}>
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-bold mb-4">Dashboard</h2>
-
-                  <div className="border-t border-gray-400 my-4"></div>
-
-                  <div className="mb-4 flex items-center space-x-4">
-                    <Select value={timeFrame} onValueChange={setTimeFrame}>
-                      <SelectTrigger className="w-[180px] ml-4">
-                        <SelectValue placeholder="Seleccionar período" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="diario">Diario</SelectItem>
-                        <SelectItem value="mensual">Mensual</SelectItem>
-                        <SelectItem value="anual">Anual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {timeFrame === "diario" && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={`w-[280px] justify-start text-left font-normal`}
-                          >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <CalendarComponent
-                            mode="single"
-                            selected={new Date(selectedDate)}
-                            onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
-                            initialFocus />
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                    {timeFrame === "mensual" && (
-                      <Input
-                        type="month"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="w-[180px]" />
-                    )}
-                    {timeFrame === "anual" && (
-                      <Input
-                        type="number"
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
-                        min="1900"
-                        max="2099"
-                        step="1"
-                        className="w-[180px]" />
-                    )}
-                  </div>
-
-                  <Tabs defaultValue="financial" className="w-full">
-                    <TabsList>
-                      <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
-                      <TabsTrigger value="inventory" onClick={() => setDashboardType("inventory")}>Inventario</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="financial">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/*Dashboard Resumen Financiaero*/}
-                        <Card className="col-span-2">
-                          <CardHeader>
-                            <CardTitle>Resumen Financiero</CardTitle>
-                          </CardHeader>
-                          <CardContent className="flex justify-around items-center">
-                            <div className="text-center">
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
-                              <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
-                              <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
-                              <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Grafico de Barras */}
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Gráfico de Barras</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="Debe" fill="#4ade80" />
-                                <Bar dataKey="Haber" fill="#f87171" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-
-                        {/* Grafico de Lineas */}
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Gráfico de Líneas</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <LineChart data={lineChartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="fecha" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="Debe" stroke="#4ade80" />
-                                <Line type="monotone" dataKey="Haber" stroke="#f87171" />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-
-                        {/* Grafico de Pastel */}
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Gráfico Circular</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <PieChart>
-                                <Pie
-                                  data={pieChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                >
-                                  {pieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={index === 0 ? "#4ade80" : "#f87171"} />
-                                  ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-
+                {/* Libro Diario Interfaz Estilo */}
+                {activeTab === "libro-diario" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoLibroDiario}>
+                    <div>
+                      {/* Titulo */}
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-3xl font-bold">Libro Diario</h2>
                       </div>
-                    </TabsContent>
-                    <TabsContent value="inventory">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Resumen de Inventario</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div>
-                              <p>Total de ítems:</p>
-                              <p className="text-2xl font-bold">{inventoryItems.length}</p>
-                            </div>
-                            <div>
-                              <p>Valor total del inventario:</p>
-                              <p className="text-2xl font-bold text-green-600">${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Ítems por Categoría</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <PieChart>
-                                <Pie
-                                  data={Object.entries(inventoryItems.reduce((acc, item) => {
-                                    acc[item.category] = (acc[item.category] || 0) + 1;
-                                    return acc;
-                                  }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                >
-                                  {pieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random() * 16777215).toString(16)}`} />
-                                  ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
+
+                      <div className="border-t border-gray-400 my-4"></div>
+
+                      <div className="mb-4 flex items-center space-x-4">
+
+                        {/* Nav */}
+                        <Button onClick={() => openFieldEditor('libroDiario')}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar Campos
+                        </Button>
+                        <Button onClick={() => setIsCreatingAccountingEntry(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Crear Asiento Contable
+                        </Button>
+
+                        {/* Seleccion De Fecha */}
+                        <Select value={timeFrame} onValueChange={setTimeFrame}>
+                          <SelectTrigger className="w-[180px] ml-4">
+                            <SelectValue placeholder="Seleccionar período" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            <SelectItem value="diario">Diario</SelectItem>
+                            <SelectItem value="mensual">Mensual</SelectItem>
+                            <SelectItem value="anual">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {timeFrame === "diario" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={`w-[280px] justify-start text-left font-normal`}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <CalendarComponent
+                                mode="single"
+                                selected={selectedDate ? new Date(selectedDate) : undefined}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    // Sumar un día a la fecha seleccionada
+                                    const adjustedDate = new Date(date);
+                                    adjustedDate.setDate(adjustedDate.getDate() + 1); // Sumar un día
+
+                                    // Formatear la fecha ajustada a 'YYYY-MM-DD'
+                                    const localDate = adjustedDate.toLocaleDateString('en-CA'); 
+                                    setSelectedDate(localDate);
+                                  }
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                        {timeFrame === "mensual" && (
+                          <Input
+                            type="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="w-[180px]" />
+                            
+                        )}
+                        {timeFrame === "anual" && (
+                          <Input
+                            type="number"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            min="1900"
+                            max="2099"
+                            step="1"
+                            className="w-[180px]" />
+                        )}
                       </div>
-                      <Card className="mt-4">
-                        <CardHeader>
-                          <CardTitle>Tabla de Inventario</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="mb-4">
-                            <Label htmlFor="category-filter">Filtrar por categoría:</Label>
-                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                              <SelectTrigger id="category-filter">
-                                <SelectValue placeholder="Todas las categorías" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">Todas las categorías</SelectItem>
-                                {Array.from(new Set(inventoryItems.map(item => item.category))).map(category => (
-                                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <Table className="table-auto w-full">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Descripción</TableHead>
-                                <TableHead>Categoría</TableHead>
-                                <TableHead>Cantidad</TableHead>
-                                <TableHead>Precio de Compra</TableHead>
-                                <TableHead>Precio de Venta</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            {/*Filtrado de Inventario*/}
-                            <TableBody>
-                              {inventoryItems
-                                .filter(item => selectedCategory === "all" || item.category === selectedCategory)
-                                .map(item => (
-                                  <TableRow key={item.id}>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
-                                      {item.id}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px]">
-                                      {item.descripcion}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
-                                      {item.category}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">
-                                      {item.cantidadDisponible}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
-                                      ${parseFloat(item.precioCompra).toFixed(2)}
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
-                                      ${parseFloat(item.precioVenta).toFixed(2)}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                            </TableBody>
-                          </Table>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </Tabs>
-                  
-                </div>
-              </AccesoRestringido>
-            )}
 
-            {/* Inventario Interfaz Estilo */} 
-            {activeTab === "inventario" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoInventario}>
-                <div>
-
-                  <div className="flex justify-between items-center mb-4 mr-10">
-                    <h2 className="text-3xl font-bold">Registro de Inventario</h2>
-                  </div>
-
-                  <div className="border-t border-gray-400 my-4"></div>
-
-                  <div className="mb-4 flex items-center space-x-4">
-                    <Button onClick={() => openFieldEditor('inventario')}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar Campos
-                    </Button>
-                    <Button onClick={() => setIsInventoryModalOpen(true)}>
-                      Agregar Nuevo Ítem
-                    </Button>
-
-                    {/* Filtros */}
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-[180px] ml-4">
-                        <SelectValue placeholder="Seleccionar por categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas las categorías</SelectItem>
-                        {getUniqueCategories().map(category => (
-                          <SelectItem 
-                          key={category} //Nombre clave en base a categoria
-                          value={category}>{category}</SelectItem>//Valor clave en base a categoria
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {hayItems(inventoryItems) ? (
-                  <>        
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
-                            <TableHead key={categoria}>{appConfig.inventario[categoria]?.name || categoria}</TableHead>
-                          ))}
-                          <TableHead>Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {inventoryItems
-                          .filter((item) => selectedCategory === "all" || item.category === selectedCategory)
-                          .map((item) => (
-                            <TableRow key={item.id}>
-                              {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
+                      {/* Tablas de Libro Diario */}
+                      {hayItems(filteredData) ? (
+                      <>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
+                                <TableHead key={categoria}>{appConfig.libroDiario[categoria]?.name || categoria}</TableHead>
+                              ))}
+                              <TableHead>Acciones</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                          {filteredData.map((row) => (
+                            <TableRow key={row.id}>
+                              {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
                                 <TableCell key={categoria}>
-                                  {editingInventoryId === item.id ? (
+                                  {editingId === row.id ? (
                                     <Input
-                                      type={appConfig.inventario[categoria]?.type || "text"}
-                                      value={newInventoryItem[categoria] || ""}
-                                      onChange={(e) =>
-                                        setNewInventoryItem({ ...newInventoryItem, [categoria]: e.target.value })
-                                      }
+                                      type={appConfig.libroDiario[categoria]?.type || "text"}
+                                      value={row[categoria] || ""}
+                                      onChange={(e) => handleInputChange(row.id, categoria, e.target.value)}
                                     />
-                                  ) : advancedViewInventory ? (
-                                    item[categoria]
-                                  ) : categoria === "descripcion" ? (
-                                    item[categoria]
                                   ) : (
-                                    "•••"
+                                    row[categoria]
                                   )}
                                 </TableCell>
                               ))}
                               <TableCell>
-                                {editingInventoryId === item.id ? (
-                                  <Button className="m-1" onClick={handleSaveInventoryItem}>
+                                {editingId === row.id ? (
+                                  <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
                                     <IoIosSave size={20} />
                                   </Button>
                                 ) : (
-                                  <Button className="m-1" onClick={() => handleEditInventoryItem(item.id)}>
+                                  <Button onClick={() => handleEditRow(row.id)} className="mr-4">
                                     <RiEditLine size={20} />
                                   </Button>
                                 )}
-                                <Button
-                                  className="m-1"
-                                  variant="destructive"
-                                  onClick={() => handleDeleteInventoryItem(item.id)}
-                                >
+                                <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
                                   <IoTrashBinSharp size={20} />
                                 </Button>
                               </TableCell>
                             </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <div className="mt-4">
+                          <Card className="col-span-2">
 
-                  </>
-                  ) : (
-                    <div className="flex justify-center items-center h-[calc(65vh)]">
-                      <MensajeNoItems
-                        mensaje="Aún no has agregado ningún ítem al inventario."
-                        accion={() => setIsInventoryModalOpen(true)}
-                        textoBoton="Agregar Ítem al Inventario"
-                      />
+                            <CardHeader>
+                              <div className="text-center">
+                                <CardTitle>Resumen Financiero</CardTitle>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="flex justify-around items-center">
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                                <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                                <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                                <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </>
+                      ) : (
+                        <div className="flex justify-center items-center h-[calc(65vh)]">
+                          <MensajeNoItems
+                          mensaje="Aún no has agregado ningún asiento contable."
+                          accion={() => setIsCreatingAccountingEntry(true)}
+                          textoBoton="Agregar Asiento Contable"
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </AccesoRestringido>
-            )}  
+                  </AccesoRestringido>
+                )}
 
-            {/* Facturacion Emitidas Interfaz Estilo */}
-            {activeTab === "facturacion-emitidas" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
-               <div>
-                 <div className="flex justify-between items-center mb-4 mr-10">
-                   <h2 className="text-3xl font-bold">Registro de Facturación Emitida</h2>
-                 </div>
+                {/* Dashboard Interfaz Estilo */}
+                {activeTab === "dashboard" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoDashboard}>
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-bold mb-4">Dashboard</h2>
 
-                 <div className="border-t border-gray-400 my-4"></div>
+                      <div className="border-t border-gray-400 my-4"></div>
 
-                 <div className="flex justify-between items-center mb-4 mr-10">
-                   <div className="mb-4 flex items-center space-x-4">
-                     {/* Btn Editar Campos */}
-                     <Button onClick={() => openFieldEditor('facturacion')}>
-                       <Edit className="h-4 w-4 mr-2" />
-                       Editar Campos
-                     </Button>
-                     {/* Crear Factura */}
-                     <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
+                      <div className="mb-4 flex items-center space-x-4">
+                        <Select value={timeFrame} onValueChange={setTimeFrame}>
+                          <SelectTrigger className="w-[180px] ml-4">
+                            <SelectValue placeholder="Seleccionar período" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diario">Diario</SelectItem>
+                            <SelectItem value="mensual">Mensual</SelectItem>
+                            <SelectItem value="anual">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {timeFrame === "diario" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={`w-[280px] justify-start text-left font-normal`}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(new Date(selectedDate), "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <CalendarComponent
+                                mode="single"
+                                selected={new Date(selectedDate)}
+                                onSelect={(date) => date && setSelectedDate(date.toISOString().split('T')[0])}
+                                initialFocus />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                        {timeFrame === "mensual" && (
+                          <Input
+                            type="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="w-[180px]" />
+                        )}
+                        {timeFrame === "anual" && (
+                          <Input
+                            type="number"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            min="1900"
+                            max="2099"
+                            step="1"
+                            className="w-[180px]" />
+                        )}
+                      </div>
 
-                     {/* Seleccionar Fecha */}
-                     <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                       <SelectTrigger className="w-[180px] ml-4">
-                         <SelectValue placeholder="Filtrar por fecha" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="all">Todas las fechas</SelectItem>
-                         <SelectItem value="day">Por día</SelectItem>
-                         <SelectItem value="month">Por mes</SelectItem>
-                         <SelectItem value="year">Por año</SelectItem>
-                       </SelectContent>
-                     </Select>
-                     {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
-                       <Input
-                         type="date"// Tipo de dato que es usado
-                         value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
-                         onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
-                         className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
-                     )}
-                     {invoiceFilterType === "month" && (
-                       <Input
-                         type="month"
-                         value={invoiceFilterMonth}
-                         onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                         className="ml-4" />
-                     )}
-                     {invoiceFilterType === "year" && (
-                       <Input
-                         type="number"
-                         value={invoiceFilterYear}
-                         onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                         min="1900"
-                         max="2099"
-                         step="1"
-                         className="ml-4" />
-                     )}
+                      <Tabs defaultValue="financial" className="w-full">
+                        <TabsList>
+                          <TabsTrigger value="financial" onClick={() => setDashboardType("financial")}>Financiero</TabsTrigger>
+                          <TabsTrigger value="inventory" onClick={() => setDashboardType("inventory")}>Inventario</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="financial">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/*Dashboard Resumen Financiaero*/}
+                            <Card className="col-span-2">
+                              <CardHeader>
+                                <CardTitle>Resumen Financiero</CardTitle>
+                              </CardHeader>
+                              <CardContent className="flex justify-around items-center">
+                                <div className="text-center">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Debe</p>
+                                  <p className="text-2xl font-bold text-green-600">${totals.debe.toFixed(2)}</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Haber</p>
+                                  <p className="text-2xl font-bold text-red-600">${totals.haber.toFixed(2)}</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Balance</p>
+                                  <p className="text-2xl font-bold">${(totals.debe - totals.haber).toFixed(2)}</p>
+                                </div>
+                              </CardContent>
+                            </Card>
 
-                   </div>
-                 </div>
-                  
-                  {hayItems(filteredInvoiceItems) ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredInvoiceItems.map((factura) => (
-                        <Card key={factura.id} className="rounded-lg border flex flex-col">
+                            {/* Grafico de Barras */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Gráfico de Barras</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                  <BarChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="Debe" fill="#4ade80" />
+                                    <Bar dataKey="Haber" fill="#f87171" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
 
-                          <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                            <CardTitle className="text-xl font-bold flex justify-between items-center">
-                              <span>Factura N°{factura.numeroFactura}</span>
+                            {/* Grafico de Lineas */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Gráfico de Líneas</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                  <LineChart data={lineChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="fecha" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="Debe" stroke="#4ade80" />
+                                    <Line type="monotone" dataKey="Haber" stroke="#f87171" />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+
+                            {/* Grafico de Pastel */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Gráfico Circular</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                  <PieChart>
+                                    <Pie
+                                      data={pieChartData}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      outerRadius={80}
+                                      fill="#8884d8"
+                                      dataKey="value"
+                                    >
+                                      {pieChartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === 0 ? "#4ade80" : "#f87171"} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="inventory">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Resumen de Inventario</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div>
+                                  <p>Total de ítems:</p>
+                                  <p className="text-2xl font-bold">{inventoryItems.length}</p>
+                                </div>
+                                <div>
+                                  <p>Valor total del inventario:</p>
+                                  <p className="text-2xl font-bold text-green-600">${inventoryItems.reduce((sum, item) => sum + item.precioCompra * item.cantidadDisponible, 0).toFixed(2)}</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Ítems por Categoría</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                  <PieChart>
+                                    <Pie
+                                      data={Object.entries(inventoryItems.reduce((acc, item) => {
+                                        acc[item.category] = (acc[item.category] || 0) + 1;
+                                        return acc;
+                                      }, {} as Record<string, number>)).map(([name, value]) => ({ name, value }))}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      outerRadius={80}
+                                      fill="#8884d8"
+                                      dataKey="value"
+                                    >
+                                      {pieChartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random() * 16777215).toString(16)}`} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          <Card className="mt-4">
+                            <CardHeader>
+                              <CardTitle>Tabla de Inventario</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="mb-4">
+                                <Label htmlFor="category-filter">Filtrar por categoría:</Label>
+                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                  <SelectTrigger id="category-filter">
+                                    <SelectValue placeholder="Todas las categorías" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="all">Todas las categorías</SelectItem>
+                                    {Array.from(new Set(inventoryItems.map(item => item.category))).map(category => (
+                                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Table className="table-auto w-full">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Descripción</TableHead>
+                                    <TableHead>Categoría</TableHead>
+                                    <TableHead>Cantidad</TableHead>
+                                    <TableHead>Precio de Compra</TableHead>
+                                    <TableHead>Precio de Venta</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                {/*Filtrado de Inventario*/}
+                                <TableBody>
+                                  {inventoryItems
+                                    .filter(item => selectedCategory === "all" || item.category === selectedCategory)
+                                    .map(item => (
+                                      <TableRow key={item.id}>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                          {item.id}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[250px]">
+                                          {item.descripcion}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                          {item.category}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">
+                                          {item.cantidadDisponible}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                                          ${parseFloat(item.precioCompra).toFixed(2)}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                                          ${parseFloat(item.precioVenta).toFixed(2)}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+                      </Tabs>
+                      
+                    </div>
+                  </AccesoRestringido>
+                )}
+
+                {/* Inventario Interfaz Estilo */} 
+                {activeTab === "inventario" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoInventario}>
+                    <div>
+
+                      <div className="flex justify-between items-center mb-4 mr-10">
+                        <h2 className="text-3xl font-bold">Registro de Inventario</h2>
+                      </div>
+
+                      <div className="border-t border-gray-400 my-4"></div>
+
+                      <div className="mb-4 flex items-center space-x-4">
+                        <Button onClick={() => openFieldEditor('inventario')}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar Campos
+                        </Button>
+                        <Button onClick={() => setIsInventoryModalOpen(true)}>
+                          Agregar Nuevo Ítem
+                        </Button>
+
+                        {/* Filtros */}
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger className="w-[180px] ml-4">
+                            <SelectValue placeholder="Seleccionar por categoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todas las categorías</SelectItem>
+                            {getUniqueCategories().map(category => (
+                              <SelectItem 
+                              key={category} //Nombre clave en base a categoria
+                              value={category}>{category}</SelectItem>//Valor clave en base a categoria
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {hayItems(inventoryItems) ? (
+                      <>        
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
+                                <TableHead key={categoria}>{appConfig.inventario[categoria]?.name || categoria}</TableHead>
+                              ))}
+                              <TableHead>Acciones</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {inventoryItems
+                              .filter((item) => selectedCategory === "all" || item.category === selectedCategory)
+                              .map((item) => (
+                                <TableRow key={item.id}>
+                                  {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
+                                    <TableCell key={categoria}>
+                                      {editingInventoryId === item.id ? (
+                                        <Input
+                                          type={appConfig.inventario[categoria]?.type || "text"}
+                                          value={newInventoryItem[categoria] || ""}
+                                          onChange={(e) =>
+                                            setNewInventoryItem({ ...newInventoryItem, [categoria]: e.target.value })
+                                          }
+                                        />
+                                      ) : advancedViewInventory ? (
+                                        item[categoria]
+                                      ) : categoria === "descripcion" ? (
+                                        item[categoria]
+                                      ) : (
+                                        "•••"
+                                      )}
+                                    </TableCell>
+                                  ))}
+                                  <TableCell>
+                                    {editingInventoryId === item.id ? (
+                                      <Button className="m-1" onClick={handleSaveInventoryItem}>
+                                        <IoIosSave size={20} />
+                                      </Button>
+                                    ) : (
+                                      <Button className="m-1" onClick={() => handleEditInventoryItem(item.id)}>
+                                        <RiEditLine size={20} />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      className="m-1"
+                                      variant="destructive"
+                                      onClick={() => handleDeleteInventoryItem(item.id)}
+                                    >
+                                      <IoTrashBinSharp size={20} />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+
+                      </>
+                      ) : (
+                        <div className="flex justify-center items-center h-[calc(65vh)]">
+                          <MensajeNoItems
+                            mensaje="Aún no has agregado ningún ítem al inventario."
+                            accion={() => setIsInventoryModalOpen(true)}
+                            textoBoton="Agregar Ítem al Inventario"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </AccesoRestringido>
+                )}  
+
+                {/* Facturacion Emitidas Interfaz Estilo */}
+                {activeTab === "facturacion-emitidas" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
+                  <div>
+                    <div className="flex justify-between items-center mb-4 mr-10">
+                      <h2 className="text-3xl font-bold">Registro de Facturación Emitida</h2>
+                    </div>
+
+                    <div className="border-t border-gray-400 my-4"></div>
+
+                    <div className="flex justify-between items-center mb-4 mr-10">
+                      <div className="mb-4 flex items-center space-x-4">
+                        {/* Btn Editar Campos */}
+                        <Button onClick={() => openFieldEditor('facturacion')}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar Campos
+                        </Button>
+                        {/* Crear Factura */}
+                        <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
+
+                        {/* Seleccionar Fecha */}
+                        <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                          <SelectTrigger className="w-[180px] ml-4">
+                            <SelectValue placeholder="Filtrar por fecha" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todas las fechas</SelectItem>
+                            <SelectItem value="day">Por día</SelectItem>
+                            <SelectItem value="month">Por mes</SelectItem>
+                            <SelectItem value="year">Por año</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
+                          <Input
+                            type="date"// Tipo de dato que es usado
+                            value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
+                            onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
+                            className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
+                        )}
+                        {invoiceFilterType === "month" && (
+                          <Input
+                            type="month"
+                            value={invoiceFilterMonth}
+                            onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                            className="ml-4" />
+                        )}
+                        {invoiceFilterType === "year" && (
+                          <Input
+                            type="number"
+                            value={invoiceFilterYear}
+                            onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                            min="1900"
+                            max="2099"
+                            step="1"
+                            className="ml-4" />
+                        )}
+
+                      </div>
+                    </div>
+                      
+                      {hayItems(filteredInvoiceItems) ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredInvoiceItems.map((factura) => (
+                            <Card key={factura.id} className="rounded-lg border flex flex-col">
+
+                              <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                                <CardTitle className="text-xl font-bold flex justify-between items-center">
+                                  <span>Factura N°{factura.numeroFactura}</span>
+                                </CardTitle>
+                              </CardHeader>
+                              
+                              <CardContent className="flex-grow p-4 bg-card">
+                                <div className="space-y-2">
+                                  <p className="text-sm flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span className="font-medium text-muted-foreground">Emisión:</span>
+                                    <span className="ml-2">{factura.fechaEmision}</span>
+                                  </p>
+                                  <p className="text-sm flex items-center">
+                                    <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span className="font-medium text-muted-foreground">Cliente:</span>
+                                    <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                                  </p>
+                                  <p className="text-sm flex items-center">
+                                    <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span className="font-medium text-muted-foreground">Emisor:</span>
+                                    <span className="ml-2 truncate">
+                                      {factura.nombreEmisor}
+                                    </span>
+                                  </p>
+                                  <p className="text-sm flex items-center">
+                                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span className="font-medium text-muted-foreground">Correo:</span>
+                                    <span className="ml-2 truncate">
+                                      {factura.correoEmisor}
+                                    </span>
+                                  </p>
+                                </div>
+                              </CardContent>
+
+                              <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                                <p className="text-sm font-semibold text-muted-foreground">
+                                  Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                                </p>
+                                <Button
+                                    size="icon"
+                                    onClick={() => handleViewInvoice(factura)}
+                                  >
+                                    <Eye className="h-5 w-5"/>
+                                  </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      </>
+                      ) : (
+                        <div className="flex justify-center items-center h-[calc(62vh)]">
+                          <MensajeNoItems
+                            mensaje="Aún no has agregado ninguna factura."
+                            accion={() => setIsInvoiceModalOpen(true)}
+                            textoBoton="Crear Nueva Factura"
+                          />
+                        </div>
+                      )}
+
+                    </div>
+                  </AccesoRestringido>
+                )}
+
+                {/* Facturacion Recibidas Interfaz Estilo */}
+                {activeTab === "facturacion-recibidas" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
+                    <div>
+                      <div className="flex justify-between items-center mb-4 mr-10">
+                        <h2 className="text-3xl font-bold">Registro de Facturación Recibida</h2>
+                      </div>
+
+                      <div className="border-t border-gray-400 my-4"></div>
+
+                      <div className="flex justify-between items-center mb-4 mr-10">
+                        <div className="mb-4 flex items-center space-x-4">
+                          {/* Btn Editar Campos */}
+                          <Button onClick={() => openFieldEditor('facturacionRecibida')}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar Campos
+                          </Button>
+                          {/* Crear Factura Recibida */}
+                          <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
+
+                          {/* Seleccionar Fecha */}
+                          <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                            <SelectTrigger className="w-[180px] ml-4">
+                              <SelectValue placeholder="Filtrar por fecha" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas las fechas</SelectItem>
+                              <SelectItem value="day">Por día</SelectItem>
+                              <SelectItem value="month">Por mes</SelectItem>
+                              <SelectItem value="year">Por año</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {invoiceFilterType === "day" && (
+                            <Input
+                              type="date"
+                              value={invoiceFilterDate}
+                              onChange={(e) => setInvoiceFilterDate(e.target.value)}
+                              className="ml-4" />
+                          )}
+                          {invoiceFilterType === "month" && (
+                            <Input
+                              type="month"
+                              value={invoiceFilterMonth}
+                              onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                              className="ml-4" />
+                          )}
+                          {invoiceFilterType === "year" && (
+                            <Input
+                              type="number"
+                              value={invoiceFilterYear}
+                              onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                              min="1900"
+                              max="2099"
+                              step="1"
+                              className="ml-4" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {hayItems(filteredInvoiceItems.filter(item => item.tipoFactura === 'recibida')) ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredInvoiceItems
+                            .filter(factura => factura.tipoFactura === 'recibida')
+                            .map((factura) => (
+                              <Card key={factura.id} className="rounded-lg border flex flex-col">
+                                <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                                  <CardTitle className="text-xl font-bold flex justify-between items-center">
+                                    <span>Factura N°{factura.numeroFactura}</span>
+                                  </CardTitle>
+                                </CardHeader>
+                                
+                                <CardContent className="flex-grow p-4 bg-card">
+                                  <div className="space-y-2">
+                                    <p className="text-sm flex items-center">
+                                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span className="font-medium text-muted-foreground">Emisión:</span>
+                                      <span className="ml-2">{factura.fechaEmision}</span>
+                                    </p>
+                                    <p className="text-sm flex items-center">
+                                      <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span className="font-medium text-muted-foreground">Cliente:</span>
+                                      <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                                    </p>
+                                    <p className="text-sm flex items-center">
+                                      <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span className="font-medium text-muted-foreground">Emisor:</span>
+                                      <span className="ml-2 truncate">
+                                        {factura.empresaGuardada}
+                                      </span>
+                                    </p>
+                                    <p className="text-sm flex items-center">
+                                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span className="font-medium text-muted-foreground">Correo:</span>
+                                      <span className="ml-2 truncate">
+                                        {factura.correoEmisorRecibido}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </CardContent>
+
+                                <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                                  <p className="text-sm font-semibold text-muted-foreground">
+                                    Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                                  </p>
+                                  <Button
+                                      size="icon"
+                                      onClick={() => handleViewInvoice(factura)}
+                                    >
+                                      <Eye className="h-5 w-5"/>
+                                    </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="flex justify-center items-center h-[calc(62vh)]">
+                          <MensajeNoItems
+                            mensaje="Aún no has agregado ninguna factura recibida."
+                            accion={() => setIsInvoiceReceivedModalOpen(true)}
+                            textoBoton="Crear Nueva Factura Recibida"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </AccesoRestringido>
+                )}
+
+                {/* Registros Interfaz Estilo */}
+                {activeTab === "generar-registros" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoGenerarRegistros}>
+                    <GenerarRegistros 
+                    data={data} 
+                    inventoryItems={inventoryItems} 
+                    invoiceItems={invoiceItems} 
+                    appConfig={appConfig} />
+                  </AccesoRestringido>
+                )}
+
+                {/* Servicios Interfaz Estilo */}
+                {activeTab === "servicios" && (
+                  <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
+                    <div>
+
+                      <div className={stylesService.serviciosContainer}>
+                        <h2 className="text-3xl font-bold">Servicios</h2>
+                      </div>
+
+                      <div className="border-t border-gray-400 my-4"></div>
+
+                      <div>
+                        <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
+                          Agregar Nuevo Servicio
+                        </Button>
+                      </div>
+
+                      {hayItems(servicios) ? (
+                      <>
+                      <div className={stylesService.serviciosContentent}>
+                        {servicios.map((servicio) => (
+
+                        <Card key={servicio.id} className={stylesService.card}>
+
+                          <CardHeader className={`${stylesService.cardHeader} bg-gradient-to-r`}>
+                            <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.themeLight : stylesService.themeDark}`} >
+                              <span>{servicio.nombre}</span>
                             </CardTitle>
                           </CardHeader>
-                          
-                          <CardContent className="flex-grow p-4 bg-card">
-                            <div className="space-y-2">
-                              <p className="text-sm flex items-center">
-                                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span className="font-medium text-muted-foreground">Emisión:</span>
-                                <span className="ml-2">{factura.fechaEmision}</span>
+
+                          <CardContent className={stylesService.cardContent}>
+                            <div className={stylesService.cardContentInner}>
+                              <p>
+                                <Calendar className={stylesService.icon} />
+                                <span className="font-medium text-muted-foreground">Descripción:</span>
+                                <span className="ml-2 truncate">{servicio.descripcion}</span>
                               </p>
-                              <p className="text-sm flex items-center">
-                                <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span className="font-medium text-muted-foreground">Cliente:</span>
-                                <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                              <p>
+                                <CircleUserRound className={stylesService.icon} />
+                                <span className="font-medium text-muted-foreground">Uso de Item:</span>
+                                <span className="ml-2 truncate">{servicio.usoDeItem}</span>
                               </p>
-                              <p className="text-sm flex items-center">
-                                <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span className="font-medium text-muted-foreground">Emisor:</span>
-                                <span className="ml-2 truncate">
-                                  {factura.nombreEmisor}
-                                </span>
-                              </p>
-                              <p className="text-sm flex items-center">
-                                <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span className="font-medium text-muted-foreground">Correo:</span>
-                                <span className="ml-2 truncate">
-                                  {factura.correoEmisor}
-                                </span>
+                              <p>
+                                <DollarSign className={stylesService.icon} />
+                                <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
+                                <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
                               </p>
                             </div>
                           </CardContent>
 
-                          <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                            <p className="text-sm font-semibold text-muted-foreground">
-                              Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
-                            </p>
-                            <Button
-                                size="icon"
-                                onClick={() => handleViewInvoice(factura)}
-                              >
-                                <Eye className="h-5 w-5"/>
+                          <CardFooter className={stylesService.cardFooter}>
+                            <div className={stylesService.buttonGroupA}>
+                              <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
+                                Generar Facturación
                               </Button>
+                              <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
+                                Generar Asiento Contable
+                              </Button>
+                            </div>
+                            <div className={stylesService.buttonGroupB}>
+                              <Button size="sm" onClick={() => handleEditService(servicio)}>
+                                <RiEditLine className={stylesService.icon} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  setServiceToDelete(servicio.id);
+                                  setIsServiceDeleteModalOpen(true);
+                                }}
+                              >
+                                <IoTrashBinSharp className={stylesService.icon} />
+                              </Button>
+                            </div>
                           </CardFooter>
                         </Card>
+
+                        ))}
+                      </div>
+                      </>
+                      ) : (
+                        <div className="flex justify-center items-center h-[calc(68vh)]">
+                          <MensajeNoItems
+                            mensaje="Aún no has agregado ningún servicio."
+                            accion={() => setIsCreatingService(true)}
+                            textoBoton="Agregar Nuevo Servicio"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </AccesoRestringido>
+                )}
+
+              </div>
+
+              {/* Panel de IA desplegable */}
+              <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
+
+              {/* Btn Configuracion */}
+              {isIAOpen ? (
+                <Button
+                  variant={activeTab === "configuracion" ? "default" : "ghost"}
+                  className={`${stylesMenu.configbutton}`} // Clase cuando el botón está visible
+                  onClick={() => setActiveTab("configuracion")}
+                >
+                  <Settings className={stylesMenu.iconconfig} />
+                </Button>
+              ) : (
+                <Button
+                  variant={activeTab === "configuracion" ? "default" : "ghost"}
+                  className={`${stylesMenu.configbutton} ${stylesMenu.hidden}`} // Clase cuando el botón está oculto
+                  onClick={() => setActiveTab("configuracion")}
+                >
+                  <Settings className={stylesMenu.iconconfig} />
+                </Button>
+              )}
+              
+
+                {/* Btn Desplegar Panel */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 left-4"
+                  onClick={() => setIsIAOpen(!isIAOpen)}
+                  aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
+                >
+                  {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+                </Button>
+
+                {/* Interfaz Panel IA */}
+                {isIAOpen && (
+                  <>
+                    <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
+                      {messages.map((message, index) => (
+                        <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                          <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
+                            {message.content}
+                          </div>
+                        </div>
                       ))}
                     </div>
+                    <div className="p-4 border-t">
+                      <div className="flex mb-2">
+
+                        {/* Barra de Texto */}
+                        <Input
+                          type="text"
+                          placeholder="Escribe tu mensaje..."
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyDown={handleSendMessage}
+                          className="flex-grow mr-2" />
+                      </div>
+                      <div className="flex justify-between">
+
+                        {/* Btn Subir Archivo */}
+                        <Button variant="outline" size="icon" onClick={() => document.getElementById('file-upload')?.click()}>
+                          <Upload className="h-4 w-4" />
+                          <span className="sr-only">Subir archivo</span>
+                        </Button>
+
+                        <input
+                          id="file-upload"
+                          type="file"
+                          className="hidden"
+                          onChange={handleFileUpload} />
+
+                        {/* Btn Hablar Para Escuchar */}
+                        <Button variant="outline" size="icon" onClick={handleVoiceInput}>
+                          <Mic className="h-4 w-4" />
+                          <span className="sr-only">Entrada de voz</span>
+                        </Button>
+                      </div>
+                    </div>
                   </>
-                  ) : (
-                    <div className="flex justify-center items-center h-[calc(62vh)]">
-                      <MensajeNoItems
-                        mensaje="Aún no has agregado ninguna factura."
-                        accion={() => setIsInvoiceModalOpen(true)}
-                        textoBoton="Crear Nueva Factura"
-                      />
-                    </div>
-                  )}
+                )}
+              </div>
 
-                </div>
-              </AccesoRestringido>
-            )}
+            {/* MODALES */}
+            <div>
 
-            {/* Facturacion Recibidas Interfaz Estilo */}
-            {activeTab === "facturacion-recibidas" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
-                <div>
-                  <div className="flex justify-between items-center mb-4 mr-10">
-                    <h2 className="text-3xl font-bold">Registro de Facturación Recibida</h2>
-                  </div>
+              {/* Modal para editar campos */}
+              <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
+                <DialogContent aria-describedby={undefined}>
 
-                  <div className="border-t border-gray-400 my-4"></div>
+                  {/* Cabecera */}
+                  <DialogHeader>
+                    <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
+                  </DialogHeader>
 
-                  <div className="flex justify-between items-center mb-4 mr-10">
-                    <div className="mb-4 flex items-center space-x-4">
-                      {/* Btn Editar Campos */}
-                      <Button onClick={() => openFieldEditor('facturacionRecibida')}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Campos
-                      </Button>
-                      {/* Crear Factura Recibida */}
-                      <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
-
-                      {/* Seleccionar Fecha */}
-                      <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                        <SelectTrigger className="w-[180px] ml-4">
-                          <SelectValue placeholder="Filtrar por fecha" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas las fechas</SelectItem>
-                          <SelectItem value="day">Por día</SelectItem>
-                          <SelectItem value="month">Por mes</SelectItem>
-                          <SelectItem value="year">Por año</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {invoiceFilterType === "day" && (
+                  {/* Contenido */}
+                  <div className="space-y-4">
+                    {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
+                      <div key={key} className="flex items-center space-x-2">
                         <Input
-                          type="date"
-                          value={invoiceFilterDate}
-                          onChange={(e) => setInvoiceFilterDate(e.target.value)}
-                          className="ml-4" />
-                      )}
-                      {invoiceFilterType === "month" && (
-                        <Input
-                          type="month"
-                          value={invoiceFilterMonth}
-                          onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                          className="ml-4" />
-                      )}
-                      {invoiceFilterType === "year" && (
-                        <Input
-                          type="number"
-                          value={invoiceFilterYear}
-                          onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                          min="1900"
-                          max="2099"
-                          step="1"
-                          className="ml-4" />
-                      )}
-                    </div>
-                  </div>
-                  
-                  {hayItems(filteredInvoiceItems.filter(item => item.tipoFactura === 'recibida')) ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredInvoiceItems
-                        .filter(factura => factura.tipoFactura === 'recibida')
-                        .map((factura) => (
-                          <Card key={factura.id} className="rounded-lg border flex flex-col">
-                            <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                              <CardTitle className="text-xl font-bold flex justify-between items-center">
-                                <span>Factura N°{factura.numeroFactura}</span>
-                              </CardTitle>
-                            </CardHeader>
-                            
-                            <CardContent className="flex-grow p-4 bg-card">
-                              <div className="space-y-2">
-                                <p className="text-sm flex items-center">
-                                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Emisión:</span>
-                                  <span className="ml-2">{factura.fechaEmision}</span>
-                                </p>
-                                <p className="text-sm flex items-center">
-                                  <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Cliente:</span>
-                                  <span className="ml-2 truncate">{factura.nombreCliente}</span>
-                                </p>
-                                <p className="text-sm flex items-center">
-                                  <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Emisor:</span>
-                                  <span className="ml-2 truncate">
-                                    {factura.empresaGuardada}
-                                  </span>
-                                </p>
-                                <p className="text-sm flex items-center">
-                                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Correo:</span>
-                                  <span className="ml-2 truncate">
-                                    {factura.correoEmisorRecibido}
-                                  </span>
-                                </p>
-                              </div>
-                            </CardContent>
-
-                            <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                              <p className="text-sm font-semibold text-muted-foreground">
-                                Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
-                              </p>
-                              <Button
-                                  size="icon"
-                                  onClick={() => handleViewInvoice(factura)}
-                                >
-                                  <Eye className="h-5 w-5"/>
-                                </Button>
-                            </CardFooter>
-                          </Card>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="flex justify-center items-center h-[calc(62vh)]">
-                      <MensajeNoItems
-                        mensaje="Aún no has agregado ninguna factura recibida."
-                        accion={() => setIsInvoiceReceivedModalOpen(true)}
-                        textoBoton="Crear Nueva Factura Recibida"
-                      />
-                    </div>
-                  )}
-                </div>
-              </AccesoRestringido>
-            )}
-
-            {/* Registros Interfaz Estilo */}
-            {activeTab === "generar-registros" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoGenerarRegistros}>
-                <GenerarRegistros 
-                data={data} 
-                inventoryItems={inventoryItems} 
-                invoiceItems={invoiceItems} 
-                appConfig={appConfig} />
-              </AccesoRestringido>
-            )}
-
-            {/* Servicios Interfaz Estilo */}
-            {activeTab === "servicios" && (
-              <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
-                <div>
-
-                  <div className={stylesService.serviciosContainer}>
-                    <h2 className="text-3xl font-bold">Servicios</h2>
-                  </div>
-
-                  <div className="border-t border-gray-400 my-4"></div>
-
-                  <div>
-                    <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
-                      Agregar Nuevo Servicio
-                    </Button>
-                  </div>
-
-                  {hayItems(servicios) ? (
-                  <>
-                  <div className={stylesService.serviciosContentent}>
-                    {servicios.map((servicio) => (
-
-                    <Card key={servicio.id} className={stylesService.card}>
-
-                      <CardHeader className={`${stylesService.cardHeader} bg-gradient-to-r`}>
-                        <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.themeLight : stylesService.themeDark}`} >
-                          <span>{servicio.nombre}</span>
-                        </CardTitle>
-                      </CardHeader>
-
-                      <CardContent className={stylesService.cardContent}>
-                        <div className={stylesService.cardContentInner}>
-                          <p>
-                            <Calendar className={stylesService.icon} />
-                            <span className="font-medium text-muted-foreground">Descripción:</span>
-                            <span className="ml-2 truncate">{servicio.descripcion}</span>
-                          </p>
-                          <p>
-                            <CircleUserRound className={stylesService.icon} />
-                            <span className="font-medium text-muted-foreground">Uso de Item:</span>
-                            <span className="ml-2 truncate">{servicio.usoDeItem}</span>
-                          </p>
-                          <p>
-                            <DollarSign className={stylesService.icon} />
-                            <span className="font-medium text-muted-foreground">Costo de Servicio:</span>
-                            <span className="ml-2 truncate">${servicio.costoDeServicio}</span>
-                          </p>
-                        </div>
-                      </CardContent>
-
-                      <CardFooter className={stylesService.cardFooter}>
-                        <div className={stylesService.buttonGroupA}>
-                          <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
-                            Generar Facturación
-                          </Button>
-                          <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
-                            Generar Asiento Contable
-                          </Button>
-                        </div>
-                        <div className={stylesService.buttonGroupB}>
-                          <Button size="sm" onClick={() => handleEditService(servicio)}>
-                            <RiEditLine className={stylesService.icon} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setServiceToDelete(servicio.id);
-                              setIsServiceDeleteModalOpen(true);
-                            }}
-                          >
-                            <IoTrashBinSharp className={stylesService.icon} />
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-
+                          value={field.name}
+                          onChange={(e) => updateField(editingSection, key, { name: e.target.value })} />
+                        <Select
+                          value={field.type}
+                          onValueChange={(value) => updateField(editingSection, key, { type: value })}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Tipo de campo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Texto</SelectItem>
+                            <SelectItem value="number">Número</SelectItem>
+                            <SelectItem value="date">Fecha</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="destructive" size="icon" onClick={() => deleteField(editingSection, key)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ))}
+                    <Button onClick={() => addNewField(editingSection as keyof AppConfig)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Campo
+                    </Button>
                   </div>
-                  </>
-                  ) : (
-                    <div className="flex justify-center items-center h-[calc(68vh)]">
-                      <MensajeNoItems
-                        mensaje="Aún no has agregado ningún servicio."
-                        accion={() => setIsCreatingService(true)}
-                        textoBoton="Agregar Nuevo Servicio"
-                      />
+
+                  {/* Contenido Inferior */}
+                  <DialogFooter>
+                    <Button onClick={saveFieldChanges}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar Cambios
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal de inicio de sesión */}
+              <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+                      <DialogTitle>Iniciar sesión</DialogTitle>
                     </div>
-                  )}
-                </div>
-              </AccesoRestringido>
-            )}
+                    <DialogDescription>
+                      Inicia Sesión para poder utilizar utilizar las funciones.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+                    <Button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-3 w-full">
+                      <FcGoogle size={25} />
+                      <span>Iniciar sesión con Google</span>
+                    </Button>
+                    <Button onClick={() => {
+                      setIsLoginModalOpen(false);
+                      setIsEmailLoginModalOpen(true);
+                    } }
+                      className="flex items-center justify-center space-x-3 w-full">
+                      <TfiEmail size={25} />
+                      <span>Iniciar sesión con correo electrónico</span>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-          </div>
-
-          {/* Panel de IA desplegable */}
-          <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
-
-          {/* Btn Configuracion */}
-          {isIAOpen ? (
-            <Button
-              variant={activeTab === "configuracion" ? "default" : "ghost"}
-              className={`${stylesMenu.configbutton}`} // Clase cuando el botón está visible
-              onClick={() => setActiveTab("configuracion")}
-            >
-              <Settings className={stylesMenu.iconconfig} />
-            </Button>
-          ) : (
-            <Button
-              variant={activeTab === "configuracion" ? "default" : "ghost"}
-              className={`${stylesMenu.configbutton} ${stylesMenu.hidden}`} // Clase cuando el botón está oculto
-              onClick={() => setActiveTab("configuracion")}
-            >
-              <Settings className={stylesMenu.iconconfig} />
-            </Button>
-          )}
-          
-
-            {/* Btn Desplegar Panel */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 left-4"
-              onClick={() => setIsIAOpen(!isIAOpen)}
-              aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
-            >
-              {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
-            </Button>
-
-            {/* Interfaz Panel IA */}
-            {isIAOpen && (
-              <>
-                <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
-                  {messages.map((message, index) => (
-                    <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                      <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
-                        {message.content}
+              {/* Modal de inicio de sesión con correo electrónico */}
+              <Dialog open={isEmailLoginModalOpen} onOpenChange={setIsEmailLoginModalOpen}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Iniciar sesión con correo electrónico</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleEmailLogin}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Correo electrónico</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Contraseña</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required />
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="p-4 border-t">
-                  <div className="flex mb-2">
-
-                    {/* Barra de Texto */}
-                    <Input
-                      type="text"
-                      placeholder="Escribe tu mensaje..."
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={handleSendMessage}
-                      className="flex-grow mr-2" />
-                  </div>
-                  <div className="flex justify-between">
-
-                    {/* Btn Subir Archivo */}
-                    <Button variant="outline" size="icon" onClick={() => document.getElementById('file-upload')?.click()}>
-                      <Upload className="h-4 w-4" />
-                      <span className="sr-only">Subir archivo</span>
-                    </Button>
-
-                    <input
-                      id="file-upload"
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileUpload} />
-
-                    {/* Btn Hablar Para Escuchar */}
-                    <Button variant="outline" size="icon" onClick={handleVoiceInput}>
-                      <Mic className="h-4 w-4" />
-                      <span className="sr-only">Entrada de voz</span>
+                    <DialogFooter className="mt-4">
+                      <Button type="submit">Iniciar sesión</Button>
+                    </DialogFooter>
+                  </form>
+                  <div className="mt-4 text-center">
+                    <p>¿No tienes una cuenta?</p>
+                    <Button variant="link" onClick={handleEmailSignUp}>
+                      Registrarse
                     </Button>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                </DialogContent>
+              </Dialog>
 
-        {/* MODALES */}
-        <div>
-
-          {/* Modal para editar campos */}
-          <Dialog open={isEditingFields} onOpenChange={setIsEditingFields}>
-            <DialogContent aria-describedby={undefined}>
-
-              {/* Cabecera */}
-              <DialogHeader>
-                <DialogTitle>Editar Campos de {editingSection}</DialogTitle>
-              </DialogHeader>
-
-              {/* Contenido */}
-              <div className="space-y-4">
-                {editingSection && Object.entries(appConfig[editingSection]).map(([key, field]) => (
-                  <div key={key} className="flex items-center space-x-2">
-                    <Input
-                      value={field.name}
-                      onChange={(e) => updateField(editingSection, key, { name: e.target.value })} />
-                    <Select
-                      value={field.type}
-                      onValueChange={(value) => updateField(editingSection, key, { type: value })}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Tipo de campo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Texto</SelectItem>
-                        <SelectItem value="number">Número</SelectItem>
-                        <SelectItem value="date">Fecha</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="destructive" size="icon" onClick={() => deleteField(editingSection, key)}>
-                      <Trash2 className="h-4 w-4" />
+              {/* Modal de confirmacion de cierre */}
+              <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
+                      <DialogTitle>¿Cerrar Secion?</DialogTitle>
+                    </div>
+                    <DialogDescription>
+                      Confirma el cierre de la secion actual
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
+                    <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
+                    onClick={()=> {
+                      handleLogout()
+                      setIsLogOutModalOpen(false)}}>
+                      Confirmar
                     </Button>
                   </div>
-                ))}
-                <Button onClick={() => addNewField(editingSection as keyof AppConfig)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Campo
-                </Button>
-              </div>
+                </DialogContent>
+              </Dialog>
 
-              {/* Contenido Inferior */}
-              <DialogFooter>
-                <Button onClick={saveFieldChanges}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar Cambios
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal de inicio de sesión */}
-          <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
-                  <DialogTitle>Iniciar sesión</DialogTitle>
-                </div>
-                <DialogDescription>
-                  Inicia Sesión para poder utilizar utilizar las funciones.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
-                <Button onClick={handleGoogleLogin} className="flex items-center justify-center space-x-3 w-full">
-                  <FcGoogle size={25} />
-                  <span>Iniciar sesión con Google</span>
-                </Button>
-                <Button onClick={() => {
-                  setIsLoginModalOpen(false);
-                  setIsEmailLoginModalOpen(true);
-                } }
-                  className="flex items-center justify-center space-x-3 w-full">
-                  <TfiEmail size={25} />
-                  <span>Iniciar sesión con correo electrónico</span>
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal de inicio de sesión con correo electrónico */}
-          <Dialog open={isEmailLoginModalOpen} onOpenChange={setIsEmailLoginModalOpen}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Iniciar sesión con correo electrónico</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleEmailLogin}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Correo electrónico</Label>
+              {/* Modal para unirse a un grupo */}
+              <Dialog open={showJoinGroupModal} onOpenChange={setShowJoinGroupModal}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Unirse a Grupo Empresarial</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Label htmlFor="group-uid">UID de Empresa</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required />
+                      id="group-uid"
+                      value={joinGroupUID}
+                      onChange={(e) => setJoinGroupUID(e.target.value)}
+                      placeholder="Ingrese el UID del grupo"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Contraseña</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required />
-                  </div>
-                </div>
-                <DialogFooter className="mt-4">
-                  <Button type="submit">Iniciar sesión</Button>
-                </DialogFooter>
-              </form>
-              <div className="mt-4 text-center">
-                <p>¿No tienes una cuenta?</p>
-                <Button variant="link" onClick={handleEmailSignUp}>
-                  Registrarse
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button onClick={() => setShowJoinGroupModal(true)}>Cancelar</Button>
+                    <Button onClick={handleJoinGroup}>Enviar Solicitud</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-          {/* Modal de confirmacion de cierre */}
-          <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <div className="flex flex-col items-center justify-center space-y-4 mr-0 mb-4">
-                  <DialogTitle>¿Cerrar Secion?</DialogTitle>
-                </div>
-                <DialogDescription>
-                  Confirma el cierre de la secion actual
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
-                <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
-                onClick={()=> {
-                  handleLogout()
-                  setIsLogOutModalOpen(false)}}>
-                  Confirmar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              {/* Modal de Autocompletar Factura Recibida */}
+              <Dialog open={showInvoiceRecibedAutoCompleteModal} onOpenChange={setShowInvoiceRecibedAutoCompleteModal}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Autocompletar Libro Diario</DialogTitle>
+                  </DialogHeader>
+                  <p>¿Desea autocompletar este ítem en el libro diario?</p>
+                  <DialogFooter>
+                    <Button onClick={() => setShowInvoiceRecibedAutoCompleteModal(false)}>Cancelar</Button>
+                    <Button onClick={handleInvoiceRecibedAutoCompleteLibroDiario}>Aceptar</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-          {/* Modal para unirse a un grupo */}
-          <Dialog open={showJoinGroupModal} onOpenChange={setShowJoinGroupModal}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Unirse a Grupo Empresarial</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Label htmlFor="group-uid">UID de Empresa</Label>
-                <Input
-                  id="group-uid"
-                  value={joinGroupUID}
-                  onChange={(e) => setJoinGroupUID(e.target.value)}
-                  placeholder="Ingrese el UID del grupo"
-                />
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setShowJoinGroupModal(true)}>Cancelar</Button>
-                <Button onClick={handleJoinGroup}>Enviar Solicitud</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              {/* Modal de Autocompletar Factura Emitida */}
+              <Dialog open={showInvoiceEmitedAutoCompleteModal} onOpenChange={setShowInvoiceEmitedAutoCompleteModal}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Autocompletar Libro Diario</DialogTitle>
+                  </DialogHeader>
+                  <p>¿Desea autocompletar este ítem en el libro diario?</p>
+                  <DialogFooter>
+                    <Button onClick={() => setShowInvoiceEmitedAutoCompleteModal(false)}>Cancelar</Button>
+                    <Button onClick={handleAutoCompleteLibroDiario}>Aceptar</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-          {/* Modal de Autocompletar Factura Recibida */}
-          <Dialog open={showInvoiceRecibedAutoCompleteModal} onOpenChange={setShowInvoiceRecibedAutoCompleteModal}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Autocompletar Libro Diario</DialogTitle>
-              </DialogHeader>
-              <p>¿Desea autocompletar este ítem en el libro diario?</p>
-              <DialogFooter>
-                <Button onClick={() => setShowInvoiceRecibedAutoCompleteModal(false)}>Cancelar</Button>
-                <Button onClick={handleInvoiceRecibedAutoCompleteLibroDiario}>Aceptar</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              {/* Agregar Nuevos Items */}
 
-          {/* Modal de Autocompletar Factura Emitida */}
-          <Dialog open={showInvoiceEmitedAutoCompleteModal} onOpenChange={setShowInvoiceEmitedAutoCompleteModal}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Autocompletar Libro Diario</DialogTitle>
-              </DialogHeader>
-              <p>¿Desea autocompletar este ítem en el libro diario?</p>
-              <DialogFooter>
-                <Button onClick={() => setShowInvoiceEmitedAutoCompleteModal(false)}>Cancelar</Button>
-                <Button onClick={handleAutoCompleteLibroDiario}>Aceptar</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              {/* Modal para visualizar una factura */}
+              <Dialog open={isViewInvoiceModalOpen} onOpenChange={setIsViewInvoiceModalOpen}>
+                <DialogContent className="bg-background text-foreground max-w-4xl" aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {isEditingInvoice ? "Editor de Factura" : "Visualizador de Factura"}
+                    </DialogTitle>
+                  </DialogHeader>
 
-          {/* Agregar Nuevos Items */}
+                  {/* Visualizador */}
+                  {currentInvoice && (
+                    <ScrollArea className="max-h-[80vh]">
+                      <div className="space-y-4 p-4">
+                        {/* Cabecera */}
+                        <div className="grid grid-cols-2 gap-4">
 
-          {/* Modal para visualizar una factura */}
-          <Dialog open={isViewInvoiceModalOpen} onOpenChange={setIsViewInvoiceModalOpen}>
-            <DialogContent className="bg-background text-foreground max-w-4xl" aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>
-                  {isEditingInvoice ? "Editor de Factura" : "Visualizador de Factura"}
-                </DialogTitle>
-              </DialogHeader>
+                          {/* Superior Izquierda */}
+                          <div className="border p-4 rounded-md">
+                            <div className="col-span-2">
+                              {isEditingInvoice ? (
+                                <>
+                                  <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
+                                  <Input
+                                    id="empresaGuardada"
+                                    className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                    style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                    value={currentInvoice.empresaGuardada || ''}
+                                    onChange={(e) => setCurrentInvoice({...currentInvoice, empresaGuardada: e.target.value})}
+                                    disabled={!isEditingInvoice}
+                                  />
+                                </>
+                              ) : (
+                                <h2 className="text-xl font-bold">{currentInvoice.empresaGuardada || "Nombre Comercial"}</h2>
+                              )}
+                            </div>
+                            <div className="col-span-2 mt-2">
+                              {isEditingInvoice ? (
+                                <>
+                                  <Label htmlFor="correoEmisorRecibido">Correo de Empresa Emisora</Label>
+                                  <Input
+                                    id="correoEmisorRecibido"
+                                    className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                    style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                    value={currentInvoice.correoEmisorRecibido || ''}
+                                    onChange={(e) => setCurrentInvoice({...currentInvoice, correoEmisorRecibido: e.target.value})}
+                                    disabled={!isEditingInvoice}
+                                  />
+                                </>
+                              ) : (
+                                <p className="text-sm text-gray-600">{currentInvoice.correoEmisorRecibido || "Razón Social Emisor"}</p>
+                              )}
+                            </div>
+                            <div className="mt-4 pt-4 border-t">
+                              <div className="space-y-2">
+                                <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                                <Input 
+                                  id="direccionMatriz" 
+                                  className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                  value={currentInvoice.direccionMatriz || ''} 
+                                  onChange={(e) => setCurrentInvoice({...currentInvoice, direccionMatriz: e.target.value})}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </div>
+                              <div className="space-y-2 mt-2">
+                                <Label htmlFor="direccionSucursal">Dirección Sucursal:</Label>
+                                <Input 
+                                  id="direccionSucursal" 
+                                  className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                  value={currentInvoice.direccionSucursal || ''} 
+                                  onChange={(e) => setCurrentInvoice({...currentInvoice, direccionSucursal: e.target.value})}
+                                  disabled={!isEditingInvoice}
+                                />
+                              </div>
+                            </div>
+                          </div>
 
-              {/* Visualizador */}
-              {currentInvoice && (
-                <ScrollArea className="max-h-[80vh]">
-                  <div className="space-y-4 p-4">
-                    {/* Cabecera */}
-                    <div className="grid grid-cols-2 gap-4">
-
-                      {/* Superior Izquierda */}
-                      <div className="border p-4 rounded-md">
-                        <div className="col-span-2">
-                          {isEditingInvoice ? (
-                            <>
-                              <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
-                              <Input
-                                id="empresaGuardada"
+                          {/* Superior Derecha */}
+                          <div className="border p-4 rounded-md space-y-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                              <Input 
+                                id="rucEmisor" 
                                 className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                value={currentInvoice.empresaGuardada || ''}
-                                onChange={(e) => setCurrentInvoice({...currentInvoice, empresaGuardada: e.target.value})}
+                                value={currentInvoice.rucEmisor || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, rucEmisor: e.target.value})}
                                 disabled={!isEditingInvoice}
                               />
-                            </>
-                          ) : (
-                            <h2 className="text-xl font-bold">{currentInvoice.empresaGuardada || "Nombre Comercial"}</h2>
-                          )}
-                        </div>
-                        <div className="col-span-2 mt-2">
-                          {isEditingInvoice ? (
-                            <>
-                              <Label htmlFor="correoEmisorRecibido">Correo de Empresa Emisora</Label>
-                              <Input
-                                id="correoEmisorRecibido"
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                              <Input 
+                                id="numeroAutorizacion" 
                                 className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                value={currentInvoice.correoEmisorRecibido || ''}
-                                onChange={(e) => setCurrentInvoice({...currentInvoice, correoEmisorRecibido: e.target.value})}
+                                value={currentInvoice.numeroAutorizacion || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, numeroAutorizacion: e.target.value})}
                                 disabled={!isEditingInvoice}
                               />
-                            </>
-                          ) : (
-                            <p className="text-sm text-gray-600">{currentInvoice.correoEmisorRecibido || "Razón Social Emisor"}</p>
-                          )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                              <Input 
+                                id="numeroFactura" 
+                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.numeroFactura || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, numeroFactura: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                              <Input 
+                                id="fechaAutorizacion" 
+                                type="date" 
+                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.fechaAutorizacion || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, fechaAutorizacion: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                          </div>
+
                         </div>
-                        <div className="mt-4 pt-4 border-t">
+                        
+                        {/* Inferior de Cabecera */}
+                        <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
                           <div className="space-y-2">
-                            <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
-                            <Input 
-                              id="direccionMatriz" 
-                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                              value={currentInvoice.direccionMatriz || ''} 
-                              onChange={(e) => setCurrentInvoice({...currentInvoice, direccionMatriz: e.target.value})}
-                              disabled={!isEditingInvoice}
-                            />
+                            <div className="space-y-2">
+                              <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
+                              <Input 
+                                id="identificacionAdquiriente" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.identificacionAdquiriente || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, identificacionAdquiriente: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                              <Input 
+                                id="fechaEmision" 
+                                type="date" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.fechaEmision || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, fechaEmision: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
                           </div>
-                          <div className="space-y-2 mt-2">
-                            <Label htmlFor="direccionSucursal">Dirección Sucursal:</Label>
-                            <Input 
-                              id="direccionSucursal" 
-                              className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                              style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                              value={currentInvoice.direccionSucursal || ''} 
-                              onChange={(e) => setCurrentInvoice({...currentInvoice, direccionSucursal: e.target.value})}
-                              disabled={!isEditingInvoice}
-                            />
+                          <div className="space-y-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                              <Input 
+                                id="rucCi" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.rucCi || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, rucCi: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                              <Input 
+                                id="guiaRemision" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.guiaRemision || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, guiaRemision: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="border p-4 rounded-md">
+                          <table className="w-full">
+                            <thead>
+                              <tr>
+                                <th className="w-1/6">Código</th>
+                                <th className="w-1/6">Cantidad</th>
+                                <th className="w-2/6">Detalle</th>
+                                <th className="w-1/6">P. Unitario</th>
+                                <th className="w-1/6">V. Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {currentInvoice.detalles && currentInvoice.detalles.map((detalle: { idElemento: string | number | readonly string[] | undefined; cantidad: string | number | readonly string[] | undefined; detalle: string | number | readonly string[] | undefined; precioUnitario: string | number | readonly string[] | undefined; valorTotal: string | number | readonly string[] | undefined; }, index: number) => (
+                                <tr key={index}>
+                                  <td>
+                                    <Input 
+                                      className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                      style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                      value={detalle.idElemento} 
+                                      onChange={(e) => {
+                                        const newDetalles = [...currentInvoice.detalles];
+                                        newDetalles[index] = {...newDetalles[index], idElemento: e.target.value};
+                                        setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                      }}
+                                      disabled={!isEditingInvoice}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input 
+                                      className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                      style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                      value={detalle.cantidad} 
+                                      onChange={(e) => {
+                                        const newDetalles = [...currentInvoice.detalles];
+                                        newDetalles[index] = {...newDetalles[index], cantidad: e.target.value};
+                                        setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                      }}
+                                      disabled={!isEditingInvoice}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input 
+                                      className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                      style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                      value={detalle.detalle} 
+                                      onChange={(e) => {
+                                        const newDetalles = [...currentInvoice.detalles];
+                                        newDetalles[index] = {...newDetalles[index], detalle: e.target.value};
+                                        setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                      }}
+                                      disabled={!isEditingInvoice}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input 
+                                      className={`${!isEditingInvoice ? 'bg-background ' : ''}`}
+                                      style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                      value={detalle.precioUnitario} 
+                                      onChange={(e) => {
+                                        const newDetalles = [...currentInvoice.detalles];
+                                        newDetalles[index] = {...newDetalles[index], precioUnitario: e.target.value};
+                                        setCurrentInvoice({...currentInvoice, detalles: newDetalles});
+                                      }}
+                                      disabled={!isEditingInvoice}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input 
+                                      className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                      style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                      value={detalle.valorTotal} 
+                                      readOnly 
+                                      disabled={!isEditingInvoice}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Contenido Inferior */}
+                        <div className="grid grid-cols-2 gap-4">
+
+                          {/* Inferior Izquierda */}
+                          <div className="border p-4 rounded-md space-y-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="formaPago">Forma de Pago:</Label>
+                              <Input 
+                                id="formaPago" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.formaPago || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, formaPago: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="otros">Otros:</Label>
+                              <Input 
+                                id="otros" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.otros || ''} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, otros: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Inferior Derecha */}
+                          <div className="border p-4 rounded-md space-y-2">
+                            {[
+                              { id: "SubTotal12IVA", label: "Sub. Total 12% IVA" },
+                              { id: "SubTotal0IVA", label: "Sub. Total 0% IVA" },
+                              { id: "SubTotalExentoIVA", label: "Sub. Total Exento IVA" },
+                              { id: "SubTotalNoObjetoIVA", label: "Sub. Total No Objeto IVA" },
+                              { id: "Descuento", label: "Descuento" },
+                              { id: "SubTotal", label: "Sub Total" },
+                              { id: "ICE", label: "ICE" },
+                              { id: "IVA12", label: "IVA 12%" },
+                              { id: "Propina", label: "Propina" },
+                              { id: "ValorTotalFinal", label: "Valor Total" },
+                            ].map((item) => (
+                              <div key={item.id} className="space-y-2">
+                                <Label htmlFor={item.id}>{item.label}:</Label>
+                                <Input
+                                  id={item.id}
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={currentInvoice[item.id] || 0}
+                                  onChange={(e) => setCurrentInvoice({ ...currentInvoice, [item.id]: e.target.value })}
+                                  className={`${!isEditingInvoice ? "bg-background" : ""}`}
+                                  style={!isEditingInvoice ? { color: "white", opacity: 1, cursor: "default" } : {}}
+                                  disabled={!isEditingInvoice}
+                                  readOnly
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  )}
+
+                  {/* Editor */}
+                  <DialogFooter>
+                    {isEditingInvoice ? (
+                      <>
+                        <Button onClick={() => setIsEditingInvoice(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveInvoiceItem}>Guardar Cambios</Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button onClick={() => setIsViewInvoiceModalOpen(false)}>Cerrar</Button>
+                        <Button onClick={handleEditInvoiceItem}>
+                          <RiEditLine size={20} />
+                        </Button>
+                        <Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)}>
+                          <IoTrashBinSharp size={20} />
+                        </Button>
+                      </>
+                    )}
+                  </DialogFooter>
+
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal para emitir una nueva factura */}
+              <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
+                <DialogContent className="max-w-4xl" aria-describedby={undefined}>
+
+                  <DialogHeader>
+                    <DialogTitle>Crear nueva factura</DialogTitle>
+                  </DialogHeader>
+
+                  <ScrollArea className="max-h-[80vh]">
+                    <div className="space-y-4 p-4">
+                      {/* Cabecera */}
+                      <div className="grid grid-cols-2 gap-4">
+
+                        {/* Superior Izquierda */}
+                        <div className="border p-4 rounded-md">
+                          <div className="col-span-2">
+                            <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
+                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"}/>
+                          </div>
+                          <div className="col-span-2 mt-2">
+                            <Label htmlFor="correoEmisor">Correo Empresa Emisora</Label>
+                            <Input id="correoEmisor" placeholder="Ingrese el nombre de la empresa" value={correoEmisor || "Correo Comercial"}/>
+                          </div>
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="space-y-2">
+                              <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                            </div>
+                            <div className="space-y-2 mt-2">
+                              <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
+                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Superior Derecha */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                            <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" value={userData.rucCI} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                            <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                            <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" value={1} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                            <Input id="fechaAutorizacion" type="date" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Inferior de Cabecera */}
+                      <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
+                        <div className="space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
+                            <Input id="identificacionAdquiriente" placeholder="Ingrese la identificación del adquiriente" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                            <Input id="fechaEmision" type="date" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                            <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                            <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
                           </div>
                         </div>
                       </div>
 
-                      {/* Superior Derecha */}
-                      <div className="border p-4 rounded-md space-y-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                          <Input 
-                            id="rucEmisor" 
-                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.rucEmisor || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, rucEmisor: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
-                          <Input 
-                            id="numeroAutorizacion" 
-                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.numeroAutorizacion || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, numeroAutorizacion: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                          <Input 
-                            id="numeroFactura" 
-                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.numeroFactura || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, numeroFactura: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
-                          <Input 
-                            id="fechaAutorizacion" 
-                            type="date" 
-                            className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.fechaAutorizacion || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, fechaAutorizacion: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                      </div>
-
-                    </div>
-                    
-                    {/* Inferior de Cabecera */}
-                    <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
-                      <div className="space-y-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
-                          <Input 
-                            id="identificacionAdquiriente" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.identificacionAdquiriente || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, identificacionAdquiriente: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
-                          <Input 
-                            id="fechaEmision" 
-                            type="date" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.fechaEmision || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, fechaEmision: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                          <Input 
-                            id="rucCi" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.rucCi || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, rucCi: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
-                          <Input 
-                            id="guiaRemision" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.guiaRemision || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, guiaRemision: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contenido */}
-                    <div className="border p-4 rounded-md">
-                      <table className="w-full">
-                        <thead>
-                          <tr>
-                            <th className="w-1/6">Código</th>
-                            <th className="w-1/6">Cantidad</th>
-                            <th className="w-2/6">Detalle</th>
-                            <th className="w-1/6">P. Unitario</th>
-                            <th className="w-1/6">V. Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentInvoice.detalles && currentInvoice.detalles.map((detalle: { idElemento: string | number | readonly string[] | undefined; cantidad: string | number | readonly string[] | undefined; detalle: string | number | readonly string[] | undefined; precioUnitario: string | number | readonly string[] | undefined; valorTotal: string | number | readonly string[] | undefined; }, index: number) => (
-                            <tr key={index}>
-                              <td>
-                                <Input 
-                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                  value={detalle.idElemento} 
-                                  onChange={(e) => {
-                                    const newDetalles = [...currentInvoice.detalles];
-                                    newDetalles[index] = {...newDetalles[index], idElemento: e.target.value};
-                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
-                                  }}
-                                  disabled={!isEditingInvoice}
-                                />
-                              </td>
-                              <td>
-                                <Input 
-                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                  value={detalle.cantidad} 
-                                  onChange={(e) => {
-                                    const newDetalles = [...currentInvoice.detalles];
-                                    newDetalles[index] = {...newDetalles[index], cantidad: e.target.value};
-                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
-                                  }}
-                                  disabled={!isEditingInvoice}
-                                />
-                              </td>
-                              <td>
-                                <Input 
-                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                  value={detalle.detalle} 
-                                  onChange={(e) => {
-                                    const newDetalles = [...currentInvoice.detalles];
-                                    newDetalles[index] = {...newDetalles[index], detalle: e.target.value};
-                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
-                                  }}
-                                  disabled={!isEditingInvoice}
-                                />
-                              </td>
-                              <td>
-                                <Input 
-                                  className={`${!isEditingInvoice ? 'bg-background ' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                  value={detalle.precioUnitario} 
-                                  onChange={(e) => {
-                                    const newDetalles = [...currentInvoice.detalles];
-                                    newDetalles[index] = {...newDetalles[index], precioUnitario: e.target.value};
-                                    setCurrentInvoice({...currentInvoice, detalles: newDetalles});
-                                  }}
-                                  disabled={!isEditingInvoice}
-                                />
-                              </td>
-                              <td>
-                                <Input 
-                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                                  style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                                  value={detalle.valorTotal} 
-                                  readOnly 
-                                  disabled={!isEditingInvoice}
-                                />
-                              </td>
+                      {/* Contenido */}
+                      <div className="border p-4 rounded-md">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="w-1/6">Código</th>
+                              <th className="w-1/6">Cantidad</th>
+                              <th className="w-2/6">Detalle</th>
+                              <th className="w-1/6">P. Unitario</th>
+                              <th className="w-1/6">V. Total</th>
+                              <th className="w-1/12">Acción</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Contenido Inferior */}
-                    <div className="grid grid-cols-2 gap-4">
-
-                      {/* Inferior Izquierda */}
-                      <div className="border p-4 rounded-md space-y-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="formaPago">Forma de Pago:</Label>
-                          <Input 
-                            id="formaPago" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.formaPago || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, formaPago: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="otros">Otros:</Label>
-                          <Input 
-                            id="otros" 
-                            className={`${!isEditingInvoice ? 'bg-background' : ''}`}
-                            style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
-                            value={currentInvoice.otros || ''} 
-                            onChange={(e) => setCurrentInvoice({...currentInvoice, otros: e.target.value})}
-                            disabled={!isEditingInvoice}
-                          />
-                        </div>
+                          </thead>
+                          <tbody>
+                            {detallesFactura.map((detalle, index) => (
+                              <tr key={index}>
+                                <td>
+                                  <Select
+                                    value={detalle.idElemento || ""}
+                                    onValueChange={(value) => handleServiceSelect(value, index)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Seleccionar servicio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {servicios.map((servicio) => (
+                                        <SelectItem key={servicio.id} value={servicio.id}>
+                                          {servicio.nombre}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                                <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.valorTotal} readOnly/></td>
+                                <td>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="icon"
+                                    onClick={() => eliminarFila(index)}
+                                    disabled={detallesFactura.length === 1}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
                       </div>
 
-                      {/* Inferior Derecha */}
-                      <div className="border p-4 rounded-md space-y-2">
-                        {[
-                          { id: "SubTotal12IVA", label: "Sub. Total 12% IVA" },
-                          { id: "SubTotal0IVA", label: "Sub. Total 0% IVA" },
-                          { id: "SubTotalExentoIVA", label: "Sub. Total Exento IVA" },
-                          { id: "SubTotalNoObjetoIVA", label: "Sub. Total No Objeto IVA" },
-                          { id: "Descuento", label: "Descuento" },
-                          { id: "SubTotal", label: "Sub Total" },
-                          { id: "ICE", label: "ICE" },
-                          { id: "IVA12", label: "IVA 12%" },
-                          { id: "Propina", label: "Propina" },
-                          { id: "ValorTotalFinal", label: "Valor Total" },
-                        ].map((item) => (
-                          <div key={item.id} className="space-y-2">
-                            <Label htmlFor={item.id}>{item.label}:</Label>
+                      {/* Contenido Inferior */}
+                      <div className="grid grid-cols-2 gap-4">
+
+                        {/* Inferior Izquierda */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="formaPago">Forma de Pago:</Label>
+                            <Input id="formaPago" placeholder="Ingrese la forma de pago" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="otros">Otros:</Label>
+                            <Input id="otros" placeholder="Ingrese otros detalles" />
+                          </div>
+                        </div>
+
+                        {/* Inferior Derecha */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
                             <Input
-                              id={item.id}
+                              id="SubTotal12IVA"
                               type="number"
                               placeholder="0.00"
-                              value={currentInvoice[item.id] || 0}
-                              onChange={(e) => setCurrentInvoice({ ...currentInvoice, [item.id]: e.target.value })}
-                              className={`${!isEditingInvoice ? "bg-background" : ""}`}
-                              style={!isEditingInvoice ? { color: "white", opacity: 1, cursor: "default" } : {}}
-                              disabled={!isEditingInvoice}
+                              value={totales.SubTotal12IVA.toFixed(2)}
                               readOnly
                             />
                           </div>
-                        ))}
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
+                            <Input
+                              id="SubTotal0IVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotal0IVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
+                            <Input
+                              id="SubTotalExentoIVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotalExentoIVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
+                            <Input
+                              id="SubTotalNoObjetoIVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="Descuento">Descuento:</Label>
+                            <Input
+                              id="Descuento"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.Descuento.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal">Sub Total:</Label>
+                            <Input
+                              id="SubTotal"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotal.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ICE">ICE:</Label>
+                            <Input
+                              id="ICE"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.ICE.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="IVA12">IVA 12%:</Label>
+                            <Input
+                              id="IVA12"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.IVA12.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="Propina">Propina:</Label>
+                            <Input
+                              id="Propina"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.Propina.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
+                            <Input
+                              id="ValorTotalFinal"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.ValorTotalFinal.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+                        
                       </div>
-
                     </div>
-                  </div>
-                </ScrollArea>
-              )}
+                  </ScrollArea>
 
-              {/* Editor */}
-              <DialogFooter>
-                {isEditingInvoice ? (
-                  <>
-                    <Button onClick={() => setIsEditingInvoice(false)}>Cancelar</Button>
-                    <Button onClick={handleSaveInvoiceItem}>Guardar Cambios</Button>
-                  </>
-                ) : (
-                  <>
-                    <Button onClick={() => setIsViewInvoiceModalOpen(false)}>Cerrar</Button>
-                    <Button onClick={handleEditInvoiceItem}>
-                      <RiEditLine size={20} />
-                    </Button>
-                    <Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)}>
-                      <IoTrashBinSharp size={20} />
-                    </Button>
-                  </>
-                )}
-              </DialogFooter>
+                  {/* Contenido de Botones */}
+                  <DialogFooter>
+                    <Button onClick={() => handleCancelCreationFacturacion(() => {
+                      setNewInvoiceItem({} as InvoiceItem);
+                      setIsInvoiceModalOpen(false);
+                    })}>Cancelar</Button>
+                    <Button onClick={handleCreateInvoice('emitida')}>Crear</Button>
+                  </DialogFooter>
+                </DialogContent>
 
-            </DialogContent>
-          </Dialog>
+              </Dialog>
 
-          {/* Modal para emitir una nueva factura */}
-          <Dialog open={isInvoiceModalOpen} onOpenChange={setIsInvoiceModalOpen}>
-            <DialogContent className="max-w-4xl" aria-describedby={undefined}>
+              {/* Modal para registrar una nueva factura */}
+              <Dialog open={isInvoiceReceivedModalOpen} onOpenChange={setIsInvoiceReceivedModalOpen}>
+                <DialogContent className="max-w-4xl" aria-describedby={undefined}>
 
-              <DialogHeader>
-                <DialogTitle>Crear nueva factura</DialogTitle>
-              </DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>
+                    {newInvoiceItem.tipoFactura === "emitida" ? "Emitir Factura" : "Registrar Factura Recibida"}
+                  </DialogTitle>
+                </DialogHeader>
 
-              <ScrollArea className="max-h-[80vh]">
-                <div className="space-y-4 p-4">
-                  {/* Cabecera */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <ScrollArea className="max-h-[80vh]">
+                    <div className="space-y-4 p-4">
+                      {/* Cabecera */}
+                      <div className="grid grid-cols-2 gap-4">
 
-                    {/* Superior Izquierda */}
-                    <div className="border p-4 rounded-md">
-                      <div className="col-span-2">
-                        <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
-                        <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"}/>
+                        {/* Superior Izquierda */}
+                        <div className="border p-4 rounded-md">
+                          <div className="col-span-2">
+                            <Label htmlFor="empresaGuardada">Empresa Emisora:</Label>
+                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa emisora" />
+                          </div>
+                          <div className="col-span-2 mt-2">
+                            <Label htmlFor="correoEmisorRecibido">Correo Empresa Emisora:</Label>
+                            <Input id="correoEmisorRecibido" placeholder="Ingrese el correo de la empresa emisora" />
+                          </div>
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="space-y-2">
+                              <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
+                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                            </div>
+                            <div className="space-y-2 mt-2">
+                              <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
+                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Superior Derecha */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
+                            <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
+                            <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="numeroFactura">Número de Factura:</Label>
+                            <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
+                            <Input id="fechaAutorizacion" type="date" />
+                          </div>
+                        </div>
                       </div>
-                      <div className="col-span-2 mt-2">
-                        <Label htmlFor="correoEmisor">Correo Empresa Emisora</Label>
-                        <Input id="correoEmisor" placeholder="Ingrese el nombre de la empresa" value={correoEmisor || "Correo Comercial"}/>
-                      </div>
-                      <div className="mt-4 pt-4 border-t">
+                      
+                      {/* Inferior de Cabecera */}
+                      <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
                         <div className="space-y-2">
-                          <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
-                          <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                          <div className="space-y-2">
+                            <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente</Label>
+                            <Input
+                              id="identificacionAdquiriente"
+                              value={nombreEmisor}
+                              onChange={(e) => setIdentificacionAdquiriente(e.target.value)}
+                              placeholder="Identificación del adquiriente"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
+                            <Input id="fechaEmision" type="date" />
+                          </div>
                         </div>
-                        <div className="space-y-2 mt-2">
-                          <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
-                          <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                        <div className="space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="rucCi">R.U.C/C.I:</Label>
+                            <Input 
+                              id="rucCi" 
+                              value={userData.rucCI || ''}
+                              placeholder="Ingrese el R.U.C o C.I" 
+                              type="number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
+                            <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Superior Derecha */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" value={userData.rucCI} />
+                      {/* Contenido */}
+                      <div className="border p-4 rounded-md">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="w-1/6">Código</th>
+                              <th className="w-1/6">Cantidad</th>
+                              <th className="w-2/6">Detalle</th>
+                              <th className="w-1/6">P. Unitario</th>
+                              <th className="w-1/6">V. Total</th>
+                              <th className="w-1/12">Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detallesFactura.map((detalle, index) => (
+                              <tr key={index}>
+                                <td>
+                                  <Select
+                                    value={detalle.idElemento}
+                                    onValueChange={(value) => handleInventoryItemSelect(value, index)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Seleccionar item" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {inventoryItems.map((item) => (
+                                        <SelectItem key={item.idElemento} value={item.idElemento}>
+                                          {item.idElemento}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                                <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" readOnly value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
+                                <td>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="icon"
+                                    onClick={() => eliminarFila(index)}
+                                    disabled={detallesFactura.length === 1}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
-                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" value={1} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
-                        <Input id="fechaAutorizacion" type="date" />
+
+                      {/* Contenido Inferior */}
+                      <div className="grid grid-cols-2 gap-4">
+
+                        {/* Inferior Izquierda */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="formaPago">Forma de Pago:</Label>
+                            <Input id="formaPago" placeholder="Ingrese la forma de pago" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="otros">Otros:</Label>
+                            <Input id="otros" placeholder="Ingrese otros detalles" />
+                          </div>
+                        </div>
+
+                        {/* Inferior Derecha */}
+                        <div className="border p-4 rounded-md space-y-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
+                            <Input
+                              id="SubTotal12IVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotal12IVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
+                            <Input
+                              id="SubTotal0IVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotal0IVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
+                            <Input
+                              id="SubTotalExentoIVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotalExentoIVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
+                            <Input
+                              id="SubTotalNoObjetoIVA"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="Descuento">Descuento:</Label>
+                            <Input
+                              id="Descuento"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.Descuento.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="SubTotal">Sub Total:</Label>
+                            <Input
+                              id="SubTotal"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.SubTotal.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ICE">ICE:</Label>
+                            <Input
+                              id="ICE"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.ICE.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="IVA12">IVA 12%:</Label>
+                            <Input
+                              id="IVA12"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.IVA12.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="Propina">Propina:</Label>
+                            <Input
+                              id="Propina"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.Propina.toFixed(2)}
+                              onChange={(e) => handleTotalesChange("Propina", e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
+                            <Input
+                              id="ValorTotalFinal"
+                              type="number"
+                              placeholder="0.00"
+                              value={totales.ValorTotalFinal.toFixed(2)}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Inferior de Cabecera */}
-                  <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
-                    <div className="space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
-                        <Input id="identificacionAdquiriente" placeholder="Ingrese la identificación del adquiriente" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
-                        <Input id="fechaEmision" type="date" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                        <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
-                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
-                      </div>
-                    </div>
-                  </div>
+                  </ScrollArea>
+
+                  <DialogFooter>
+                    <Button onClick={() => handleCancelCreationFacturacion(() => {
+                      setNewInvoiceItem({} as InvoiceItem);
+                      setIsInvoiceReceivedModalOpen(false);
+                    })}>Cancelar</Button>
+                    <Button onClick={handleCreateInvoice('recibida')}>Crear</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal para agregar nuevo ítem al inventario */}
+              <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Agregar Nuevo Ítem al Inventario</DialogTitle>
+                  </DialogHeader>
 
                   {/* Contenido */}
-                  <div className="border p-4 rounded-md">
-                    <table className="w-full">
-                      <thead>
-                        <tr>
-                          <th className="w-1/6">Código</th>
-                          <th className="w-1/6">Cantidad</th>
-                          <th className="w-2/6">Detalle</th>
-                          <th className="w-1/6">P. Unitario</th>
-                          <th className="w-1/6">V. Total</th>
-                          <th className="w-1/12">Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detallesFactura.map((detalle, index) => (
-                          <tr key={index}>
-                            <td>
-                              <Select
-                                value={detalle.idElemento || ""}
-                                onValueChange={(value) => handleServiceSelect(value, index)}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Seleccionar servicio" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {servicios.map((servicio) => (
-                                    <SelectItem key={servicio.id} value={servicio.id}>
-                                      {servicio.nombre}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
-                            <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.valorTotal} readOnly/></td>
-                            <td>
-                              <Button 
-                                variant="destructive" 
-                                size="icon"
-                                onClick={() => eliminarFila(index)}
-                                disabled={detallesFactura.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
-                  </div>
+                  <ScrollArea className="max-h-[70vh]">
+                    <div className="space-y-4 p-4">
+                      {(Object.entries(appConfig.inventario)).map(([key, field]) => (//Mapeado en base a los campos del usuario
+                        <div key={key} className="space-y-2"> 
+                          <Label htmlFor={key}>{field.name}</Label>
+                          <Input //Agregar nuevo input en base a el nombre y rellenar en base al campo
+                            id={key}
+                            type={field.type}
+                            value={newInventoryItem[key] || ''}
+                            onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
 
                   {/* Contenido Inferior */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <DialogFooter>
+                  <Button onClick={() => handleCancelCreationInventario(() => {
+                    setNewInventoryItem({} as InventoryItem);
+                    setIsInventoryModalOpen(false);
+                    })}>Cancelar
+                  </Button>
+                    <Button onClick={handleAddInventoryItem}>Agregar</Button>
+                  </DialogFooter>
 
-                    {/* Inferior Izquierda */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="formaPago">Forma de Pago:</Label>
-                        <Input id="formaPago" placeholder="Ingrese la forma de pago" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="otros">Otros:</Label>
-                        <Input id="otros" placeholder="Ingrese otros detalles" />
-                      </div>
-                    </div>
+                </DialogContent>
+              </Dialog>
 
-                    {/* Inferior Derecha */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
-                        <Input
-                          id="SubTotal12IVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal12IVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
-                        <Input
-                          id="SubTotal0IVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal0IVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
-                        <Input
-                          id="SubTotalExentoIVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotalExentoIVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
-                        <Input
-                          id="SubTotalNoObjetoIVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotalNoObjetoIVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="Descuento">Descuento:</Label>
-                        <Input
-                          id="Descuento"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.Descuento.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal">Sub Total:</Label>
-                        <Input
-                          id="SubTotal"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="ICE">ICE:</Label>
-                        <Input
-                          id="ICE"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.ICE.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="IVA12">IVA 12%:</Label>
-                        <Input
-                          id="IVA12"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.IVA12.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="Propina">Propina:</Label>
-                        <Input
-                          id="Propina"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.Propina.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
-                        <Input
-                          id="ValorTotalFinal"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.ValorTotalFinal.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
+              {/* Modal para crear asiento contable */}
+              <Dialog open={isCreatingAccountingEntry} onOpenChange={setIsCreatingAccountingEntry}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Crear Asiento Contable</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="max-h-[70vh]">
+                    <div className="space-y-4 p-4">
+                      {Object.entries(appConfig.libroDiario).map(([key, field]) => (
+                        <div key={key} className="space-y-2">
+                          <Label htmlFor={key}>{field.name}</Label>
+                          <Input
+                            id={key}
+                            type={field.type}
+                            value={newRow[key] || ''}
+                            onChange={(e) => handleNewRowChange(key, e.target.value)}
+                          />
+                        </div>
+                      ))}
                     </div>
+                  </ScrollArea>
+                  <DialogFooter>
+                    <Button onClick={() => handleCancelCreationLibroDiario(() => {
+                      setNewRow({});
+                      setIsCreatingAccountingEntry(false);
+                      })}>Cancelar
+                    </Button>
+                    <Button onClick={() => {
+                        handleAddRow();
+                        setIsCreatingAccountingEntry(false);
+                      }}>Crear
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal para crear servicio */}
+              <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
+                <DialogContent aria-describedby={undefined} className={stylesService.DialogContent}>
+                  
+                  {/* Cabecera */}
+                  <DialogHeader>
+                    <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
+                    <DialogDescription>
+                      {editingServiceId ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Contenido */}
+                  <div className={stylesService.contenidoservicio}>
                     
-                  </div>
-                </div>
-              </ScrollArea>
-
-              {/* Contenido de Botones */}
-              <DialogFooter>
-                <Button onClick={() => handleCancelCreationFacturacion(() => {
-                  setNewInvoiceItem({} as InvoiceItem);
-                  setIsInvoiceModalOpen(false);
-                })}>Cancelar</Button>
-                <Button onClick={handleCreateInvoice('emitida')}>Crear</Button>
-              </DialogFooter>
-            </DialogContent>
-
-          </Dialog>
-
-          {/* Modal para registrar una nueva factura */}
-          <Dialog open={isInvoiceReceivedModalOpen} onOpenChange={setIsInvoiceReceivedModalOpen}>
-            <DialogContent className="max-w-4xl" aria-describedby={undefined}>
-
-            <DialogHeader>
-              <DialogTitle>
-                {newInvoiceItem.tipoFactura === "emitida" ? "Emitir Factura" : "Registrar Factura Recibida"}
-              </DialogTitle>
-            </DialogHeader>
-
-              <ScrollArea className="max-h-[80vh]">
-                <div className="space-y-4 p-4">
-                  {/* Cabecera */}
-                  <div className="grid grid-cols-2 gap-4">
-
-                    {/* Superior Izquierda */}
-                    <div className="border p-4 rounded-md">
-                      <div className="col-span-2">
-                        <Label htmlFor="empresaGuardada">Empresa Emisora:</Label>
-                        <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa emisora" />
-                      </div>
-                      <div className="col-span-2 mt-2">
-                        <Label htmlFor="correoEmisorRecibido">Correo Empresa Emisora:</Label>
-                        <Input id="correoEmisorRecibido" placeholder="Ingrese el correo de la empresa emisora" />
-                      </div>
-                      <div className="mt-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
-                          <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
-                        </div>
-                        <div className="space-y-2 mt-2">
-                          <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
-                          <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Superior Derecha */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                        <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
-                        <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                        <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
-                        <Input id="fechaAutorizacion" type="date" />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Inferior de Cabecera */}
-                  <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
-                    <div className="space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente</Label>
+                    {/* Contenido Izquierdo */}
+                    <div className={stylesService.contenidoIzquierdoServicio}>
+                      <div className={stylesService.camposIzq}>
+                        <Label htmlFor="nombre">Nombre del Servicio</Label>
                         <Input
-                          id="identificacionAdquiriente"
-                          value={nombreEmisor}
-                          onChange={(e) => setIdentificacionAdquiriente(e.target.value)}
-                          placeholder="Identificación del adquiriente"
+                          id="nombre"
+                          value={newService.nombre || ""}
+                          onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
-                        <Input id="fechaEmision" type="date" />
+                      <div className={stylesService.camposIzq}>
+                        <Label htmlFor="descripcion">Descripción</Label>
+                        <Input
+                          id="descripcion"
+                          value={newService.descripcion || ""}
+                          onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
+                        />
+                      </div>
+                      <div className={stylesService.camposIzq}>
+                        <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
+                        <Input
+                          id="costoDeServicio"
+                          type="number"
+                          value={newService.costoDeServicio || ""}
+                          onChange={(e) => setNewService({ ...newService, costoDeServicio: e.target.value })}
+                        />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                        <Input 
-                          id="rucCi" 
-                          value={userData.rucCI || ''}
-                          placeholder="Ingrese el R.U.C o C.I" 
-                          type="number" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
-                        <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
+
+                    {/* Contenido Derecho */}
+                    <div className={stylesService.contenidoDerechoServicio}>
+                      <div className={stylesService.contenedorTabla}>
+                        <table className={stylesService.tabla}>
+                          <thead>
+                            <tr>
+                              <th className={stylesService.camposDere}>Uso de Item</th>
+                              <th className={stylesService.camposDere}>Gastos por Item</th>
+                              <th className={stylesService.camposDere}>Cantidad</th>
+                              <th className={stylesService.camposDere}>Gastos Servicio</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detallesServicio.map((detalle, index) => (
+                              <tr key={index}>
+                                <td>
+                                  <Select
+                                    value={detalle.usoDeItem || ""}
+                                    onValueChange={(value) => handleUsoDeItemSelect(value, index)}
+                                  >
+                                    <SelectTrigger className={stylesService.SelectTrigger}>
+                                      <SelectValue placeholder="Seleccionar item" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">Ninguno</SelectItem>
+                                      {inventoryItems.map((item) => (
+                                        <SelectItem key={item.idElemento} value={item.idElemento}>
+                                          {item.idElemento}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td>
+                                  <Input
+                                    className={stylesService.inputDetalle}
+                                    type="number"
+                                    value={detalle.gastosPorItem || ""}
+                                    readOnly
+                                  />
+                                </td>
+                                <td>
+                                  <Input
+                                    className={stylesService.inputDetalle}
+                                    type="number"
+                                    value={detalle.cantidad || 0}
+                                    onChange={(e) =>
+                                      handleDetalleChangeService(index, "cantidad", e.target.value)
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <Input
+                                    className={stylesService.inputDetalle}
+                                    type="number"
+                                    value={detalle.gastosPorServicio || ""}
+                                    readOnly
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
+                          Agregar Fila
+                        </Button>
                       </div>
                     </div>
                   </div>
+
+                  {/* Footer */}
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNewService({
+                          id: "",
+                          nombre: "",
+                          descripcion: "",
+                          usoDeItem: "",
+                          costoDeServicio: "",
+                          gastosPorItem: "",
+                          gastosPorServicio: "",
+                          cantidad: 1,
+                        });
+                        setIsCreatingService(false);
+                        setEditingServiceId(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button onClick={editingServiceId ? handleSaveService : handleAddService}>
+                      {editingServiceId ? "Guardar" : "Crear"}
+                    </Button>
+                  </DialogFooter>
+
+                </DialogContent>
+              </Dialog>
+
+              {/* Control de Modales */}
+
+              {/* Modal de confirmación para cancelar creación en Libro Diario */}
+              <Dialog open={showCancelConfirmModalLibroDiario} onOpenChange={setShowCancelConfirmModalLibroDiario}>
+                <DialogContent aria-describedby={undefined}>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar cancelación - Libro Diario</DialogTitle>
+                    <DialogDescription>
+                      ¿Está seguro de que desea cancelar la creación del nuevo asiento en el Libro Diario? Los datos no guardados se perderán.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCancelConfirmModalLibroDiario(false)}>No, continuar editando</Button>
+                    <Button variant="destructive" onClick={confirmCancelLibroDiario}>Sí, cancelar creación</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal de confirmación para cancelar creación en Inventario */}
+              <Dialog open={showCancelConfirmModalInventario} onOpenChange={setShowCancelConfirmModalInventario}>
+                <DialogContent aria-describedby={undefined}>
 
                   {/* Contenido */}
-                  <div className="border p-4 rounded-md">
-                    <table className="w-full">
-                      <thead>
-                        <tr>
-                          <th className="w-1/6">Código</th>
-                          <th className="w-1/6">Cantidad</th>
-                          <th className="w-2/6">Detalle</th>
-                          <th className="w-1/6">P. Unitario</th>
-                          <th className="w-1/6">V. Total</th>
-                          <th className="w-1/12">Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detallesFactura.map((detalle, index) => (
-                          <tr key={index}>
-                            <td>
-                              <Select
-                                value={detalle.idElemento}
-                                onValueChange={(value) => handleInventoryItemSelect(value, index)}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Seleccionar item" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {inventoryItems.map((item) => (
-                                    <SelectItem key={item.idElemento} value={item.idElemento}>
-                                      {item.idElemento}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
-                            <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                            <td><Input className="w-full"  type="number" readOnly value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
-                            <td>
-                              <Button 
-                                variant="destructive" 
-                                size="icon"
-                                onClick={() => eliminarFila(index)}
-                                disabled={detallesFactura.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <Button className="mt-2 w-full" onClick={agregarNuevaFila}>Agregar Fila</Button>
-                  </div>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar cancelación - Inventario</DialogTitle>
+                    <DialogDescription>
+                      ¿Está seguro de que desea cancelar la creación del nuevo ítem de inventario? Los datos no guardados se perderán.
+                    </DialogDescription>
+                  </DialogHeader>
 
                   {/* Contenido Inferior */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCancelConfirmModalInventario(false)}>No, continuar editando</Button>
+                    <Button variant="destructive" onClick={confirmCancelInventario}>Sí, cancelar creación</Button>
+                  </DialogFooter>
+                  
+                </DialogContent>
+              </Dialog>
 
-                    {/* Inferior Izquierda */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="formaPago">Forma de Pago:</Label>
-                        <Input id="formaPago" placeholder="Ingrese la forma de pago" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="otros">Otros:</Label>
-                        <Input id="otros" placeholder="Ingrese otros detalles" />
-                      </div>
-                    </div>
+              {/* Modal de confirmación para cancelar creación en Facturación */}
+              <Dialog open={showCancelConfirmModalFacturacion} onOpenChange={setShowCancelConfirmModalFacturacion}>
+                <DialogContent aria-describedby={undefined}>
 
-                    {/* Inferior Derecha */}
-                    <div className="border p-4 rounded-md space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
-                        <Input
-                          id="SubTotal12IVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal12IVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal0IVA">Sub. Total 0% IVA:</Label>
-                        <Input
-                          id="SubTotal0IVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal0IVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotalExentoIVA">Sub. Total Exento IVA:</Label>
-                        <Input
-                          id="SubTotalExentoIVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotalExentoIVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotalNoObjetoIVA">Sub. Total No Objeto IVA:</Label>
-                        <Input
-                          id="SubTotalNoObjetoIVA"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotalNoObjetoIVA.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="Descuento">Descuento:</Label>
-                        <Input
-                          id="Descuento"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.Descuento.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="SubTotal">Sub Total:</Label>
-                        <Input
-                          id="SubTotal"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.SubTotal.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="ICE">ICE:</Label>
-                        <Input
-                          id="ICE"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.ICE.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="IVA12">IVA 12%:</Label>
-                        <Input
-                          id="IVA12"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.IVA12.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="Propina">Propina:</Label>
-                        <Input
-                          id="Propina"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.Propina.toFixed(2)}
-                          onChange={(e) => handleTotalesChange("Propina", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="ValorTotalFinal">Valor Total:</Label>
-                        <Input
-                          id="ValorTotalFinal"
-                          type="number"
-                          placeholder="0.00"
-                          value={totales.ValorTotalFinal.toFixed(2)}
-                          readOnly
-                        />
-                      </div>
-                    </div>
+                  {/* Contenido */}
+                  <DialogHeader>
+                    <DialogTitle>Confirmar cancelación - Facturación</DialogTitle>
+                    <DialogDescription>
+                      ¿Está seguro de que desea cancelar la creación de la nueva factura? Los datos no guardados se perderán.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                  </div>
-                </div>
-              </ScrollArea>
+                  {/* Contenido Inferior */}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCancelConfirmModalFacturacion(false)}>No, continuar editando</Button>
+                    <Button variant="destructive" onClick={confirmCancelFacturacion}>Sí, cancelar creación</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-              <DialogFooter>
-                <Button onClick={() => handleCancelCreationFacturacion(() => {
-                  setNewInvoiceItem({} as InvoiceItem);
-                  setIsInvoiceReceivedModalOpen(false);
-                })}>Cancelar</Button>
-                <Button onClick={handleCreateInvoice('recibida')}>Crear</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para agregar nuevo ítem al inventario */}
-          <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Agregar Nuevo Ítem al Inventario</DialogTitle>
-              </DialogHeader>
-
-              {/* Contenido */}
-              <ScrollArea className="max-h-[70vh]">
-                <div className="space-y-4 p-4">
-                  {(Object.entries(appConfig.inventario)).map(([key, field]) => (//Mapeado en base a los campos del usuario
-                    <div key={key} className="space-y-2"> 
-                      <Label htmlFor={key}>{field.name}</Label>
-                      <Input //Agregar nuevo input en base a el nombre y rellenar en base al campo
-                        id={key}
-                        type={field.type}
-                        value={newInventoryItem[key] || ''}
-                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-
-              {/* Contenido Inferior */}
-              <DialogFooter>
-              <Button onClick={() => handleCancelCreationInventario(() => {
-                setNewInventoryItem({} as InventoryItem);
-                setIsInventoryModalOpen(false);
-                })}>Cancelar
-              </Button>
-                <Button onClick={handleAddInventoryItem}>Agregar</Button>
-              </DialogFooter>
-
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para crear asiento contable */}
-          <Dialog open={isCreatingAccountingEntry} onOpenChange={setIsCreatingAccountingEntry}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Crear Asiento Contable</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[70vh]">
-                <div className="space-y-4 p-4">
-                  {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                    <div key={key} className="space-y-2">
-                      <Label htmlFor={key}>{field.name}</Label>
-                      <Input
-                        id={key}
-                        type={field.type}
-                        value={newRow[key] || ''}
-                        onChange={(e) => handleNewRowChange(key, e.target.value)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              <DialogFooter>
-                <Button onClick={() => handleCancelCreationLibroDiario(() => {
-                  setNewRow({});
-                  setIsCreatingAccountingEntry(false);
-                  })}>Cancelar
-                </Button>
-                <Button onClick={() => {
-                    handleAddRow();
-                    setIsCreatingAccountingEntry(false);
-                  }}>Crear
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para crear servicio */}
-          <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
-            <DialogContent aria-describedby={undefined} className={stylesService.DialogContent}>
-              
-              {/* Cabecera */}
-              <DialogHeader>
-                <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
-                <DialogDescription>
-                  {editingServiceId ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Contenido */}
-              <div className={stylesService.contenidoservicio}>
-                
-                {/* Contenido Izquierdo */}
-                <div className={stylesService.contenidoIzquierdoServicio}>
-                  <div className={stylesService.camposIzq}>
-                    <Label htmlFor="nombre">Nombre del Servicio</Label>
-                    <Input
-                      id="nombre"
-                      value={newService.nombre || ""}
-                      onChange={(e) => setNewService({ ...newService, nombre: e.target.value })}
-                    />
-                  </div>
-                  <div className={stylesService.camposIzq}>
-                    <Label htmlFor="descripcion">Descripción</Label>
-                    <Input
-                      id="descripcion"
-                      value={newService.descripcion || ""}
-                      onChange={(e) => setNewService({ ...newService, descripcion: e.target.value })}
-                    />
-                  </div>
-                  <div className={stylesService.camposIzq}>
-                    <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
-                    <Input
-                      id="costoDeServicio"
-                      type="number"
-                      value={newService.costoDeServicio || ""}
-                      onChange={(e) => setNewService({ ...newService, costoDeServicio: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Contenido Derecho */}
-                <div className={stylesService.contenidoDerechoServicio}>
-                  <div className={stylesService.contenedorTabla}>
-                    <table className={stylesService.tabla}>
-                      <thead>
-                        <tr>
-                          <th className={stylesService.camposDere}>Uso de Item</th>
-                          <th className={stylesService.camposDere}>Gastos por Item</th>
-                          <th className={stylesService.camposDere}>Cantidad</th>
-                          <th className={stylesService.camposDere}>Gastos Servicio</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detallesServicio.map((detalle, index) => (
-                          <tr key={index}>
-                            <td>
-                              <Select
-                                value={detalle.usoDeItem || ""}
-                                onValueChange={(value) => handleUsoDeItemSelect(value, index)}
-                              >
-                                <SelectTrigger className={stylesService.SelectTrigger}>
-                                  <SelectValue placeholder="Seleccionar item" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Ninguno</SelectItem>
-                                  {inventoryItems.map((item) => (
-                                    <SelectItem key={item.idElemento} value={item.idElemento}>
-                                      {item.idElemento}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td>
-                              <Input
-                                className={stylesService.inputDetalle}
-                                type="number"
-                                value={detalle.gastosPorItem || ""}
-                                readOnly
-                              />
-                            </td>
-                            <td>
-                              <Input
-                                className={stylesService.inputDetalle}
-                                type="number"
-                                value={detalle.cantidad || 0}
-                                onChange={(e) =>
-                                  handleDetalleChangeService(index, "cantidad", e.target.value)
-                                }
-                              />
-                            </td>
-                            <td>
-                              <Input
-                                className={stylesService.inputDetalle}
-                                type="number"
-                                value={detalle.gastosPorServicio || ""}
-                                readOnly
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
-                      Agregar Fila
+              {/* Modal para la confirmacion de borrar factura */}
+              <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar Eliminación</DialogTitle>
+                    <DialogDescription>
+                      ¿Estás seguro de que deseas eliminar esta factura? Esta acción no se puede deshacer.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                      Cancelar
                     </Button>
-                  </div>
-                </div>
-              </div>
+                    <Button variant="destructive" onClick={handleDeleteInvoiceItem}>
+                      Eliminar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-              {/* Footer */}
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setNewService({
-                      id: "",
-                      nombre: "",
-                      descripcion: "",
-                      usoDeItem: "",
-                      costoDeServicio: "",
-                      gastosPorItem: "",
-                      gastosPorServicio: "",
-                      cantidad: 1,
-                    });
-                    setIsCreatingService(false);
-                    setEditingServiceId(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={editingServiceId ? handleSaveService : handleAddService}>
-                  {editingServiceId ? "Guardar" : "Crear"}
-                </Button>
-              </DialogFooter>
+              {/* Modal para la confirmacion de borrar servicio */}
+              <Dialog open={isServiceDeleteModalOpen} onOpenChange={setIsServiceDeleteModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar Eliminación</DialogTitle>
+                    <DialogDescription>
+                      ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsServiceDeleteModalOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteService}>
+                      Eliminar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-            </DialogContent>
-          </Dialog>
+              {/* Modal for invoice confirmation */}
+              <Dialog open={isInvoiceConfirmeModalOpen} onOpenChange={setIsInvoiceConfirmeModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar Generación de Factura</DialogTitle>
+                    <DialogDescription>¿Estás seguro de que deseas generar una factura para este servicio?</DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsInvoiceConfirmeModalOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={() => {
+                      setIsInvoiceModalOpen(true)
+                      setIsInvoiceConfirmeModalOpen(false)
+                      confirmGenerateInvoice()
+                    }}>Generar Factura</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-          {/* Control de Modales */}
+              {/* Modal for accounting entry confirmation */}
+              <Dialog open={isAccountingEntryModalOpen} onOpenChange={setIsAccountingEntryModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirmar Generación de Asiento Contable</DialogTitle>
+                    <DialogDescription>
+                      ¿Estás seguro de que deseas generar un asiento contable para este servicio?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAccountingEntryModalOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={confirmGenerateAccountingEntry}>Generar Asiento Contable</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-          {/* Modal de confirmación para cancelar creación en Libro Diario */}
-          <Dialog open={showCancelConfirmModalLibroDiario} onOpenChange={setShowCancelConfirmModalLibroDiario}>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Confirmar cancelación - Libro Diario</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro de que desea cancelar la creación del nuevo asiento en el Libro Diario? Los datos no guardados se perderán.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCancelConfirmModalLibroDiario(false)}>No, continuar editando</Button>
-                <Button variant="destructive" onClick={confirmCancelLibroDiario}>Sí, cancelar creación</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </div>
 
-          {/* Modal de confirmación para cancelar creación en Inventario */}
-          <Dialog open={showCancelConfirmModalInventario} onOpenChange={setShowCancelConfirmModalInventario}>
-            <DialogContent aria-describedby={undefined}>
+          </div>
+        ) : (
 
-              {/* Contenido */}
-              <DialogHeader>
-                <DialogTitle>Confirmar cancelación - Inventario</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro de que desea cancelar la creación del nuevo ítem de inventario? Los datos no guardados se perderán.
-                </DialogDescription>
-              </DialogHeader>
+          //Landing Page
+          <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+            
+            {/* Landing Page */}
+            <LandingPage
+              theme={theme || "light"}
+              user={user}
+              setShowLandingPage={setShowLandingPage}
+              setIsLoginModalOpen={setIsLoginModalOpen}
+              setIsLogOutModalOpen={setIsLogOutModalOpen}
+              setActiveTab={setActiveTab}
+              onUpdateUserType={(newType) => console.log(newType)}
+            />
 
-              {/* Contenido Inferior */}
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCancelConfirmModalInventario(false)}>No, continuar editando</Button>
-                <Button variant="destructive" onClick={confirmCancelInventario}>Sí, cancelar creación</Button>
-              </DialogFooter>
-              
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal de confirmación para cancelar creación en Facturación */}
-          <Dialog open={showCancelConfirmModalFacturacion} onOpenChange={setShowCancelConfirmModalFacturacion}>
-            <DialogContent aria-describedby={undefined}>
-
-              {/* Contenido */}
-              <DialogHeader>
-                <DialogTitle>Confirmar cancelación - Facturación</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro de que desea cancelar la creación de la nueva factura? Los datos no guardados se perderán.
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Contenido Inferior */}
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCancelConfirmModalFacturacion(false)}>No, continuar editando</Button>
-                <Button variant="destructive" onClick={confirmCancelFacturacion}>Sí, cancelar creación</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para la confirmacion de borrar factura */}
-          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar Eliminación</DialogTitle>
-                <DialogDescription>
-                  ¿Estás seguro de que deseas eliminar esta factura? Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button variant="destructive" onClick={handleDeleteInvoiceItem}>
-                  Eliminar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para la confirmacion de borrar servicio */}
-          <Dialog open={isServiceDeleteModalOpen} onOpenChange={setIsServiceDeleteModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar Eliminación</DialogTitle>
-                <DialogDescription>
-                  ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsServiceDeleteModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button variant="destructive" onClick={handleDeleteService}>
-                  Eliminar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal for invoice confirmation */}
-          <Dialog open={isInvoiceConfirmeModalOpen} onOpenChange={setIsInvoiceConfirmeModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar Generación de Factura</DialogTitle>
-                <DialogDescription>¿Estás seguro de que deseas generar una factura para este servicio?</DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsInvoiceConfirmeModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => {
-                  setIsInvoiceModalOpen(true)
-                  setIsInvoiceConfirmeModalOpen(false)
-                  confirmGenerateInvoice()
-                }}>Generar Factura</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal for accounting entry confirmation */}
-          <Dialog open={isAccountingEntryModalOpen} onOpenChange={setIsAccountingEntryModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar Generación de Asiento Contable</DialogTitle>
-                <DialogDescription>
-                  ¿Estás seguro de que deseas generar un asiento contable para este servicio?
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAccountingEntryModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={confirmGenerateAccountingEntry}>Generar Asiento Contable</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-        </div>
-
-      </div>
-    ) : (
-
-      //Landing Page
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-        
-        {/* Landing Page */}
-        <LandingPage
-          theme={theme || "light"}
-          user={user}
-          setShowLandingPage={setShowLandingPage}
-          setIsLoginModalOpen={setIsLoginModalOpen}
-          setIsLogOutModalOpen={setIsLogOutModalOpen}
-          setActiveTab={setActiveTab}
-          onUpdateUserType={(newType) => console.log(newType)}
-        />
-
+          </div>
+        )}
       </div>
     )}
-    
+
     </>
   )
 }
