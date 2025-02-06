@@ -94,6 +94,7 @@
     display: flex;
     flex-direction: column;
     margin-top: 2rem; /* mt-8 */
+    min-width: max-content;
   }
   
   /* Estilos para el encabezado de la tarjeta (CardHeader) */
@@ -181,6 +182,10 @@
 
 /* Adaptación a móviles */
 @media (max-width: 768px) {
+  
+    .serviciosContentent {
+      flex-wrap: nowrap; /* Permite que los elementos se envuelvan en múltiples líneas */
+    }
     .contenidoservicio {
         grid-template-columns: 1fr;
     }

@@ -740,6 +740,10 @@
       overflow-x: auto; /* Hace que el contenido sea desplazable horizontalmente */
       white-space: nowrap; /* Evita que los elementos se envuelvan a la siguiente línea */
     }
+
+    .sectionIniced {
+      padding: 2.5rem;
+    }
   
     .main-title {
       font-size: 2rem;
