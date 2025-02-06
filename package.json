@@ -31,7 +31,7 @@
     "firebase": "^11.2.0",
     "ldrs": "^1.0.2",
     "lucide-react": "^0.446.0",
-    "next": "^14.2.13",
+    "next": "^15.1.6",
     "next-themes": "^0.3.0",
     "openai": "^4.65.0",
     "particles.js": "^2.0.0",

@@ -18,6 +18,7 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
+import dynamic from 'next/dynamic';
 
 //Estilos
 import stylesMenu from "@/components/estilos/menu.module.css"
@@ -77,8 +78,6 @@ import { useTheme } from "next-themes"
 // Importaciones Archivo de Exel
 import { FileDown } from 'lucide-react'
 import GenerarRegistros from '@/components/GenerarRegistros';
-
-grid.register()
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -392,6 +391,12 @@ export default function ContabilidadApp() {
 
   // Simula un tiempo de carga
   useEffect(() => {
+    // Importar y registrar el componente grid de ldrs solo en el cliente
+    import('ldrs').then(({ grid }) => {
+      grid.register();
+    });
+
+    // Simula un tiempo de carga
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2000); // 2 segundos de carga
