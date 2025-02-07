@@ -80,6 +80,7 @@ import { useTheme } from "next-themes"
 import { FileDown } from 'lucide-react'
 import GenerarRegistros from '@/components/GenerarRegistros';
 import { Toaster } from "@/components/ui/toaster";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -172,6 +173,7 @@ interface Service {
   descripcion: string
   usoDeItem: string
   costoDeServicio: string
+  exento: boolean; // Nuevo campo
   [key: string]: any
 }
 
@@ -283,6 +285,7 @@ export default function ContabilidadApp() {
     descripcion: "",
     usoDeItem: "",
     costoDeServicio: "",
+    exento: false, // Inicializado como false
     detalles: [],
   })
   const [detallesServicio, setDetallesServicio] = useState<ServiceDetail[]>([
@@ -1120,8 +1123,8 @@ export default function ContabilidadApp() {
     }
   
     try {
-      // Calcular los totales usando los valores del DOM
-      const totalesFactura = calcularTotalesFactura(detallesFactura);
+      // Calcular los totales usando los valores del DOM y la lista de servicios
+      const totalesFactura = calcularTotalesFactura(detallesFactura, servicios);
   
       // Recopilar todos los datos de la factura
       const newInvoiceData = {
@@ -1160,30 +1163,23 @@ export default function ContabilidadApp() {
       setNewInvoiceItem({} as InvoiceItem);
       if (tipo == 'recibida') {
         setIsInvoiceReceivedModalOpen(false);
-        
-      }
-      else {
+      } else {
         setIsInvoiceModalOpen(false);
       }
       setDetallesFactura([{ idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }]);
-      setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
+      setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0 });
   
       toast({
         title: "Éxito",
         description: "La factura se ha guardado correctamente.",
       });
-
-      console.log(tipo);
   
       // Opcional: Mostrar modal de autocompletar
       if (tipo == 'recibida') {
         setShowInvoiceRecibedAutoCompleteModal(true);
-        
-      }
-      else {
+      } else {
         setShowInvoiceEmitedAutoCompleteModal(true);
       }
-      
     } catch (error) {
       console.error("Error al agregar factura:", error);
       toast({
@@ -1218,28 +1214,34 @@ export default function ContabilidadApp() {
     return sumaTotalFilas + subTotal + ice + iva12 + propina
   }
 
-  const calcularTotalesFactura = (detalles: DetalleFactura[]): TotalesFactura => {
+  const calcularTotalesFactura = (detalles: DetalleFactura[], servicios: Service[]): TotalesFactura => {
     let subTotal12IVA = 0;
     let subTotal0IVA = 0;
+    let subTotalExentoIVA = 0;
   
     detalles.forEach((detalle) => {
       const valorTotal = detalle.valorTotal || 0;
+      const servicioSeleccionado = servicios.find((servicio) => servicio.nombre === detalle.idElemento);
   
-      if (detalle.tipoIVA === "15") {
+      if (servicioSeleccionado?.exento) {
+        // Si el servicio es exento, sumar al subtotal exento de IVA
+        subTotalExentoIVA += valorTotal;
+      } else if (detalle.tipoIVA === "15") {
+        // Si no es exento y tiene IVA del 15%, sumar al subtotal con IVA
         subTotal12IVA += valorTotal;
       } else if (detalle.tipoIVA === "0") {
+        // Si no es exento y tiene IVA del 0%, sumar al subtotal sin IVA
         subTotal0IVA += valorTotal;
       }
     });
   
-    const subTotalExentoIVA = 0; // Siempre 0
     const subTotalNoObjetoIVA = 0; // Siempre 0
     const descuento = 0; // Siempre 0
     const ice = 0; // Siempre 0
     const propina = 0; // Siempre 0
   
     const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento;
-    const iva12 = subTotal12IVA * 0.15;
+    const iva12 = subTotal12IVA * 0.15; // Calcular IVA solo para los servicios no exentos
     const valorTotalFinal = subTotal + ice + iva12 + propina;
   
     return {
@@ -1380,8 +1382,8 @@ export default function ContabilidadApp() {
       newDetalles[index].valorTotal = Number.parseFloat(value) || 0;
     }
   
-    // Recalcular los totales basados en los nuevos detalles
-    const nuevosTotales = calcularTotalesFactura(newDetalles);
+    // Recalcular los totales basados en los nuevos detalles y la lista de servicios
+    const nuevosTotales = calcularTotalesFactura(newDetalles, servicios);
   
     // Actualizar el estado de detallesFactura y totales
     setDetallesFactura(newDetalles);
@@ -1407,24 +1409,26 @@ export default function ContabilidadApp() {
     if (!viewingUID) return;
   
     try {
-      const gastosTotalesPorServicio = detallesServicio.reduce((total, detalle) => 
-        total + parseFloat(detalle.gastosPorServicio || '0'), 0).toFixed(2);
-
-      const selectedItem = inventoryItems.find(item => item.idElemento === newService.usoDeItem);
+      const gastosTotalesPorServicio = detallesServicio
+        .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
+        .toFixed(2);
+  
+      const selectedItem = inventoryItems.find((item) => item.idElemento === newService.usoDeItem);
   
       const serviceToAdd = {
         ...newService,
         fechaCreacion: new Date().toISOString(),
         gastosTotalesPorServicio,
         detalles: detallesServicio,
+        exento: newService.exento, // Guardar el valor boolean directamente
       };
-
+  
       const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
       const addedService = { ...serviceToAdd, id: docRef.id };
       setIsCreatingService(false);
       setServicios([...servicios, addedService]);
-      resetNewService()
-
+      resetNewService();
+  
       toast({
         title: "Éxito",
         description: "Servicio creado correctamente.",
@@ -1447,32 +1451,33 @@ export default function ContabilidadApp() {
   
   // Funcion guardar servicio
   const handleSaveService = async () => {
-    if (!viewingUID || !editingServiceId) return
-
+    if (!viewingUID || !editingServiceId) return;
+  
     try {
       const gastosTotalesPorServicio = detallesServicio
         .reduce((total, detalle) => total + Number.parseFloat(detalle.gastosPorServicio || "0"), 0)
-        .toFixed(2)
-
+        .toFixed(2);
+  
       const updatedService: Service = {
         ...newService,
         gastosTotalesPorServicio,
         detalles: detallesServicio,
-      }
-
-      const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId)
-      await updateDoc(serviceRef, updatedService)
-      setServicios(servicios.map((service) => (service.id === editingServiceId ? updatedService : service)))
-      setIsEditingService(false)
-      resetNewService()
+        exento: newService.exento, // Mantener como boolean
+      };
+  
+      const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId);
+      await updateDoc(serviceRef, updatedService);
+      setServicios(servicios.map((service) => (service.id === editingServiceId ? updatedService : service)));
+      setIsEditingService(false);
+      resetNewService();
     } catch (error) {
-      console.error("Error al actualizar servicio:", error)
+      console.error("Error al actualizar servicio:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al actualizar el servicio. Por favor, intenta de nuevo.",
-      })
+      });
     }
-  }
+  };
 
   const resetNewService = () => {
     setNewService({
@@ -1486,6 +1491,7 @@ export default function ContabilidadApp() {
       cantidad: 1,
       gastosTotalesPorServicio: "0",
       fechaCreacion: "",
+      exento: false, // Resetear a false
       detalles: [],
     })
     setDetallesServicio([{ usoDeItem: "", gastosPorItem: "0", cantidad: 0, gastosPorServicio: "0" }])
@@ -1750,7 +1756,7 @@ export default function ContabilidadApp() {
 
   // Función para Seleccionar un Servicio en Facturacion
   const handleServiceSelect = (serviceId: string, index: number) => {
-    const selectedService = servicios.find(service => service.id === serviceId);
+    const selectedService = servicios.find((service) => service.id === serviceId);
     if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
@@ -1759,7 +1765,7 @@ export default function ContabilidadApp() {
         detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
         valorTotal: Number(selectedService.costoDeServicio),
-        tipoIVA: "15"
+        tipoIVA: selectedService.exento ? "exento" : "15", // Si es exento, marcamos como "exento"; de lo contrario, aplicamos IVA del 15%
       };
       setDetallesFactura(newDetalles);
       setSelectedService(selectedService);
@@ -3010,21 +3016,11 @@ export default function ContabilidadApp() {
                         <h2 className="text-3xl font-bold">Servicios</h2>
                       </div>
 
-                      <div className="border-t border-gray-400 my-4"></div>
+                      <div className={`${stylesService.separacion} ${theme === "light" ? stylesService.separacionLight : stylesService.separacionDark}`}></div>
 
                       <div className={stylesService.serviciosCabecera}>
                         <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
                           Agregar Nuevo Servicio
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            toast({
-                              title: "Scheduled: Catch up",
-                              description: "Friday, February 10, 2023 at 5:57 PM",
-                            })
-                          }}
-                        >
-                          Show Toast
                         </Button>
                       </div>
 
@@ -3834,21 +3830,21 @@ export default function ContabilidadApp() {
                             {detallesFactura.map((detalle, index) => (
                               <tr key={index}>
                                 <td>
-                                  <Select
-                                    value={detalle.idElemento || ""}
-                                    onValueChange={(value) => handleServiceSelect(value, index)}
-                                  >
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Seleccionar servicio" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {servicios.map((servicio) => (
-                                        <SelectItem key={servicio.id} value={servicio.id}>
-                                          {servicio.nombre}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                <Select
+                                  value={detalle.idElemento || ""}
+                                  onValueChange={(value) => handleServiceSelect(value, index)}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Seleccionar servicio" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {servicios.map((servicio) => (
+                                      <SelectItem key={servicio.id} value={servicio.id}>
+                                        {servicio.nombre} {servicio.exento ? "(Exento de IVA)" : ""}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 </td>
                                 <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                                 <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
@@ -4115,16 +4111,16 @@ export default function ContabilidadApp() {
                               <tr key={index}>
                                 <td>
                                   <Select
-                                    value={detalle.idElemento}
-                                    onValueChange={(value) => handleInventoryItemSelect(value, index)}
+                                    value={detalle.idElemento || ""}
+                                    onValueChange={(value) => handleServiceSelect(value, index)}
                                   >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Seleccionar item" />
+                                      <SelectValue placeholder="Seleccionar servicio" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {inventoryItems.map((item) => (
-                                        <SelectItem key={item.idElemento} value={item.idElemento}>
-                                          {item.idElemento}
+                                      {servicios.map((servicio) => (
+                                        <SelectItem key={servicio.id} value={servicio.id}>
+                                          {servicio.nombre} {servicio.exento ? "(Exento de IVA)" : ""}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -4471,14 +4467,26 @@ export default function ContabilidadApp() {
                         <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
                           Agregar Fila
                         </Button>
-                        <div className={stylesService.campoVTot}>
-                          <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
-                          <Input
-                            id="gastosTotalesPorServicio"
-                            type="number"
-                            value={newService.gastosTotalesPorServicio || "0"}
-                            readOnly
-                          />
+                        <div className={stylesService.campoInfDere}>
+                          <div className={stylesService.campoExIVA}>
+                            <Label htmlFor="exento">Servicio exento de IVA</Label>
+                            <Checkbox
+                              id="exento"
+                              checked={newService.exento}
+                              onCheckedChange={(checked) => {
+                                setNewService({ ...newService, exento: checked as boolean });
+                              }}
+                            />
+                          </div>
+                          <div className={stylesService.campoVTot}>
+                            <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
+                            <Input
+                              id="gastosTotalesPorServicio"
+                              type="number"
+                              value={newService.gastosTotalesPorServicio || "0"}
+                              readOnly
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

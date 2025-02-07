@@ -209,7 +209,8 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
                     <span className={styles.user_name}>{user.displayName || user.email}</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className={styles.popover_content}>
+                
+                <PopoverContent className={`${styles.popover_content} ${theme === "light" ? styles.popover_contentLight : styles.popover_contentDark}`}>
                   <div className={styles.user_info}>
                     <Avatar className={styles.avatar_large}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
@@ -294,7 +295,17 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
           <section className={styles.hero}>
             <h1 className={styles.hero_title}>Alice: Tu Software de Contabilidad</h1>
             <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
-            <Button className={styles.cta_button}>Explorar Funciones</Button>
+            {user ? (
+              // Si el usuario existe, muestra este botón
+              <Button className={styles.cta_button} onClick={() => setShowLandingPage(true)}>
+                Explorar Funciones
+              </Button>
+            ) : (
+              // Si el usuario no existe, muestra este botón
+              <Button className={styles.cta_button} onClick={() => setIsLogOutModalOpen(true)}>
+                Iniciar Sesión
+              </Button>
+            )}
           </section>
         </div>
 

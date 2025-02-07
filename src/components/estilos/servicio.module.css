@@ -13,6 +13,20 @@
   margin-bottom: 2rem;
 }
 
+.separacion {
+  width: 100vh;
+  margin-top: 1rem; /* Equivalente a my-4 */
+  margin-bottom: 1rem;
+}
+
+.separacionLight {
+  border-top: 1px solid #000000; /* Equivalente a border-gray-400 */
+}
+
+.separacionDark {
+  border-top: 1px solid #ffffff; /* Equivalente a border-gray-400 */
+}
+
 .nameService {
   font-size: 1.4rem;
 }
@@ -50,6 +64,10 @@
   flex-direction: column;
   gap: 0.75rem;
   /* Reducimos el espacio entre los campos */
+}
+
+.campoExIVA {
+  margin: 1rem;
 }
 
 .camposIzq {
@@ -93,7 +111,6 @@
 .camposDere {
   width: 25%;
   margin-right: 1rem;
-  padding: 0.75rem;
   /* Aumentamos el padding en los encabezados */
   font-family: inherit;
   /* Heredar la fuente del contenedor */
@@ -248,6 +265,10 @@
   margin-right: 0.34rem;
 }
 
+.campoInfDere {
+  display: flex;
+}
+
 .checkboxContainer {
   display: flex;
   align-items: center;
@@ -264,6 +285,9 @@
   .serviciosContentent {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    width: min-content;
+    margin-right: 1rem;
+    padding-right: 1.2rem;
     /* 3 columnas de igual tamaño *
       justify-content: flex-start; /* Alinea los elementos al inicio del contenedor */
   }
