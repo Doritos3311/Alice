@@ -391,6 +391,11 @@ export default function ContabilidadApp() {
 
   // Simula un tiempo de carga
   useEffect(() => {
+    if (theme == "dark" || theme == "light") {
+      console.log(theme)
+    } else {
+      setTheme("dark"); // Define el tema por defecto si no hay uno establecido
+    }
     // Importar y registrar el componente grid de ldrs solo en el cliente
     import('ldrs').then(({ grid }) => {
       grid.register();

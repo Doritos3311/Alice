@@ -235,7 +235,6 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
-    view-timeline: --scroll;
 }
 
   .hero {
@@ -243,22 +242,6 @@
     padding: 5rem 2rem;
     width: 100%;
     border-radius: 1rem;
-  }
-
-  .hero:last-child {
-    animation: fade-away both linear;
-    animation-timeline: --scroll;
-    animation-range: 
-      exit 0% exit 100%,
-      exit 50% exit 90%; 
-  }
-
-  .hero:first-child {
-    animation:
-      scale-up both ease-in-out
-      fade-away both linear;
-      animation-timeline: --scroll;
-      animation-range: exit 20% exit 90%;
   }
   
   .hero_title {
@@ -283,35 +266,17 @@
   }
   
   .features {
-    view-timeline: --scroll;
     margin-top: 3rem;
     width: 100%;
     padding: 1rem;
   }
   
   .feature_grid {
-    view-timeline: --scroll;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     width: 100%;
     margin-top: 2rem;
-  }
-
-  .feature_grid:last-child {
-    animation: fade-away both linear;
-    animation-timeline: --scroll;
-    animation-range: 
-      exit 0% exit 100%,
-      exit 50% exit 90%; 
-  }
-
-  .feature_grid:first-child {
-    animation:
-      scale-up both ease-in-out
-      fade-away both linear;
-      animation-timeline: --scroll;
-      animation-range: exit 20% exit 90%;
   }
   
   .feature_card {
@@ -806,6 +771,7 @@
     }
 
     .sectionIniced {
+      margin-top: 5rem;
       padding: 2.5rem;
     }
   

@@ -224,12 +224,12 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
                   </div>
                   <div className={styles.divider}></div>
                   <Button variant="ghost" size="sm" className={styles.menu_button} onClick={() => setShowLandingPage(true)}>
-                    <ChartColumnBig className="icon" />
+                    <ChartColumnBig className={styles.icon} />
                     Contabilidad
                   </Button>
                   <div className={styles.divider}></div>
                   <Button variant="ghost" size="sm" className={styles.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
-                    <LogOut className="icon" />
+                    <LogOut className={styles.icon} />
                     Cerrar sesión
                   </Button>
                 </PopoverContent>
