@@ -105,13 +105,10 @@
     border-top-right-radius: 0.5rem; /* Radio de esquina superior derecha */
   }
 
-  .themeLight {
-    color: rgb(209, 213, 219);
-  }
-  
-  /* Estilos para el tema oscuro */
-  .themeDark {
-    color: rgb(17, 24, 39);
+  .cardHeaderLight {
+    border-top-left-radius: 0.5rem; /* Radio de esquina superior izquierda */
+    border-top-right-radius: 0.5rem; /* Radio de esquina superior derecha */
+    background-color: rgb(28, 28, 28);
   }
   
   /* Estilos para el título de la tarjeta (CardTitle) */
@@ -121,6 +118,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .cardTitleLight {
+    color: rgb(255, 255, 255);
+  }
+  
+  /* Estilos para el tema oscuro */
+  .cardTitleDark {
+    color: rgb(17, 24, 39);
   }
   
   /* Estilos para el contenido de la tarjeta (CardContent) */
@@ -152,7 +158,6 @@
   
   /* Estilos para el pie de la tarjeta (CardFooter) */
   .cardFooter {
-    background-color: rgb(28, 28, 28);
     padding: 1rem;
     padding-left: 0.5rem; /* p-4 */
     padding-right: 0.5rem; /* p-4 */
@@ -170,6 +175,14 @@
   .cardFooter button svg {
     height: 1rem; /* h-4 */
     width: 1rem; /* w-4 */
+  }
+
+  .cardFooterLight {
+    background-color: rgb(237, 237, 237);
+  }
+
+  .cardFooterDark {
+    background-color: rgb(28, 28, 28);
   }
 
   .buttonGroupA{

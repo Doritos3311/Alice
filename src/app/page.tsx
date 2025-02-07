@@ -2965,8 +2965,8 @@ export default function ContabilidadApp() {
 
                         <Card key={servicio.id} className={stylesService.card}>
 
-                          <CardHeader className={`${stylesService.cardHeader} bg-gradient-to-r`}>
-                            <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.themeLight : stylesService.themeDark}`} >
+                          <CardHeader className={`${stylesService.cardHeader} ${theme === "light" ? stylesService.cardHeaderLight : stylesService.cardHeaderDark}`}>
+                            <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.cardTitleLight : stylesService.cardTitleDark}`} >
                               <span>{servicio.nombre}</span>
                             </CardTitle>
                           </CardHeader>
@@ -2991,7 +2991,7 @@ export default function ContabilidadApp() {
                             </div>
                           </CardContent>
 
-                          <CardFooter className={stylesService.cardFooter}>
+                          <CardFooter className={`${stylesService.cardFooter} ${theme === "light" ? stylesService.cardFooterLight : stylesService.cardFooterDark}`}>
                             <div className={stylesService.buttonGroupA}>
                               <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
                                 Generar Facturación
@@ -4528,7 +4528,7 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
-              {/* Modal for invoice confirmation */}
+              {/* Modal para la confirmacion de facturacion */}
               <Dialog open={isInvoiceConfirmeModalOpen} onOpenChange={setIsInvoiceConfirmeModalOpen}>
                 <DialogContent>
                   <DialogHeader>

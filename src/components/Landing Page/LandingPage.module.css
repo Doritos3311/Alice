@@ -1,5 +1,7 @@
+
+
   /* Agregar al inicio del archivo LandingPage.css */
-  .landing-page {
+  .landing_page {
     position: relative;
     min-height: 100vh;
     overflow: hidden;
@@ -16,21 +18,23 @@
     pointer-events: none;
   }
 
-  .landing-page {
+  .landing_page {
     position: relative;
     min-height: 100vh;
     overflow: hidden;
     z-index: 1;
   }
 
-  .landing-page.dark {
-    background-color: rgb(15 15 15);
-    color: white;
-  }
-
-  .landing-page.light {
+  /* Estilos para el tema claro */
+  .themeLight {
     background-color: rgb(243 244 246);
     color: black;
+  }
+
+  /* Estilos para el tema oscuro */
+  .themeDark {
+    background-color: rgb(15 15 15);
+    color: white;
   }
   
   .header {
@@ -42,13 +46,15 @@
     align-items: center;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
-  
-  .dark .header {
-    background-color: #1E1E1E;
-  }
-  
-  .light .header {
+
+  /* Estilos para el tema claro */
+  .themeLightNanvar {
     background-color: rgb(255 255 255);
+  }
+
+  /* Estilos para el tema oscuro */
+  .themeDarkNanvar {
+    background-color: #1E1E1E;
   }
   
   .logo {
@@ -63,30 +69,32 @@
     gap: 1rem;
   } 
   
-  .nav-link {
+  .nav_link {
+    margin: 1rem;
     display: flex;
+    font-size: 1rem;
     transition: color 0.3s;
   }
   
-  .dark .nav-link {
+  .dark .nav_link {
     color: white;
   }
   
-  .light .nav-link {
+  .light .nav_link {
     color: black;
   }
   
-  .nav-link:hover {
+  .nav_link:hover {
     color: #a78bfa;
   }
   
-  .user-profile {
+  .user_profile {
     margin-top: 1.25rem;
     margin-bottom: 0.25rem;
     margin-right: 20px;
   }
 
-  .user-button {
+  .user_button {
     width: 100%;
     height: 100%;
     margin-bottom: 1rem;
@@ -102,27 +110,27 @@
     margin-right: 0.5rem;
   }
   
-  .user-name {
+  .user_name {
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   
-  .popover-content {
+  .popover_content {
     width: 20rem;
     padding: 0;
     transform: translateY(0.75rem);
     border-radius: 1.5rem;
   }
   
-  .user-info {
+  .user_info {
     display: flex;
     align-items: center;
     margin-bottom: 1rem;
   }
   
-  .avatar-large {
+  .avatar_large {
     height: 4rem;
     width: 4rem;
     margin-right: 1rem;
@@ -130,18 +138,18 @@
     margin-top: 1rem;
   }
   
-  .avatar-fallback {
+  .avatar_fallback {
     font-size: 1.125rem;
     font-weight: bold;
   }
   
-  .user-display-name {
+  .user_display_name {
     font-size: 1.125rem;
     font-weight: 600;
     margin-top: 1rem;
   }
   
-  .user-email {
+  .user_email {
     font-size: 0.875rem;
     color: #6b7280;
   }
@@ -150,7 +158,7 @@
     border-top: 1px solid #9ca3af;
   }
   
-  .menu-button {
+  .menu_button {
     border-radius: 0;
     font-size: 1rem;
     width: 100%;
@@ -176,12 +184,12 @@
     width: 1rem;
   }
   
-  .login-button {
+  .login_button {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
   }
   
-  .login-link {
+  .login_link {
     background-color: black;
     color: white;
     border: 1px solid #4b5563;
@@ -189,65 +197,77 @@
     margin-right: 20px;
   }
   
-  .login-link:hover {
+  .login_link:hover {
     background-color: #1f2937;
   }
   
-  .dark .login-link {
+  .login_linkDark {
     background-color: white;
     color: black;
   }
   
-  .dark .login-link:hover {
+  .login_linkDark:hover {
     background-color: #e5e7eb;
   }
   
-  .dialog-content {
+  .dialog_content {
     max-width: 425px;
   }
   
-  .dark .dialog-content {
+  .dark .dialog_content {
     color: white;
   }
   
-  .light .dialog-content {
+  .light .dialog_content {
     background-color: #e5e7eb;
   }
 
   .sectionIniced {
+    margin-top: 5.5rem;
     display: flex;
     align-items: center;
+    justify-content: center;
     max-height: 850px;
-    height: 850px;
+    height: 100vh;
     padding: 5.5rem;
     background-attachment: fixed;
     background-image: url(https://cards.algoreducation.com/_next/image?url=https%3A%2F%2Ffiles.algoreducation.com%2Fproduction-ts%2F__S3__c12cb0e6-06a3-4c90-a541-1cc29bb8a6c9&w=3840&q=75);
-  }
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    view-timeline: --scroll;
+}
 
   .hero {
-    width: 100%;
-    border-radius: 12px;
-  }
-
-  .light .hero {
-    
-    padding: 5rem 2rem;
-    width: 100%;
-  }
-
-  .dark .hero {
     background-color: rgb(255, 255, 255, 0.25);
     padding: 5rem 2rem;
     width: 100%;
+    border-radius: 1rem;
+  }
+
+  .hero:last-child {
+    animation: fade-away both linear;
+    animation-timeline: --scroll;
+    animation-range: 
+      exit 0% exit 100%,
+      exit 50% exit 90%; 
+  }
+
+  .hero:first-child {
+    animation:
+      scale-up both ease-in-out
+      fade-away both linear;
+      animation-timeline: --scroll;
+      animation-range: exit 20% exit 90%;
   }
   
-  .hero-title {
+  .hero_title {
     font-size: 3rem;
     font-weight: bold;
     margin-bottom: 1rem;
   }
   
-  .cta-button {
+  .cta_button {
     margin-top: 1rem;
     background-color: #a78bfa;
     color: black;
@@ -258,31 +278,50 @@
     transition: background 0.3s;
   }
   
-  .cta-button:hover {
+  .cta_button:hover {
     background-color: #6d28d9;
   }
   
   .features {
+    view-timeline: --scroll;
     margin-top: 3rem;
     width: 100%;
+    padding: 1rem;
   }
   
-  .feature-grid {
+  .feature_grid {
+    view-timeline: --scroll;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     width: 100%;
     margin-top: 2rem;
   }
+
+  .feature_grid:last-child {
+    animation: fade-away both linear;
+    animation-timeline: --scroll;
+    animation-range: 
+      exit 0% exit 100%,
+      exit 50% exit 90%; 
+  }
+
+  .feature_grid:first-child {
+    animation:
+      scale-up both ease-in-out
+      fade-away both linear;
+      animation-timeline: --scroll;
+      animation-range: exit 20% exit 90%;
+  }
   
-  .feature-card {
+  .feature_card {
     background: #292929;
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
   }
   
-  .image-placeholder {
+  .image_placeholder {
     width: 100%;
     height: 200px;
     background: #444;
@@ -290,39 +329,62 @@
     margin-top: 1rem;
   }
   
+  /* Pricing.module.css */
   .pricing {
-    margin-top: 5rem;
-    width: 100%;
-  }
-  
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
-  }
-  
-  .plan-card {
-    background: #292929;
-    padding: 2rem;
-    border-radius: 12px;
+    padding: 4rem 0;
     text-align: center;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .pricing h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .pricingGrid {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .planCard {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 2rem;
+    width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .planCard:hover {
+    transform: translateY(-15px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .planCard h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .planCard p {
+    font-size: 1rem;
+    color: #666;
   }
   
-  .dialog-title {
+  .dialog_title {
     font-size: 1.5rem;
     font-weight: bold;
     text-align: center;
   }
   
-  .login-form {
+  .login_form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
   
   .input {
+    background-color: #2e2e2e;
     width: 100%;
   }
   
@@ -336,74 +398,74 @@
     color: black;
   }
   
-  .submit-button {
+  .submit_button {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   
-  .dark .submit-button {
+  .dark .submit_button {
     background-color: white;
     color: black;
   }
   
-  .dark .submit-button:hover {
+  .dark .submit_button:hover {
     background-color: #e5e7eb;
   }
   
-  .light .submit-button {
+  .light .submit_button {
     background-color: black;
     color: white;
   }
   
-  .light .submit-button:hover {
+  .light .submit_button:hover {
     background-color: #1f2937;
   }
   
-  .signup-link {
+  .signup_link {
     margin-top: 1rem;
     text-align: center;
   }
   
-  .signup-button {
+  .signup_button {
     color: #60a5fa;
   }
   
-  .signup-button:hover {
+  .signup_button:hover {
     color: #3b82f6;
   }
   
-  .google-button {
+  .google_button {
     margin-top: 1rem;
   }
   
-  .google-login {
+  .google_login {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   
-  .dark .google-login {
+  .dark .google_login {
     background-color: white;
     color: black;
   }
   
-  .dark .google-login:hover {
+  .dark .google_login:hover {
     background-color: #e5e7eb;
   }
   
-  .light .google-login {
+  .light .google_login {
     background-color: black;
     color: white;
   }
   
-  .light .google-login:hover {
+  .light .google_login:hover {
     background-color: #1f2937;
   }
   
-  .google-icon {
+  .google_icon {
     margin-right: 0.5rem;
   }
   
@@ -416,7 +478,7 @@
     gap: 2rem;
   }
   
-  .main-title {
+  .main_title {
     font-size: 3rem;
     font-weight: bold;
     margin-bottom: 1rem;
@@ -468,7 +530,7 @@
     background-color: #e5e7eb;
   }
   
-  .join-title {
+  .join_title {
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 1rem;
@@ -480,30 +542,30 @@
     margin-bottom: 1.5rem;
   }
   
-  .join-button {
+  .join_button {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 10rem;
   }
   
-  .join-link {
+  .join_link {
     background-color: black;
     color: white;
     border: 1px solid #4b5563;
     transition: background-color 0.3s;
   }
   
-  .join-link:hover {
+  .join_link:hover {
     background-color: #1f2937;
   }
   
-  .dark .join-link {
+  .dark .join_link {
     background-color: white;
     color: black;
   }
   
-  .dark .join-link:hover {
+  .dark .join_link:hover {
     background-color: #e5e7eb;
   }
   
@@ -514,26 +576,26 @@
     padding: 4rem 1rem;
   }
   
-  .pricing-title {
+  .pricing_title {
     font-size: 3rem;
     font-weight: bold;
     text-align: center;
     margin-bottom: 4rem;
   }
   
-  .plans-grid {
+  .plansGrid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     gap: 3rem;
   }
   
   @media (min-width: 1024px) {
-    .plans-grid {
+    .plans_grid {
       grid-template-columns: repeat(3, 1fr);
     }
   }
   
-  .plan-card {
+  .plan_card {
     width: 100%;
     height: 100%;
     display: flex;
@@ -541,21 +603,21 @@
     justify-content: space-between;
   }
   
-  .plan-card.highlighted {
+  .plan_card.highlighted {
     border: 2px solid black;
   }
   
-  .dark .plan-card {
+  .dark .plan_card {
     background-color: #1E1E1E;
     color: white;
   }
   
-  .card-header {
+  .card_header {
     text-align: center;
     padding-bottom: 2rem;
   }
   
-  .plan-name {
+  .plan_name {
     font-size: 1.875rem;
     font-weight: bold;
     margin-bottom: 1rem;
@@ -571,24 +633,24 @@
     font-size: 1.25rem;
   }
   
-  .card-content {
+  .card_content {
     flex-grow: 1;
   }
   
-  .features-list {
+  .features_list {
     list-style-type: none;
     padding: 0;
     margin: 0;
     text-align: left;
   }
   
-  .feature-item {
+  .feature_item {
     display: flex;
     align-items: flex-start;
     margin-bottom: 1rem;
   }
   
-  .check-icon {
+  .check_icon {
     margin-right: 0.75rem;
     height: 1.5rem;
     width: 1.5rem;
@@ -606,11 +668,11 @@
     font-style: italic;
   }
   
-  .card-footer {
+  .card_footer {
     padding-top: 2rem;
   }
   
-  .select-plan-button {
+  .select-plan_button {
     width: 100%;
     font-size: 1.25rem;
     padding-top: 1.5rem;
@@ -618,21 +680,21 @@
     transition: background-color 0.3s;
   }
   
-  .dark .select-plan-button {
+  .dark .select-plan_button {
     background-color: white;
     color: black;
   }
   
-  .dark .select-plan-button:hover {
+  .dark .select-plan_button:hover {
     background-color: #e5e7eb;
   }
   
-  .light .select-plan-button {
+  .light .select-plan_button {
     background-color: black;
     color: white;
   }
   
-  .light .select-plan-button:hover {
+  .light .select-plan_button:hover {
     background-color: #1f2937;
   }
   
@@ -655,34 +717,34 @@
     color: #6b7280;
   }
   
-  .logout-dialog {
+  .logout_dialog {
     background-color: white;
     color: black;
   }
   
-  .dark .logout-dialog {
+  .dark .logout_dialog {
     background-color: #121212;
     color: white;
   }
   
-  .logout-title {
+  .logout_title {
     font-size: 1.5rem;
     font-weight: bold;
     text-align: center;
   }
   
-  .logout-description {
+  .logout_description {
     text-align: center;
   }
   
-  .logout-buttons {
+  .logout_buttons {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: 1rem;
   }
   
-  .confirm-button {
+  .confirm_button {
     background-color: #dc2626;
     color: white;
     width: 100%;
@@ -692,7 +754,7 @@
     gap: 0.75rem;
   }
   
-  .confirm-button:hover {
+  .confirm_button:hover {
     background-color: #b91c1c;
   }
 
@@ -710,7 +772,7 @@
       padding-left: 1rem;
     }
 
-    .user-button {
+    .user_button {
       justify-content: center;
       padding-right: 0;
       margin-bottom: 0.5rem;
@@ -721,17 +783,15 @@
       font-size: 1.4rem;
     }
 
-    .nav-link {
-      display: none;
-      font-size: 0.7rem;
-      padding: 0.6rem;
-    }
-
-    .user-name {
+    .nav_link {
       display: none;
     }
 
-    .user-profile {
+    .user_name {
+      display: none;
+    }
+
+    .user_profile {
       margin-top: 0.8rem;
     }
   
@@ -741,11 +801,15 @@
       white-space: nowrap; /* Evita que los elementos se envuelvan a la siguiente línea */
     }
 
+    .hero_title {
+      font-size: 2.3rem;
+    }
+
     .sectionIniced {
       padding: 2.5rem;
     }
   
-    .main-title {
+    .main_title {
       font-size: 2rem;
       margin-bottom: 0.5rem;
     }
@@ -769,7 +833,7 @@
       height: auto;
     }
   
-    .join-title {
+    .join_title {
       font-size: 1.25rem;
     }
   
@@ -777,7 +841,12 @@
       font-size: 1rem;
     }
   
-    .join-button {
+    .join_button {
+      margin-bottom: 1rem;
+    }
+
+    .planCard {
+      margin: 1rem;
       margin-bottom: 1rem;
     }
   
@@ -785,21 +854,21 @@
       padding: 2rem 1rem;
     }
   
-    .pricing-title {
+    .pricing_title {
       font-size: 2rem;
       margin-bottom: 2rem;
     }
   
-    .plans-grid {
+    .plans_grid {
       grid-template-columns: repeat(1, 1fr);
       gap: 1.5rem;
     }
   
-    .plan-card {
+    .plan_card {
       padding: 1rem;
     }
   
-    .plan-name {
+    .plan_name {
       font-size: 1.5rem;
     }
   
@@ -815,7 +884,7 @@
       font-size: 1rem;
     }
   
-    .select-plan-button {
+    .select-plan_button {
       font-size: 1rem;
       padding: 1rem;
     }
@@ -825,7 +894,7 @@
       border-radius: 0.4rem;
     }
 
-    .signup-link {
+    .signup_link {
       margin-top: 0.2rem;
     }
   
@@ -833,4 +902,12 @@
       padding: 0.5rem;
       font-size: 0.75rem;
     }
+  }
+
+  @keyframes scale-up {
+    to { scale: 1.5; }
+  }
+
+  @keyframes fade-away {
+    to { opacity: 0; }
   }

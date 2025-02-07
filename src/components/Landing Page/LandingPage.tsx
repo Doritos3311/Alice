@@ -1,7 +1,7 @@
 import React, { useEffect, useRef  } from "react";
 
 //Estilop
-import "./LandingPage.css";
+import styles from "./LandingPage.module.css";
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,51 +55,6 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
   const [showLogIn, setShowLogIn] = useState(false)
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles: { x: number; y: number; r: number; speedX: number; speedY: number }[] = [];
-
-    for (let i = 0; i < 100; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 1,
-        speedX: (Math.random() - 0.5) * 2,
-        speedY: (Math.random() - 0.5) * 2,
-      });
-    }
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        p.x += p.speedX;
-        p.y += p.speedY;
-
-        if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
-      });
-
-      requestAnimationFrame(animate);
-    };
-
-    animate();
-  }, []);
 
   const plans = [
     {
@@ -196,16 +151,6 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
     }
   }
 
-  const handleShowInice = () => {
-    setShowInice(true)
-    setShowPricing(false)
-  }
-
-  const handleShowPricing = () => {
-    setShowPricing(true)
-    setShowInice(false)
-  }
-
   const handleShowLogIn = () => {
     setShowLogIn(true)
   }
@@ -229,61 +174,61 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
   }
 
   return (
-    <div className={`landing-page ${theme}`}>
+    <div className={`${styles.landing_page} ${theme === "light" ? styles.themeLight : styles.themeDark}`}>
 
       {/* Nanvar */}
-      <header className="header">
+      <header className={`${styles.header} ${theme === "light" ? styles.themeLightNanvar : styles.themeDarkNanvar}`}>
         {user ? (
-          <div className="logo">Alice</div>
+          <div className={styles.logo}>Alice</div>
         ) : (
-          <div className="logo">A</div>
+          <div className={styles.logo}>Alice</div>
         )}
 
-        <nav className="nav">
-          <Button onClick={handleShowInice} variant="link" className="nav-link">
+        <nav className={styles.nav}>
+          <a href="#sectionIniced" className={styles.nav_link}>
             Inicio
-          </Button>
-          <Button onClick={handleShowInice} variant="link" className="nav-link">
+          </a>
+          <a href="#features" className={styles.nav_link}>
             Características
-          </Button>
-          <Button onClick={handleShowPricing} variant="link" className="nav-link">
+          </a>
+          <a href="#pricing" className={styles.nav_link}>
             Precios
-          </Button>
-          <a href="#" className="nav-link">
+          </a>
+          <a href="#pricing" className={styles.nav_link}>
             Contacto
           </a>
           {user ? (
-            <div className="user-profile">
+            <div className={styles.user_profile}>
               <Popover>
                 <PopoverTrigger asChild >
-                  <Button variant="ghost" className="user-button">
-                    <Avatar className="avatar">
+                  <Button variant="ghost" className={styles.user_button}>
+                    <Avatar className={styles.avatar}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
                       <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                     </Avatar>
-                    <span className="user-name">{user.displayName || user.email}</span>
+                    <span className={styles.user_name}>{user.displayName || user.email}</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="popover-content">
-                  <div className="user-info">
-                    <Avatar className="avatar-large">
+                <PopoverContent className={styles.popover_content}>
+                  <div className={styles.user_info}>
+                    <Avatar className={styles.avatar_large}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                      <AvatarFallback className="avatar-fallback">
+                      <AvatarFallback className={styles.avatar_fallback}>
                         {user.displayName ? user.displayName[0] : "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="user-display-name">{user.displayName || "Usuario"}</h3>
-                      <p className="user-email">{user.email}</p>
+                      <h3 className={styles.user_display_name}>{user.displayName || "Usuario"}</h3>
+                      <p className={styles.user_email}>{user.email}</p>
                     </div>
                   </div>
-                  <div className="divider"></div>
-                  <Button variant="ghost" size="sm" className="menu-button" onClick={() => setShowLandingPage(true)}>
+                  <div className={styles.divider}></div>
+                  <Button variant="ghost" size="sm" className={styles.menu_button} onClick={() => setShowLandingPage(true)}>
                     <ChartColumnBig className="icon" />
                     Contabilidad
                   </Button>
-                  <div className="divider"></div>
-                  <Button variant="ghost" size="sm" className="menuitemlogout" onClick={() => setIsLogOutModalOpen(true)}>
+                  <div className={styles.divider}></div>
+                  <Button variant="ghost" size="sm" className={styles.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>
                     <LogOut className="icon" />
                     Cerrar sesión
                   </Button>
@@ -291,46 +236,46 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
               </Popover>
             </div>
           ) : (
-            <div className="login-button">
+            <div className={styles.login_button}>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button onClick={handleShowLogIn} variant="link" className="login-link">
+                  <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_linkLight : styles.login_linkDark}`}>
                     Iniciar Sesión
                   </Button>
                 </DialogTrigger>
                 {showLogIn && (
-                  <DialogContent className="dialog-content">
+                  <DialogContent className={styles.dialog_content}>
                     <DialogHeader>
-                      <DialogTitle className="dialog-title">Iniciar Sesión</DialogTitle>
+                      <DialogTitle className={styles.dialog_title}>Iniciar Sesión</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSignIn} className="login-form">
+                    <form onSubmit={handleSignIn} className={styles.login_form}>
                       <Input
                         type="email"
                         placeholder="Correo electrónico"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="input"
+                        className={`${styles.input} ${theme === "light" ? styles.inputLight : styles.inputDark}`}
                       />
                       <Input
                         type="password"
                         placeholder="Contraseña"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="input"
+                        className={styles.input}
                       />
-                      <Button type="submit" className="submit-button">
+                      <Button type="submit" className={styles.submit_button}>
                         Iniciar Sesión
                       </Button>
                     </form>
-                    <div className="signup-link">
+                    <div className={styles.signup_link}>
                       <p>¿No tienes una cuenta?</p>
-                      <Button variant="link" onClick={handleSignUp} className="signup-button">
+                      <Button variant="link" onClick={handleSignUp} className={styles.signup_button}>
                         Registrarse
                       </Button>
                     </div>
-                    <div className="google-button">
-                      <Button onClick={handleGoogleLogin} variant="outline" className="google-login">
-                        <FcGoogle className="google-icon" />
+                    <div className={styles.google_button}>
+                      <Button onClick={handleGoogleLogin} variant="outline" className={styles.google_login}>
+                        <FcGoogle className={styles.google_icon} />
                         Continuar con Google
                       </Button>
                     </div>
@@ -343,78 +288,94 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
       </header>
 
       {/* Contenido Principal */}
-      <main className="main-content">
+      <main className={styles.main_content}>
 
-        <div className="sectionIniced">
-          <section className="hero">
-            <h1 className="hero-title">Alice: Tu Software de Contabilidad</h1>
+        <div id="sectionIniced" className={styles.sectionIniced}>
+          <section className={styles.hero}>
+            <h1 className={styles.hero_title}>Alice: Tu Software de Contabilidad</h1>
             <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
-            <Button className="cta-button">Explorar Funciones</Button>
+            <Button className={styles.cta_button}>Explorar Funciones</Button>
           </section>
         </div>
 
-        <section className="features">
+        <section id="features" className={styles.features}>
           <h2>Funciones Principales</h2>
-          <div className="feature-grid">
-            <div className="feature-card">
+          <div className={styles.feature_grid}>
+            <div className={styles.feature_card}>
               <h3>Registro de Inventario</h3>
               <p>Controla el stock de tu negocio en tiempo real.</p>
-              <div className="image-placeholder"></div>
+              <div className={styles.image_placeholder}></div>
             </div>
-            <div className="feature-card">
+            <div className={styles.feature_card}>
               <h3>Facturación</h3>
               <p>Genera y administra facturas de forma automatizada.</p>
-              <div className="image-placeholder"></div>
+              <div className={styles.image_placeholder}></div>
             </div>
-            <div className="feature-card">
+            <div className={styles.feature_card}>
               <h3>Libro Diario</h3>
               <p>Registra todas tus transacciones de manera organizada.</p>
-              <div className="image-placeholder"></div>
+              <div className={styles.image_placeholder}></div>
             </div>
-            <div className="feature-card">
+            <div className={styles.feature_card}>
               <h3>Registro de Servicios</h3>
               <p>Gestiona los servicios ofrecidos con información detallada.</p>
-              <div className="image-placeholder"></div>
+              <div className={styles.image_placeholder}></div>
             </div>
           </div>
         </section>
 
-        <section className="pricing">
+        <section id="pricing" className={styles.pricing}>
           <h2>Planes de Precios</h2>
-          <div className="pricing-grid">
-            <div className="plan-card">
-              <h3>Plan Gratuito</h3>
-              <p>Prueba todas las funciones durante 7 días sin costo.</p>
-            </div>
-            <div className="plan-card">
-              <h3>Plan Mensual</h3>
-              <p>Accede a todas las funciones por $10 al mes.</p>
-            </div>
-            <div className="plan-card">
-              <h3>Plan Anual</h3>
-              <p>Obtén un descuento especial pagando $100 al año.</p>
-            </div>
+          <div className={styles.pricingGrid}>
+            {plans.map((plan, index) => (
+              <Card
+                key={index}
+                className={`${styles.planCard} ${index === 1 ? styles.highlighted : ''}`}
+              >
+                <CardHeader className={styles.cardHeader}>
+                  <CardTitle className={styles.cardTitle}>{plan.name}</CardTitle>
+                  <p className={styles.price}>{plan.price}</p>
+                  <p className={styles.duration}>{plan.duration}</p>
+                </CardHeader>
+                <CardContent className={styles.cardContent}>
+                  <ul className={styles.featuresList}>
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className={styles.featureItem}>
+                        <Check className={styles.icon} />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {plan.note && <p className={styles.note}>{plan.note}</p>}
+                </CardContent>
+                <CardFooter className={styles.cardFooter}>
+                  <Button className={styles.button}>Seleccionar Plan</Button>
+                </CardFooter>
+              </Card>
+            ))}
           </div>
         </section>
 
       </main>
 
       {/* Footer */}
-      <footer className="footer">© 2024 Alice. Todos los derechos reservados.</footer>
+      <footer className={styles.footer}>© 2024 Alice. Todos los derechos reservados.</footer>
 
       {/* Modal Inicio Sesion */}
       <Dialog open={isLogOutModalOpen} onOpenChange={setIsLogOutModalOpen}>
-        <DialogContent className="logout-dialog">
+        <DialogContent className={styles.logout_dialog}>
           <DialogHeader>
-            <DialogTitle className="logout-title">¿Cerrar Sesión?</DialogTitle>
-            <DialogDescription className="logout-description">Confirma el cierre de la sesión actual</DialogDescription>
+            <DialogTitle className={styles.logout_title}>¿Cerrar Sesión?</DialogTitle>
+            <DialogDescription className={styles.logout_description}>
+              Confirma el cierre de la sesión actual
+            </DialogDescription>
           </DialogHeader>
-          <div className="logout-buttons">
+          <div className={styles.logout_buttons}>
             <Button
-              className="confirm-button"
+              className={styles.confirm_button}
               onClick={() => {
-                handleLogout()
-                setIsLogOutModalOpen(false)
+                handleLogout();
+                setIsLogOutModalOpen(false);
               }}
             >
               Confirmar
