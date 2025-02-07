@@ -1,0 +1,11 @@
+    .scrollArea {
+        max-height: 70vh;
+    }
+
+    .container {
+        padding: 1rem;
+    }
+
+    .fieldContainer {
+        margin-bottom: 1rem;
+    }

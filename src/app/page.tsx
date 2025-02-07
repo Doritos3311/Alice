@@ -23,6 +23,7 @@ import dynamic from 'next/dynamic';
 //Estilos
 import stylesMenu from "@/components/estilos/menu.module.css"
 import stylesService from "@/components/estilos/servicio.module.css"
+import stylesLDiario from "@/components/estilos/libroDiario.module.css"
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/ConfiguracionPage";
@@ -173,6 +174,13 @@ interface Service {
   [key: string]: any
 }
 
+interface ServiceDetail {
+  usoDeItem: string;
+  gastosPorItem: string;
+  cantidad: number;
+  gastosPorServicio: string;
+}
+
 // Definicion Mensaje
 type Message = {
   role: 'user' | 'assistant'
@@ -267,15 +275,17 @@ export default function ContabilidadApp() {
   const [currentServiceId, setCurrentServiceId] = useState<string | null>(null)
   const [isAccountingEntryModalOpen, setIsAccountingEntryModalOpen] = useState(false)
   const [isInvoiceConfirmeModalOpen, setIsInvoiceConfirmeModalOpen] = useState(false)
+  const [isEditingService, setIsEditingService] = useState(false)
   const [newService, setNewService] = useState<Service>({
     id: "",
     nombre: "",
     descripcion: "",
     usoDeItem: "",
     costoDeServicio: "",
+    detalles: [],
   })
-  const [detallesServicio, setDetallesServicio] = useState([
-    { usoDeItem: '', gastosPorItem: '0', cantidad: 1, gastosPorServicio: '0' }
+  const [detallesServicio, setDetallesServicio] = useState<ServiceDetail[]>([
+    { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }
   ]);
 
   // Estados de edicion de inventario
@@ -1396,29 +1406,24 @@ export default function ContabilidadApp() {
     if (!viewingUID) return;
   
     try {
+      const gastosTotalesPorServicio = detallesServicio.reduce((total, detalle) => 
+        total + parseFloat(detalle.gastosPorServicio || '0'), 0).toFixed(2);
+
       const selectedItem = inventoryItems.find(item => item.idElemento === newService.usoDeItem);
+  
       const serviceToAdd = {
         ...newService,
         id: newService.id || `service-${Date.now()}`,
         fechaCreacion: new Date().toISOString(),
-        gastosPorItem: selectedItem ? selectedItem.precioCompra : "0",
-        gastosPorServicio: (parseFloat(newService.gastosPorItem) * newService.cantidad).toString(),
-        cantidad: newService.cantidad || 1,
+        gastosTotalesPorServicio,
+        detalles: detallesServicio,
       };
+
       const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
       const addedService = { ...serviceToAdd, id: docRef.id };
       setIsCreatingService(false);
       setServicios([...servicios, addedService]);
-      setNewService({
-        id: "",
-        nombre: "",
-        descripcion: "",
-        usoDeItem: "",
-        costoDeServicio: "",
-        gastosPorItem: "",
-        gastosPorServicio: "",
-        cantidad: 1,
-      });
+      resetNewService()
     } catch (error) {
       console.error("Error al agregar servicio:", error);
       toast({
@@ -1430,8 +1435,9 @@ export default function ContabilidadApp() {
 
   const handleEditService = (service: Service) => {
     setNewService({ ...service })
+    setDetallesServicio(service.detalles || [])
     setEditingServiceId(service.id)
-    setIsCreatingService(true)
+    setIsEditingService(true)
   }
   
   // Funcion guardar servicio
@@ -1439,21 +1445,21 @@ export default function ContabilidadApp() {
     if (!viewingUID || !editingServiceId) return
 
     try {
-      const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId)
-      await updateDoc(serviceRef, newService)
-      setServicios(
-        servicios.map((service) => (service.id === editingServiceId ? { ...service, ...newService } : service)),
-      )
-      setNewService({
-        id: "",
-        nombre: "",
-        descripcion: "",
-        usoDeItem: "",
-        costoDeServicio: "",
-      })
-      setEditingServiceId(null)
-      setIsCreatingService(false)
+      const gastosTotalesPorServicio = detallesServicio
+        .reduce((total, detalle) => total + Number.parseFloat(detalle.gastosPorServicio || "0"), 0)
+        .toFixed(2)
 
+      const updatedService: Service = {
+        ...newService,
+        gastosTotalesPorServicio,
+        detalles: detallesServicio,
+      }
+
+      const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId)
+      await updateDoc(serviceRef, updatedService)
+      setServicios(servicios.map((service) => (service.id === editingServiceId ? updatedService : service)))
+      setIsEditingService(false)
+      resetNewService()
     } catch (error) {
       console.error("Error al actualizar servicio:", error)
       toast({
@@ -1461,6 +1467,24 @@ export default function ContabilidadApp() {
         description: "Hubo un problema al actualizar el servicio. Por favor, intenta de nuevo.",
       })
     }
+  }
+
+  const resetNewService = () => {
+    setNewService({
+      id: "",
+      nombre: "",
+      descripcion: "",
+      usoDeItem: "",
+      costoDeServicio: "",
+      gastosPorItem: "",
+      gastosPorServicio: "",
+      cantidad: 1,
+      gastosTotalesPorServicio: "0",
+      fechaCreacion: "",
+      detalles: [],
+    })
+    setDetallesServicio([{ usoDeItem: "", gastosPorItem: "0", cantidad: 0, gastosPorServicio: "0" }])
+    setEditingServiceId(null)
   }
 
   // Funcion borrar servicio
@@ -1514,7 +1538,7 @@ export default function ContabilidadApp() {
         fecha: new Date().toISOString().split('T')[0],
         nombreCuenta: `Servicio ${service.nombre}`,
         descripcion: `Ingreso por servicio: ${service.descripcion}`,
-        idElemento: service.usoDeItem || service.nombre,
+        idElemento: service.nombre || "",
         debe: Number.parseFloat(service.costoDeServicio),
         haber: Number.parseFloat(service.gastosTotalesPorServicio) || 0
       }
@@ -1538,7 +1562,33 @@ export default function ContabilidadApp() {
   }
 
   const agregarNuevaFilaService = () => {
-    setDetallesServicio([...detallesServicio, { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }]);
+    const newDetalles = [...detallesServicio, { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }];
+    setDetallesServicio(newDetalles);
+  
+    // Recalcular los gastos totales
+    const gastosTotalesPorServicio = newDetalles.reduce((total, detalle) => 
+      total + parseFloat(detalle.gastosPorServicio || '0'), 0).toFixed(2);
+  
+    setNewService({
+      ...newService,
+      gastosTotalesPorServicio,
+    });
+  };
+
+  const eliminarFilaService = (index: number) => {
+    if (detallesServicio.length > 1) {
+      const newDetalles = detallesServicio.filter((_, i) => i !== index);
+      setDetallesServicio(newDetalles);
+      
+      // Recalcular los gastos totales
+      const gastosTotalesPorServicio = newDetalles.reduce((total, detalle) => 
+        total + parseFloat(detalle.gastosPorServicio || '0'), 0).toFixed(2);
+  
+      setNewService({
+        ...newService,
+        gastosTotalesPorServicio,
+      });
+    }
   };
 
   // Función para manejar cambios en los campos de la fila
@@ -1553,19 +1603,14 @@ export default function ContabilidadApp() {
           : newDetalles[index].gastosPorServicio,
     };
     setDetallesServicio(newDetalles);
-
-    // Actualizar el estado newService si es necesario
-    if (index === 0) {
-      // Suponiendo que solo la primera fila afecta a newService
-      setNewService({
-        ...newService,
-        [field]: value,
-        gastosPorServicio:
-          field === "cantidad" && newDetalles[index].usoDeItem
-            ? (parseInt(value) * parseFloat(newDetalles[index].gastosPorItem)).toString()
-            : newService.gastosPorServicio,
-      });
-    }
+  
+    const gastosTotalesPorServicio = newDetalles.reduce((total, detalle) => 
+      total + parseFloat(detalle.gastosPorServicio || '0'), 0).toFixed(2);
+  
+    setNewService({
+      ...newService,
+      gastosTotalesPorServicio,
+    });
   };
 
   {/* Inicio de Sesion */}
@@ -2957,7 +3002,7 @@ export default function ContabilidadApp() {
 
                       <div className="border-t border-gray-400 my-4"></div>
 
-                      <div>
+                      <div className={stylesService.serviciosCabecera}>
                         <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
                           Agregar Nuevo Servicio
                         </Button>
@@ -4261,10 +4306,10 @@ export default function ContabilidadApp() {
                   <DialogHeader>
                     <DialogTitle>Crear Asiento Contable</DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className="max-h-[70vh]">
-                    <div className="space-y-4 p-4">
+                  <ScrollArea className={stylesLDiario.scrollArea}>
+                    <div className={stylesLDiario.container}>
                       {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                        <div key={key} className="space-y-2">
+                        <div key={key} className={stylesLDiario.fieldContainer}>
                           <Label htmlFor={key}>{field.name}</Label>
                           <Input
                             id={key}
@@ -4280,33 +4325,30 @@ export default function ContabilidadApp() {
                     <Button onClick={() => handleCancelCreationLibroDiario(() => {
                       setNewRow({});
                       setIsCreatingAccountingEntry(false);
-                      })}>Cancelar
+                    })}>
+                      Cancelar
                     </Button>
                     <Button onClick={() => {
-                        handleAddRow();
-                        setIsCreatingAccountingEntry(false);
-                      }}>Crear
+                      handleAddRow();
+                      setIsCreatingAccountingEntry(false);
+                    }}>
+                      Crear
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
 
-              {/* Modal para crear servicio */}
-              <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
-                <DialogContent aria-describedby={undefined} className={stylesService.DialogContent}>
-                  
-                  {/* Cabecera */}
+              {/* Modal para crear/editar servicio */}
+              <Dialog open={isCreatingService || isEditingService} onOpenChange={() => { setIsCreatingService(false); setIsEditingService(false); resetNewService();}}>
+                <DialogContent className={stylesService.DialogContent}>
                   <DialogHeader>
-                    <DialogTitle>{editingServiceId ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
+                    <DialogTitle>{isEditingService ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
                     <DialogDescription>
-                      {editingServiceId ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
+                      {isEditingService ? "Modifica los detalles del servicio." : "Ingresa los detalles del nuevo servicio."}
                     </DialogDescription>
                   </DialogHeader>
 
-                  {/* Contenido */}
                   <div className={stylesService.contenidoservicio}>
-                    
-                    {/* Contenido Izquierdo */}
                     <div className={stylesService.contenidoIzquierdoServicio}>
                       <div className={stylesService.camposIzq}>
                         <Label htmlFor="nombre">Nombre del Servicio</Label>
@@ -4335,7 +4377,6 @@ export default function ContabilidadApp() {
                       </div>
                     </div>
 
-                    {/* Contenido Derecho */}
                     <div className={stylesService.contenidoDerechoServicio}>
                       <div className={stylesService.contenedorTabla}>
                         <table className={stylesService.tabla}>
@@ -4381,9 +4422,7 @@ export default function ContabilidadApp() {
                                     className={stylesService.inputDetalle}
                                     type="number"
                                     value={detalle.cantidad || 0}
-                                    onChange={(e) =>
-                                      handleDetalleChangeService(index, "cantidad", e.target.value)
-                                    }
+                                    onChange={(e) => handleDetalleChangeService(index, "cantidad", e.target.value)}
                                   />
                                 </td>
                                 <td>
@@ -4394,6 +4433,16 @@ export default function ContabilidadApp() {
                                     readOnly
                                   />
                                 </td>
+                                <td>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => eliminarFilaService(index)}
+                                    disabled={detallesServicio.length === 1}
+                                  >
+                                    <IoTrashBinSharp className={stylesService.icon} />
+                                  </Button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -4401,38 +4450,35 @@ export default function ContabilidadApp() {
                         <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
                           Agregar Fila
                         </Button>
+                        <div className={stylesService.campoVTot}>
+                          <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
+                          <Input
+                            id="gastosTotalesPorServicio"
+                            type="number"
+                            value={newService.gastosTotalesPorServicio || "0"}
+                            readOnly
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <DialogFooter>
                     <Button
                       variant="outline"
                       onClick={() => {
-                        setNewService({
-                          id: "",
-                          nombre: "",
-                          descripcion: "",
-                          usoDeItem: "",
-                          costoDeServicio: "",
-                          gastosPorItem: "",
-                          gastosPorServicio: "",
-                          cantidad: 1,
-                        });
-                        setIsCreatingService(false);
-                        setEditingServiceId(null);
+                        setIsCreatingService(false)
+                        setIsEditingService(false)
+                        resetNewService()
                       }}
                     >
                       Cancelar
                     </Button>
-                    <Button onClick={editingServiceId ? handleSaveService : handleAddService}>
-                      {editingServiceId ? "Guardar" : "Crear"}
-                    </Button>
+                    <Button onClick={isEditingService ? handleSaveService : handleAddService}>{isEditingService ? "Guardar" : "Crear"}</Button>
                   </DialogFooter>
-
                 </DialogContent>
               </Dialog>
+
 
               {/* Control de Modales */}
 
