@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, updateDoc, deleteField, setDoc, arrayUnion, onSnapshot } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/hooks/use-toast"
 import { Check, User, X } from 'lucide-react'
 import { Dialog } from '@radix-ui/react-dialog';
 import { useTheme } from 'next-themes';

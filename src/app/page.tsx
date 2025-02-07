@@ -46,7 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -79,6 +79,7 @@ import { useTheme } from "next-themes"
 // Importaciones Archivo de Exel
 import { FileDown } from 'lucide-react'
 import GenerarRegistros from '@/components/GenerarRegistros';
+import { Toaster } from "@/components/ui/toaster";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -1413,7 +1414,6 @@ export default function ContabilidadApp() {
   
       const serviceToAdd = {
         ...newService,
-        id: newService.id || `service-${Date.now()}`,
         fechaCreacion: new Date().toISOString(),
         gastosTotalesPorServicio,
         detalles: detallesServicio,
@@ -1424,6 +1424,11 @@ export default function ContabilidadApp() {
       setIsCreatingService(false);
       setServicios([...servicios, addedService]);
       resetNewService()
+
+      toast({
+        title: "Éxito",
+        description: "Servicio creado correctamente.",
+      });
     } catch (error) {
       console.error("Error al agregar servicio:", error);
       toast({
@@ -1939,6 +1944,7 @@ export default function ContabilidadApp() {
     }
   }, [isInvoiceModalOpen, newInvoiceItem.tipoFactura])
 
+
   return (
     <>
     {isLoading ? (
@@ -1957,8 +1963,12 @@ export default function ContabilidadApp() {
 
             {/* Visualizador */}
             
+              {/* Toast */}
+              <div>
+              <Toaster/>
+              </div>
 
-              {/* Menu Izquierda*/}
+              {/* Menu Izquierda */}
               <div className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
                 <div className={`${stylesMenu.menucontent} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
 
@@ -3006,6 +3016,16 @@ export default function ContabilidadApp() {
                         <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
                           Agregar Nuevo Servicio
                         </Button>
+                        <Button
+                          onClick={() => {
+                            toast({
+                              title: "Scheduled: Catch up",
+                              description: "Friday, February 10, 2023 at 5:57 PM",
+                            })
+                          }}
+                        >
+                          Show Toast
+                        </Button>
                       </div>
 
                       {hayItems(servicios) ? (
@@ -3017,7 +3037,7 @@ export default function ContabilidadApp() {
 
                           <CardHeader className={`${stylesService.cardHeader} ${theme === "light" ? stylesService.cardHeaderLight : stylesService.cardHeaderDark}`}>
                             <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.cardTitleLight : stylesService.cardTitleDark}`} >
-                              <span>{servicio.nombre}</span>
+                              <span className={stylesService.nameService}>{servicio.nombre}</span>
                             </CardTitle>
                           </CardHeader>
 
@@ -3726,6 +3746,7 @@ export default function ContabilidadApp() {
 
                   <ScrollArea className="max-h-[80vh]">
                     <div className="space-y-4 p-4">
+                      
                       {/* Cabecera */}
                       <div className="grid grid-cols-2 gap-4">
 
@@ -4340,7 +4361,7 @@ export default function ContabilidadApp() {
 
               {/* Modal para crear/editar servicio */}
               <Dialog open={isCreatingService || isEditingService} onOpenChange={() => { setIsCreatingService(false); setIsEditingService(false); resetNewService();}}>
-                <DialogContent className={stylesService.DialogContent}>
+                <DialogContent className={stylesService.dialogServiceContent}>
                   <DialogHeader>
                     <DialogTitle>{isEditingService ? "Editar Servicio" : "Crear Nuevo Servicio"}</DialogTitle>
                     <DialogDescription>
@@ -4471,10 +4492,11 @@ export default function ContabilidadApp() {
                         setIsEditingService(false)
                         resetNewService()
                       }}
+                      className={stylesService.btnFooter}
                     >
                       Cancelar
                     </Button>
-                    <Button onClick={isEditingService ? handleSaveService : handleAddService}>{isEditingService ? "Guardar" : "Crear"}</Button>
+                    <Button onClick={isEditingService ? handleSaveService : handleAddService} className={stylesService.btnFooter}>{isEditingService ? "Guardar" : "Crear"}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

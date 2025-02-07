@@ -8,7 +8,7 @@ import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, deleteField, get
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Building, Database, Trash2, User } from 'lucide-react'
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/hooks/use-toast"
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useTheme } from "next-themes"
 

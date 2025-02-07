@@ -13,6 +13,10 @@
   margin-bottom: 2rem;
 }
 
+.nameService {
+  font-size: 1.4rem;
+}
+
 .serviciosContentent {
   display: flex;
   flex-wrap: wrap;
@@ -20,7 +24,7 @@
   gap: 1.5rem;
 }
 
-.DialogContent {
+.dialogServiceContent {
   width: auto;
   /* Se ajusta dinámicamente al contenido */
   max-width: 800px;
@@ -59,7 +63,7 @@
 }
 
 .campoVTot {
-  margin-top: 1rem;
+  margin: 1rem;
 }
 
 .contenidoDerechoServicio {
@@ -112,7 +116,6 @@
   margin-right: 1rem;
   padding: 0.75rem;
   /* Aumentamos el padding */
-  min-width: 500px;
 }
 
 .inputDetallePrincipal {
@@ -134,11 +137,12 @@
   display: flex;
   flex-direction: column;
   min-width: max-content;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra alrededor de la tarjeta */
 }
 
 /* Estilos para el encabezado de la tarjeta (CardHeader) */
 .cardHeader {
-  background-color: white;
+  background-color: rgb(247, 247, 247);
   padding: 1rem;
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
@@ -147,7 +151,7 @@
 .cardHeaderLight {
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
-  background-color: rgb(28, 28, 28);
+  background-color: rgb(49, 49, 49);
 }
 
 /* Estilos para el título de la tarjeta (CardTitle) */
@@ -202,7 +206,7 @@
 
 /* Estilos para el pie de la tarjeta (CardFooter) */
 .cardFooter {
-  padding: 1rem;
+  padding: 1.2rem;
   padding-left: 0.5rem;
   /* p-4 */
   padding-right: 0.5rem;
@@ -227,7 +231,9 @@
 }
 
 .cardFooterLight {
-  background-color: rgb(237, 237, 237);
+  background-color: rgb(227, 227, 227);
+  border-bottom-right-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
 }
 
 .cardFooterDark {
@@ -240,6 +246,16 @@
 
 .buttonGroupB {
   margin-right: 0.34rem;
+}
+
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.checkboxLabel {
+  margin-left: 8px;
 }
 
 /* Adaptación a móviles */
@@ -259,6 +275,18 @@
   .flex-item {
     flex: 1 1 calc(50% - 1.5rem);
     /* 2 columnas con gap */
+  }
+
+  .dialogServiceContent { 
+    max-width: 44vh;
+    margin-right: 3rem;
+    border-radius: 0.5rem;
+  }
+
+  .btnFooter {
+    margin-top: 0.4rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
   }
 }
 

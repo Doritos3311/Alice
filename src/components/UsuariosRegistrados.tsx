@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Building, CircleUserRound, Edit, Trash2 } from 'lucide-react';
 import { getFirestore, doc, updateDoc, arrayRemove, onSnapshot, setDoc, getDoc, deleteField } from "firebase/firestore";
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"

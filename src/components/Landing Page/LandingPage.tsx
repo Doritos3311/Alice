@@ -20,7 +20,7 @@ import {
   signInWithEmailAndPassword,
   getAuth,
 } from "firebase/auth"
-import { toast } from "../../hooks/use-toast";
+import { toast } from "../hooks/use-toast";
 import { initializeApp } from "firebase/app"
 
 const firebaseConfig = {
