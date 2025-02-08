@@ -24,9 +24,10 @@ import dynamic from 'next/dynamic';
 import stylesMenu from "@/components/estilos/menu.module.css"
 import stylesService from "@/components/estilos/servicio.module.css"
 import stylesLDiario from "@/components/estilos/libroDiario.module.css"
+import stylesGruposdeTrabajointerfaz from "@/components/estilos/gruposTrabajo.module.css"
 
 //Componentes Aplicacion
-import ConfiguracionPage from "@/components/ConfiguracionPage";
+import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage";
 import LandingPage from '@/components/Landing Page/LandingPage';
 import UsuariosRegistrados from '@/components/UsuariosRegistrados';
 import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
@@ -1409,30 +1410,29 @@ export default function ContabilidadApp() {
     if (!viewingUID) return;
   
     try {
-      const gastosTotalesPorServicio = detallesServicio
-        .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
-        .toFixed(2);
-  
-      const selectedItem = inventoryItems.find((item) => item.idElemento === newService.usoDeItem);
-  
-      const serviceToAdd = {
-        ...newService,
-        fechaCreacion: new Date().toISOString(),
-        gastosTotalesPorServicio,
-        detalles: detallesServicio,
-        exento: newService.exento, // Guardar el valor boolean directamente
-      };
-  
-      const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
-      const addedService = { ...serviceToAdd, id: docRef.id };
-      setIsCreatingService(false);
-      setServicios([...servicios, addedService]);
-      resetNewService();
-  
-      toast({
-        title: "Éxito",
-        description: "Servicio creado correctamente.",
-      });
+        const gastosTotalesPorServicio = detallesServicio
+          .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
+          .toFixed(2);
+      
+        const serviceToAdd = {
+          ...newService,
+          fechaCreacion: new Date().toISOString(),
+          gastosTotalesPorServicio,
+          detalles: detallesServicio,
+          exento: newService.exento, // Guardar el valor boolean directamente
+        };
+    
+        const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
+        const addedService = { ...serviceToAdd, id: docRef.id };
+        setIsCreatingService(false);
+        setServicios([...servicios, addedService]);
+        resetNewService();
+    
+        toast({
+          title: "Éxito",
+          description: "Servicio creado correctamente.",
+        });
+
     } catch (error) {
       console.error("Error al agregar servicio:", error);
       toast({
@@ -1454,6 +1454,7 @@ export default function ContabilidadApp() {
     if (!viewingUID || !editingServiceId) return;
   
     try {
+      setIsEditingService(false);
       const gastosTotalesPorServicio = detallesServicio
         .reduce((total, detalle) => total + Number.parseFloat(detalle.gastosPorServicio || "0"), 0)
         .toFixed(2);
@@ -1468,9 +1469,13 @@ export default function ContabilidadApp() {
       const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId);
       await updateDoc(serviceRef, updatedService);
       setServicios(servicios.map((service) => (service.id === editingServiceId ? updatedService : service)));
-      setIsEditingService(false);
       resetNewService();
+      toast({
+        title: "Éxito",
+        description: "Servicio Guardado Correctamente.",
+      });
     } catch (error) {
+      setIsEditingService(true);
       console.error("Error al actualizar servicio:", error);
       toast({
         title: "Error",
@@ -1760,7 +1765,7 @@ export default function ContabilidadApp() {
     if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
-        idElemento: selectedService.nombre || `no valio kkkk`,
+        idElemento: selectedService.nombre,
         cantidad: '0',
         detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
@@ -2153,38 +2158,37 @@ export default function ContabilidadApp() {
 
                 {/* Configuracion Interfaz Estilo */}
                 {activeTab === "configuracion" && (
-                  <ConfiguracionPage />
+                  <ConfiguracionPage
+                    user={user}
+                    setShowLandingPage={setShowLandingPage}
+                    setActiveTab={setActiveTab}
+                  />
                 )}
 
                 {/* Grupos de Trabajo Interfaz Estilo */}
                 {activeTab === "grupos-trabajo" && (
                   <div>
-                    <h2 className="text-3xl font-bold mb-4">Grupos de Trabajo</h2>
+                    <h2 className={stylesGruposdeTrabajointerfaz.titulo}>Grupos de Trabajo</h2>
                     {user && (
                       <>
-
                         {userData.type === 'personal' ? (
-                          <div className="mt-8">
-
-                            <Card className="rounded-lg shadow-lg p-6">
-                              <h2 className="text-xl font-bold mb-4">Empresas Registradas</h2>
-                              <div className="mb-4 flex items-center space-x-4"><Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button></div>
+                          <div className={stylesGruposdeTrabajointerfaz.mt8}>
+                            <Card className={stylesGruposdeTrabajointerfaz.tarjeta}>
+                              <h2 className={stylesGruposdeTrabajointerfaz.subtitulo}>Empresas Registradas</h2>
+                              <div className={stylesGruposdeTrabajointerfaz.botonesContainer}>
+                                <Button onClick={() => setShowJoinGroupModal(true)}>Unirse a Grupo de Trabajo</Button>
+                              </div>
                               <EmpresasRegistradas userId={user.uid} onCargarEmpresa={handleCargarEmpresa} />
-
                               <SolicitudIngreso userId={user.uid} />
                             </Card>
-                            
                           </div>
                         ) : (
-                          <div className="mt-8">
-
-                            <Card className="rounded-lg shadow-lg p-6">
-                              <h2 className="text-xl font-bold mb-4">Usuarios Registrados</h2>
+                          <div className={stylesGruposdeTrabajointerfaz.mt8}>
+                            <Card className={stylesGruposdeTrabajointerfaz.tarjeta}>
+                              <h2 className={stylesGruposdeTrabajointerfaz.subtitulo}>Usuarios Registrados</h2>
                               <UsuariosRegistrados user={user} />
-
                               <SolicitudPendiente userId={user.uid} />
                             </Card>
-
                           </div>
                         )}
                       </>
@@ -2751,11 +2755,6 @@ export default function ContabilidadApp() {
 
                     <div className="flex justify-between items-center mb-4 mr-10">
                       <div className="mb-4 flex items-center space-x-4">
-                        {/* Btn Editar Campos */}
-                        <Button onClick={() => openFieldEditor('facturacion')}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar Campos
-                        </Button>
                         {/* Crear Factura */}
                         <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
 
@@ -2881,11 +2880,7 @@ export default function ContabilidadApp() {
 
                       <div className="flex justify-between items-center mb-4 mr-10">
                         <div className="mb-4 flex items-center space-x-4">
-                          {/* Btn Editar Campos */}
-                          <Button onClick={() => openFieldEditor('facturacionRecibida')}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar Campos
-                          </Button>
+
                           {/* Crear Factura Recibida */}
                           <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
 
@@ -3048,6 +3043,11 @@ export default function ContabilidadApp() {
                                 <CircleUserRound className={stylesService.icon} />
                                 <span className="font-medium text-muted-foreground">Uso de Item:</span>
                                 <span className="ml-2 truncate">{servicio.usoDeItem}</span>
+                              </p>
+                              <p>
+                                <DollarSign className={stylesService.icon} />
+                                <span className="font-medium text-muted-foreground">Gasto por de Servicio:</span>
+                                <span className="ml-2 truncate">${servicio.gastosTotalesPorServicio}</span>
                               </p>
                               <p>
                                 <DollarSign className={stylesService.icon} />
@@ -3831,8 +3831,8 @@ export default function ContabilidadApp() {
                               <tr key={index}>
                                 <td>
                                 <Select
-                                  value={detalle.idElemento || ""}
                                   onValueChange={(value) => handleServiceSelect(value, index)}
+                                  value={detalle.idElemento}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Seleccionar servicio" />
@@ -4111,16 +4111,16 @@ export default function ContabilidadApp() {
                               <tr key={index}>
                                 <td>
                                   <Select
-                                    value={detalle.idElemento || ""}
-                                    onValueChange={(value) => handleServiceSelect(value, index)}
+                                    value={detalle.idElemento}
+                                    onValueChange={(value) => handleInventoryItemSelect(value, index)}
                                   >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Seleccionar servicio" />
+                                      <SelectValue placeholder="Seleccionar item" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {servicios.map((servicio) => (
-                                        <SelectItem key={servicio.id} value={servicio.id}>
-                                          {servicio.nombre} {servicio.exento ? "(Exento de IVA)" : ""}
+                                      {inventoryItems.map((item) => (
+                                        <SelectItem key={item.idElemento} value={item.idElemento}>
+                                          {item.idElemento}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
