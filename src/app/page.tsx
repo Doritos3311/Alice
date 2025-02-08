@@ -286,9 +286,9 @@ export default function ContabilidadApp() {
     descripcion: "",
     usoDeItem: "",
     costoDeServicio: "",
-    exento: false, // Inicializado como false
+    exento: false,
     detalles: [],
-  })
+  });
   const [detallesServicio, setDetallesServicio] = useState<ServiceDetail[]>([
     { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }
   ]);
@@ -1408,39 +1408,51 @@ export default function ContabilidadApp() {
 
   const handleAddService = async () => {
     if (!viewingUID) return;
-  
+
     try {
         const gastosTotalesPorServicio = detallesServicio
-          .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
-          .toFixed(2);
-      
+            .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
+            .toFixed(2);
+
+        // Crear el objeto del servicio SIN el id (Firebase lo generará automáticamente)
         const serviceToAdd = {
-          ...newService,
-          fechaCreacion: new Date().toISOString(),
-          gastosTotalesPorServicio,
-          detalles: detallesServicio,
-          exento: newService.exento, // Guardar el valor boolean directamente
+            nombre: newService.nombre,
+            descripcion: newService.descripcion,
+            usoDeItem: newService.usoDeItem,
+            costoDeServicio: newService.costoDeServicio,
+            exento: newService.exento,
+            detalles: detallesServicio,
+            fechaCreacion: new Date().toISOString(),
+            gastosTotalesPorServicio,
         };
-    
+
+        // Agregar el servicio a Firestore y obtener el id generado por Firebase
         const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
-        const addedService = { ...serviceToAdd, id: docRef.id };
-        setIsCreatingService(false);
+
+        // Crear el objeto del servicio con el id generado por Firebase
+        const addedService = { ...serviceToAdd, id: docRef.id }; // Aquí se usa el id generado por Firebase
+
+        // Actualizar el estado con el nuevo servicio
         setServicios([...servicios, addedService]);
+
+        // Cerrar el modal y resetear el formulario
+        setIsCreatingService(false);
         resetNewService();
-    
+
+        // Mostrar notificación de éxito
         toast({
-          title: "Éxito",
-          description: "Servicio creado correctamente.",
+            title: "Éxito",
+            description: "Servicio creado correctamente.",
         });
 
     } catch (error) {
-      console.error("Error al agregar servicio:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
-      });
+        console.error("Error al agregar servicio:", error);
+        toast({
+            title: "Error",
+            description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
+        });
     }
-  };
+};
 
   const handleEditService = (service: Service) => {
     setNewService({ ...service })
@@ -1765,7 +1777,7 @@ export default function ContabilidadApp() {
     if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
-        idElemento: selectedService.nombre,
+        idElemento: selectedService.nombre || "nanai",
         cantidad: '0',
         detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
@@ -3830,21 +3842,20 @@ export default function ContabilidadApp() {
                             {detallesFactura.map((detalle, index) => (
                               <tr key={index}>
                                 <td>
-                                <Select
-                                  onValueChange={(value) => handleServiceSelect(value, index)}
-                                  value={detalle.idElemento}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Seleccionar servicio" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {servicios.map((servicio) => (
-                                      <SelectItem key={servicio.id} value={servicio.id}>
-                                        {servicio.nombre} {servicio.exento ? "(Exento de IVA)" : ""}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  <Select
+                                    onValueChange={(value) => handleServiceSelect(value, index)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Seleccionar servicio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {servicios.map((servicio) => (
+                                        <SelectItem key={servicio.id} value={servicio.id || 'default'}>
+                                          {servicio.nombre} {servicio.exento ? "(Exento de IVA)" : ""}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </td>
                                 <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
                                 <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
