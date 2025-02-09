@@ -1,0 +1,57 @@
+.spaceY6 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Equivalente a space-y-6 */
+    min-width: max-content;
+    margin-right: 1rem;
+}
+
+.heading {
+    font-size: 1.875rem; /* Equivalente a text-3xl */
+    font-weight: bold;
+    margin-bottom: 1.5rem; /* Equivalente a mb-6 */
+}
+
+.gridContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Equivalente a md:grid-cols-3 */
+    gap: 1.5rem; /* Equivalente a gap-6 */
+}
+
+.flexItemsCenter {
+    display: flex;
+    align-items: center;
+}
+
+.icon {
+    margin-right: 0.5rem; /* Equivalente a mr-2 */
+    height: 1.25rem; /* Equivalente a h-5 */
+    width: 1.25rem; /* Equivalente a w-5 */
+}
+
+.iconSmall {
+    margin-right: 0.5rem; /* Equivalente a mr-2 */
+    height: 1rem; /* Equivalente a h-4 */
+    width: 1rem; /* Equivalente a w-4 */
+}
+
+.iconMedium {
+    margin-right: 0.5rem; /* Equivalente a mr-2 */
+    height: 1.25rem; /* Equivalente a h-5 */
+    width: 1.25rem; /* Equivalente a w-5 */
+}
+
+.marginTop6 {
+    margin-top: 0; /* Equivalente a mt-6 */
+}
+
+.buttonFullWidth {
+    width: 100%; /* Equivalente a w-full */
+}
+
+
+@media (max-width: 768px) {
+    .gridContainer {
+    grid-template-columns: repeat(3, 1fr); /* Equivalente a md:grid-cols-3 */
+    }
+}

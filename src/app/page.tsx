@@ -79,7 +79,7 @@ import { useTheme } from "next-themes"
 
 // Importaciones Archivo de Exel
 import { FileDown } from 'lucide-react'
-import GenerarRegistros from '@/components/GenerarRegistros';
+import GenerarRegistros from '@/components/GenerarRegistros/GenerarRegistros';
 import { Toaster } from "@/components/ui/toaster";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -1547,11 +1547,6 @@ export default function ContabilidadApp() {
   const handleGenerarLibroDiario = (serviceId: string) => {
     setCurrentServiceId(serviceId)
     setIsAccountingEntryModalOpen(true)
-  }
-
-  // Funcion auto generar facturacion
-  const confirmGenerateInvoice = () => {
-    
   }
 
   // Funcion auto generar asiento contable
@@ -3839,7 +3834,7 @@ export default function ContabilidadApp() {
                             </tr>
                           </thead>
                           <tbody>
-                            {detallesFactura.map((detalle, index) => (
+                            {detallesFactura?.map((detalle, index) => (
                               <tr key={index}>
                                 <td>
                                   <Select
@@ -3857,10 +3852,10 @@ export default function ContabilidadApp() {
                                     </SelectContent>
                                   </Select>
                                 </td>
-                                <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
-                                <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                                <td><Input className="w-full"  type="number" value={detalle.valorTotal} readOnly/></td>
+                                <td><Input className="w-full"  type="number" value={detalle.cantidad || "0"} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                                <td><Input className="w-full" value={detalle.detalle || "indefinido"} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario || "0.00"} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.valorTotal || "0.00"} readOnly/></td>
                                 <td>
                                   <Button 
                                     variant="destructive" 
@@ -3901,7 +3896,7 @@ export default function ContabilidadApp() {
                               id="SubTotal12IVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal12IVA.toFixed(2)}
+                              value={totales.SubTotal12IVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3911,7 +3906,7 @@ export default function ContabilidadApp() {
                               id="SubTotal0IVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal0IVA.toFixed(2)}
+                              value={totales.SubTotal0IVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3921,7 +3916,7 @@ export default function ContabilidadApp() {
                               id="SubTotalExentoIVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotalExentoIVA.toFixed(2)}
+                              value={totales.SubTotalExentoIVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3931,7 +3926,7 @@ export default function ContabilidadApp() {
                               id="SubTotalNoObjetoIVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                              value={totales.SubTotalNoObjetoIVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3941,7 +3936,7 @@ export default function ContabilidadApp() {
                               id="Descuento"
                               type="number"
                               placeholder="0.00"
-                              value={totales.Descuento.toFixed(2)}
+                              value={totales.Descuento.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3951,7 +3946,7 @@ export default function ContabilidadApp() {
                               id="SubTotal"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal.toFixed(2)}
+                              value={totales.SubTotal.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3961,7 +3956,7 @@ export default function ContabilidadApp() {
                               id="ICE"
                               type="number"
                               placeholder="0.00"
-                              value={totales.ICE.toFixed(2)}
+                              value={totales.ICE.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3971,7 +3966,7 @@ export default function ContabilidadApp() {
                               id="IVA12"
                               type="number"
                               placeholder="0.00"
-                              value={totales.IVA12.toFixed(2)}
+                              value={totales.IVA12.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3981,7 +3976,7 @@ export default function ContabilidadApp() {
                               id="Propina"
                               type="number"
                               placeholder="0.00"
-                              value={totales.Propina.toFixed(2)}
+                              value={totales.Propina.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -3991,7 +3986,7 @@ export default function ContabilidadApp() {
                               id="ValorTotalFinal"
                               type="number"
                               placeholder="0.00"
-                              value={totales.ValorTotalFinal.toFixed(2)}
+                              value={totales.ValorTotalFinal.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4419,7 +4414,7 @@ export default function ContabilidadApp() {
                           <tbody>
                             {detallesServicio.map((detalle, index) => (
                               <tr key={index}>
-                                <td>
+                                <td className={stylesService.camposDetalle}>
                                   <Select
                                     value={detalle.usoDeItem || ""}
                                     onValueChange={(value) => handleUsoDeItemSelect(value, index)}
@@ -4437,7 +4432,7 @@ export default function ContabilidadApp() {
                                     </SelectContent>
                                   </Select>
                                 </td>
-                                <td>
+                                <td className={stylesService.camposDetalle}>
                                   <Input
                                     className={stylesService.inputDetalle}
                                     type="number"
@@ -4445,7 +4440,7 @@ export default function ContabilidadApp() {
                                     readOnly
                                   />
                                 </td>
-                                <td>
+                                <td className={stylesService.camposDetalle}>
                                   <Input
                                     className={stylesService.inputDetalle}
                                     type="number"
@@ -4453,7 +4448,7 @@ export default function ContabilidadApp() {
                                     onChange={(e) => handleDetalleChangeService(index, "cantidad", e.target.value)}
                                   />
                                 </td>
-                                <td>
+                                <td className={stylesService.camposDetalle}>
                                   <Input
                                     className={stylesService.inputDetalle}
                                     type="number"
@@ -4517,6 +4512,7 @@ export default function ContabilidadApp() {
                     </Button>
                     <Button onClick={isEditingService ? handleSaveService : handleAddService} className={stylesService.btnFooter}>{isEditingService ? "Guardar" : "Crear"}</Button>
                   </DialogFooter>
+
                 </DialogContent>
               </Dialog>
 
@@ -4616,26 +4612,6 @@ export default function ContabilidadApp() {
                     <Button variant="destructive" onClick={handleDeleteService}>
                       Eliminar
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              {/* Modal para la confirmacion de facturacion */}
-              <Dialog open={isInvoiceConfirmeModalOpen} onOpenChange={setIsInvoiceConfirmeModalOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirmar Generación de Factura</DialogTitle>
-                    <DialogDescription>¿Estás seguro de que deseas generar una factura para este servicio?</DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsInvoiceConfirmeModalOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={() => {
-                      setIsInvoiceModalOpen(true)
-                      setIsInvoiceConfirmeModalOpen(false)
-                      confirmGenerateInvoice()
-                    }}>Generar Factura</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

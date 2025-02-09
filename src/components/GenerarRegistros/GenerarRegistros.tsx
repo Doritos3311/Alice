@@ -1,4 +1,6 @@
 import React from 'react';
+import stylesGenerarRe from "@/components/GenerarRegistros/GenerarRegistros.module.css"
+
 import * as XLSX from 'xlsx';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,14 +70,16 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold mb-6">Generar Registros</h2>
+
+    <div className={stylesGenerarRe.spaceY6}>
+    <h2 className={stylesGenerarRe.heading}>Generar Registros</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={stylesGenerarRe.gridContainer}>
+
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileSpreadsheet className="mr-2 h-5 w-5" />
+          <CardTitle className={stylesGenerarRe.flexItemsCenter}>
+          <FileSpreadsheet className={stylesGenerarRe.icon} />
               Libro Diario
             </CardTitle>
             <CardDescription>Generar registro del libro diario</CardDescription>
@@ -85,16 +89,16 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
           </CardContent>
           <CardFooter>
             <Button onClick={() => generateExcel(data, appConfig.libroDiario, "Libro Diario")}>
-              <FileDown className="mr-2 h-4 w-4" />
+              <FileDown className={stylesGenerarRe.iconSmall} />
               Descargar
             </Button>
           </CardFooter>
         </Card>
-
+        
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Package className="mr-2 h-5 w-5" />
+          <CardTitle className={stylesGenerarRe.flexItemsCenter}>
+          <Package className={stylesGenerarRe.iconMedium} />
               Inventario
             </CardTitle>
             <CardDescription>Generar registro de inventario</CardDescription>
@@ -104,7 +108,7 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
           </CardContent>
           <CardFooter>
             <Button onClick={() => generateExcel(inventoryItems, appConfig.inventario, "Inventario")}>
-              <FileDown className="mr-2 h-4 w-4" />
+            <FileDown className={stylesGenerarRe.iconSmall} />
               Descargar
             </Button>
           </CardFooter>
@@ -112,8 +116,8 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="mr-2 h-5 w-5" />
+          <CardTitle className={stylesGenerarRe.flexItemsCenter}>
+          <FileText className={stylesGenerarRe.iconMedium} />
               Facturación
             </CardTitle>
             <CardDescription>Generar registro de facturación</CardDescription>
@@ -123,14 +127,15 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
           </CardContent>
           <CardFooter>
             <Button onClick={() => generateExcel(invoiceItems, appConfig.facturacion, "Facturación")}>
-              <FileDown className="mr-2 h-4 w-4" />
+            <FileDown className={stylesGenerarRe.iconSmall} />
               Descargar
             </Button>
           </CardFooter>
         </Card>
+
       </div>
 
-      <Card className="mt-6">
+      <Card className={stylesGenerarRe.marginTop6}>
         <CardHeader>
           <CardTitle>Generar Todos los Registros</CardTitle>
           <CardDescription>Descargar un archivo Excel con todos los registros combinados</CardDescription>
@@ -139,8 +144,8 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
           <p>Este archivo incluirá hojas separadas para Libro Diario, Inventario y Facturación.</p>
         </CardContent>
         <CardFooter>
-          <Button onClick={generateAllExcel} className="w-full">
-            <FileDown className="mr-2 h-4 w-4" />
+        <Button onClick={generateAllExcel} className={stylesGenerarRe.buttonFullWidth}>
+        <FileDown className={stylesGenerarRe.iconSmall} />
             Descargar Todos los Registros
           </Button>
         </CardFooter>
@@ -150,4 +155,5 @@ const GenerarRegistros: React.FC<GenerarRegistrosProps> = ({ data, inventoryItem
 };
 
 export default GenerarRegistros;
+
 
