@@ -1,0 +1,14 @@
+.contentNoItems {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: min-content;
+}
+
+.contentNoItemsInventario {
+    margin-top: 2rem;
+}
+
+.contentNoItemsLDiario {
+    margin-top: 2rem;
+}

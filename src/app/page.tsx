@@ -21,6 +21,7 @@ import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
 import dynamic from 'next/dynamic';
 
 //Estilos
+import stylesContent from "@/components/estilos/contenido.module.css"
 import stylesMenu from "@/components/estilos/menu.module.css"
 import stylesService from "@/components/estilos/servicio.module.css"
 import stylesLDiario from "@/components/estilos/libroDiario.module.css"
@@ -29,12 +30,12 @@ import stylesGruposdeTrabajointerfaz from "@/components/estilos/gruposTrabajo.mo
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage";
 import LandingPage from '@/components/Landing Page/LandingPage';
-import UsuariosRegistrados from '@/components/UsuariosRegistrados';
-import { EmpresasRegistradas } from '@/components/EmpresasRegistradas';
-import SolicitudIngreso from '@/components/SolicitudIngreso';
-import SolicitudPendiente from '@/components/SolicitudPendiente';
-import AccesoRestringido from '@/components/AccesoRestringido';
-import MensajeNoItems from "@/components/MensajeNoItems";
+import UsuariosRegistrados from '@/components/UsuariosRegistrados/UsuariosRegistrados';
+import { EmpresasRegistradas } from '@/components/EmpresasRegistradas/EmpresasRegistradas';
+import SolicitudIngreso from '@/components/SolicitudIngreso/SolicitudIngreso';
+import SolicitudPendiente from '@/components/SolicitudPendiente/SolicitudPendiente';
+import AccesoRestringido from '@/components/AccesoRestringido/AccesoRestringido';
+import MensajeNoItems from "@/components/MensajeNoItems/MensajeNoItems";
 
 //Importaciones de Tipos
 
@@ -2373,7 +2374,7 @@ export default function ContabilidadApp() {
                         </div>
                       </>
                       ) : (
-                        <div className="flex justify-center items-center h-[calc(65vh)]">
+                        <div className={stylesContent.contentNoItemsLDiario}>
                           <MensajeNoItems
                           mensaje="Aún no has agregado ningún asiento contable."
                           accion={() => setIsCreatingAccountingEntry(true)}
@@ -2750,7 +2751,7 @@ export default function ContabilidadApp() {
 
                       </>
                       ) : (
-                        <div className="flex justify-center items-center h-[calc(65vh)]">
+                        <div className={stylesContent.contentNoItemsInventario}>
                           <MensajeNoItems
                             mensaje="Aún no has agregado ningún ítem al inventario."
                             accion={() => setIsInventoryModalOpen(true)}
@@ -2817,73 +2818,72 @@ export default function ContabilidadApp() {
                       </div>
                     </div>
                       
-                      {hayItems(filteredInvoiceItems) ? (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {filteredInvoiceItems.map((factura) => (
-                            <Card key={factura.id} className="rounded-lg border flex flex-col">
+                    {hayItems(filteredInvoiceItems) ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredInvoiceItems.map((factura) => (
+                          <Card key={factura.id} className="rounded-lg border flex flex-col">
 
-                              <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                                <CardTitle className="text-xl font-bold flex justify-between items-center">
-                                  <span>Factura N°{factura.numeroFactura}</span>
-                                </CardTitle>
-                              </CardHeader>
-                              
-                              <CardContent className="flex-grow p-4 bg-card">
-                                <div className="space-y-2">
-                                  <p className="text-sm flex items-center">
-                                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    <span className="font-medium text-muted-foreground">Emisión:</span>
-                                    <span className="ml-2">{factura.fechaEmision}</span>
-                                  </p>
-                                  <p className="text-sm flex items-center">
-                                    <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    <span className="font-medium text-muted-foreground">Cliente:</span>
-                                    <span className="ml-2 truncate">{factura.nombreCliente}</span>
-                                  </p>
-                                  <p className="text-sm flex items-center">
-                                    <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    <span className="font-medium text-muted-foreground">Emisor:</span>
-                                    <span className="ml-2 truncate">
-                                      {factura.nombreEmisor}
-                                    </span>
-                                  </p>
-                                  <p className="text-sm flex items-center">
-                                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    <span className="font-medium text-muted-foreground">Correo:</span>
-                                    <span className="ml-2 truncate">
-                                      {factura.correoEmisor}
-                                    </span>
-                                  </p>
-                                </div>
-                              </CardContent>
-
-                              <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                                <p className="text-sm font-semibold text-muted-foreground">
-                                  Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                            <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
+                              <CardTitle className="text-xl font-bold flex justify-between items-center">
+                                <span>Factura N°{factura.numeroFactura}</span>
+                              </CardTitle>
+                            </CardHeader>
+                            
+                            <CardContent className="flex-grow p-4 bg-card">
+                              <div className="space-y-2">
+                                <p className="text-sm flex items-center">
+                                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Emisión:</span>
+                                  <span className="ml-2">{factura.fechaEmision}</span>
                                 </p>
-                                <Button
-                                    size="icon"
-                                    onClick={() => handleViewInvoice(factura)}
-                                  >
-                                    <Eye className="h-5 w-5"/>
-                                  </Button>
-                              </CardFooter>
-                            </Card>
-                          ))}
-                        </div>
-                      </>
-                      ) : (
-                        <div className="flex justify-center items-center h-[calc(62vh)]">
-                          <MensajeNoItems
-                            mensaje="Aún no has agregado ninguna factura."
-                            accion={() => setIsInvoiceModalOpen(true)}
-                            textoBoton="Crear Nueva Factura"
-                          />
-                        </div>
-                      )}
+                                <p className="text-sm flex items-center">
+                                  <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Cliente:</span>
+                                  <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                                </p>
+                                <p className="text-sm flex items-center">
+                                  <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Emisor:</span>
+                                  <span className="ml-2 truncate">
+                                    {factura.nombreEmisor}
+                                  </span>
+                                </p>
+                                <p className="text-sm flex items-center">
+                                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span className="font-medium text-muted-foreground">Correo:</span>
+                                  <span className="ml-2 truncate">
+                                    {factura.correoEmisor}
+                                  </span>
+                                </p>
+                              </div>
+                            </CardContent>
 
-                    </div>
+                            <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                              <p className="text-sm font-semibold text-muted-foreground">
+                                Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                              </p>
+                              <Button
+                                  size="icon"
+                                  onClick={() => handleViewInvoice(factura)}
+                                >
+                                  <Eye className="h-5 w-5"/>
+                                </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+                    </>
+                    ) : (
+                      <div className={stylesContent.contentNoItems}>
+                        <MensajeNoItems
+                          mensaje="Aún no has agregado ninguna factura."
+                          accion={() => setIsInvoiceModalOpen(true)}
+                          textoBoton="Crear Nueva Factura"
+                        />
+                      </div>
+                    )}
+                  </div>
                   </AccesoRestringido>
                 )}
 
@@ -2998,7 +2998,7 @@ export default function ContabilidadApp() {
                             ))}
                         </div>
                       ) : (
-                        <div className="flex justify-center items-center h-[calc(62vh)]">
+                        <div className={stylesContent.contentNoItems}>
                           <MensajeNoItems
                             mensaje="Aún no has agregado ninguna factura recibida."
                             accion={() => setIsInvoiceReceivedModalOpen(true)}
@@ -3107,7 +3107,7 @@ export default function ContabilidadApp() {
                       </div>
                       </>
                       ) : (
-                        <div className="flex justify-center items-center h-[calc(68vh)]">
+                        <div className={stylesContent.contentNoItems}>
                           <MensajeNoItems
                             mensaje="Aún no has agregado ningún servicio."
                             accion={() => setIsCreatingService(true)}
