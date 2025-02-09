@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Home, LogOut, Check, ChartColumnBig } from "lucide-react"
+import { Home, LogOut, Check, ChartColumnBig, Settings } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { FcGoogle } from "react-icons/fc"
 import {
@@ -154,7 +154,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
     setShowLogIn(true)
   }
 
-// Función para cerrar sesión
+ // Función para cerrar sesión
   const handleLogout = async () => {
     try {
       await auth.signOut()
@@ -226,6 +226,10 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
                   <Button variant="ghost" size="sm" className={styles.menu_button} onClick={() => setShowLandingPage(true)}>
                     <ChartColumnBig className={styles.icon} />
                     Contabilidad
+                  </Button>
+                  <Button variant="ghost" size="sm" className={styles.menu_buttonContent} onClick={() => {setActiveTab("configuracion"); setShowLandingPage(true)}}>
+                    <Settings className={styles.icon} />
+                    Configuracion
                   </Button>
                   <div className={styles.divider}></div>
                   <Button variant="ghost" size="sm" className={styles.menuitemlogout} onClick={() => setIsLogOutModalOpen(true)}>

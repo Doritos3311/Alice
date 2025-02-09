@@ -131,6 +131,14 @@
   border-radius: 1.5rem;
 }
 
+.userpopoverLight {
+  background-color: #ffffff;
+}
+
+.userpopoverDark {
+  background-color: #1E1E1E;
+}
+
 .userinfo {
   display: flex;
   align-items: center;

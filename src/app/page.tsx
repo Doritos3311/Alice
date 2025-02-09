@@ -2026,7 +2026,7 @@ export default function ContabilidadApp() {
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className={stylesMenu.userpopover}>
+                      <PopoverContent className={`${stylesMenu.userpopover} ${theme === "light" ? stylesMenu.userpopoverLight : stylesMenu.userpopoverDark}`}>
                         <div className={stylesMenu.userinfo}>
                           <Avatar className={stylesMenu.useravatarlarge}>
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
@@ -3833,6 +3833,12 @@ export default function ContabilidadApp() {
                         </div>
                       </div>
 
+                      <div>
+                        <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
+                          Agregar Nuevo Servicio
+                        </Button>
+                      </div>
+
                       {/* Contenido */}
                       <div className="border p-4 rounded-md">
                         <table className="w-full">
@@ -3865,8 +3871,8 @@ export default function ContabilidadApp() {
                                     </SelectContent>
                                   </Select>
                                 </td>
-                                <td><Input className="w-full"  type="number" value={detalle.cantidad || "0"} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
-                                <td><Input className="w-full" value={detalle.detalle || "indefinido"} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.cantidad || ""} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
+                                <td><Input className="w-full" value={detalle.detalle || ""} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
                                 <td><Input className="w-full"  type="number" value={detalle.precioUnitario || "0.00"} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
                                 <td><Input className="w-full"  type="number" value={detalle.valorTotal || "0.00"} readOnly/></td>
                                 <td>
