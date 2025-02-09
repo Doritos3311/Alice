@@ -1219,30 +1219,39 @@ export default function ContabilidadApp() {
     let subTotal12IVA = 0;
     let subTotal0IVA = 0;
     let subTotalExentoIVA = 0;
+    let subTotalNoObjetoIVA = 0;
   
     detalles.forEach((detalle) => {
       const valorTotal = detalle.valorTotal || 0;
       const servicioSeleccionado = servicios.find((servicio) => servicio.nombre === detalle.idElemento);
   
-      if (servicioSeleccionado?.exento) {
-        // Si el servicio es exento, sumar al subtotal exento de IVA
-        subTotalExentoIVA += valorTotal;
-      } else if (detalle.tipoIVA === "15") {
-        // Si no es exento y tiene IVA del 15%, sumar al subtotal con IVA
-        subTotal12IVA += valorTotal;
-      } else if (detalle.tipoIVA === "0") {
-        // Si no es exento y tiene IVA del 0%, sumar al subtotal sin IVA
-        subTotal0IVA += valorTotal;
+      if (servicioSeleccionado) {
+        switch (servicioSeleccionado.tipoIVA) {
+          case "12":
+            subTotal12IVA += valorTotal;
+            break;
+          case "0":
+            subTotal0IVA += valorTotal;
+            break;
+          case "exento":
+            subTotalExentoIVA += valorTotal;
+            break;
+          case "noObjeto":
+            subTotalNoObjetoIVA += valorTotal;
+            break;
+          default:
+            subTotal12IVA += valorTotal;
+            break;
+        }
       }
     });
   
-    const subTotalNoObjetoIVA = 0; // Siempre 0
     const descuento = 0; // Siempre 0
     const ice = 0; // Siempre 0
     const propina = 0; // Siempre 0
   
     const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento;
-    const iva12 = subTotal12IVA * 0.15; // Calcular IVA solo para los servicios no exentos
+    const iva12 = subTotal12IVA * 0.15; // Calcular IVA solo para los servicios con IVA del 12%
     const valorTotalFinal = subTotal + ice + iva12 + propina;
   
     return {
@@ -1408,51 +1417,52 @@ export default function ContabilidadApp() {
 
   const handleAddService = async () => {
     if (!viewingUID) return;
-
+  
     try {
-        const gastosTotalesPorServicio = detallesServicio
-            .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
-            .toFixed(2);
-
-        // Crear el objeto del servicio SIN el id (Firebase lo generará automáticamente)
-        const serviceToAdd = {
-            nombre: newService.nombre,
-            descripcion: newService.descripcion,
-            usoDeItem: newService.usoDeItem,
-            costoDeServicio: newService.costoDeServicio,
-            exento: newService.exento,
-            detalles: detallesServicio,
-            fechaCreacion: new Date().toISOString(),
-            gastosTotalesPorServicio,
-        };
-
-        // Agregar el servicio a Firestore y obtener el id generado por Firebase
-        const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
-
-        // Crear el objeto del servicio con el id generado por Firebase
-        const addedService = { ...serviceToAdd, id: docRef.id }; // Aquí se usa el id generado por Firebase
-
-        // Actualizar el estado con el nuevo servicio
-        setServicios([...servicios, addedService]);
-
-        // Cerrar el modal y resetear el formulario
-        setIsCreatingService(false);
-        resetNewService();
-
-        // Mostrar notificación de éxito
-        toast({
-            title: "Éxito",
-            description: "Servicio creado correctamente.",
-        });
-
+      const gastosTotalesPorServicio = detallesServicio
+        .reduce((total, detalle) => total + parseFloat(detalle.gastosPorServicio || "0"), 0)
+        .toFixed(2);
+  
+      // Crear el objeto del servicio SIN el id (Firebase lo generará automáticamente)
+      const serviceToAdd = {
+        nombre: newService.nombre,
+        descripcion: newService.descripcion,
+        usoDeItem: newService.usoDeItem,
+        costoDeServicio: newService.costoDeServicio,
+        exento: newService.exento,
+        tipoIVA: newService.tipoIVA, // Incluir el tipo de IVA
+        detalles: detallesServicio,
+        fechaCreacion: new Date().toISOString(),
+        gastosTotalesPorServicio,
+      };
+  
+      // Agregar el servicio a Firestore y obtener el id generado por Firebase
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/servicios`), serviceToAdd);
+  
+      // Crear el objeto del servicio con el id generado por Firebase
+      const addedService = { ...serviceToAdd, id: docRef.id }; // Aquí se usa el id generado por Firebase
+  
+      // Actualizar el estado con el nuevo servicio
+      setServicios([...servicios, addedService]);
+  
+      // Cerrar el modal y resetear el formulario
+      setIsCreatingService(false);
+      resetNewService();
+  
+      // Mostrar notificación de éxito
+      toast({
+        title: "Éxito",
+        description: "Servicio creado correctamente.",
+      });
+  
     } catch (error) {
-        console.error("Error al agregar servicio:", error);
-        toast({
-            title: "Error",
-            description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
-        });
+      console.error("Error al agregar servicio:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el servicio. Por favor, intenta de nuevo.",
+      });
     }
-};
+  };
 
   const handleEditService = (service: Service) => {
     setNewService({ ...service })
@@ -1476,6 +1486,7 @@ export default function ContabilidadApp() {
         gastosTotalesPorServicio,
         detalles: detallesServicio,
         exento: newService.exento, // Mantener como boolean
+        tipoIVA: newService.tipoIVA, // Incluir el tipo de IVA
       };
   
       const serviceRef = doc(db, `users/${viewingUID}/servicios`, editingServiceId);
@@ -1509,11 +1520,12 @@ export default function ContabilidadApp() {
       gastosTotalesPorServicio: "0",
       fechaCreacion: "",
       exento: false, // Resetear a false
+      tipoIVA: "12", // Valor por defecto "12"
       detalles: [],
-    })
-    setDetallesServicio([{ usoDeItem: "", gastosPorItem: "0", cantidad: 0, gastosPorServicio: "0" }])
-    setEditingServiceId(null)
-  }
+    });
+    setDetallesServicio([{ usoDeItem: "", gastosPorItem: "0", cantidad: 0, gastosPorServicio: "0" }]);
+    setEditingServiceId(null);
+  };
 
   // Funcion borrar servicio
   const handleDeleteService = async () => {
@@ -1777,7 +1789,7 @@ export default function ContabilidadApp() {
         detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
         valorTotal: Number(selectedService.costoDeServicio),
-        tipoIVA: selectedService.exento ? "exento" : "15", // Si es exento, marcamos como "exento"; de lo contrario, aplicamos IVA del 15%
+        tipoIVA: selectedService.tipoIVA || "15", // Usar el tipo de IVA seleccionado en el servicio
       };
       setDetallesFactura(newDetalles);
       setSelectedService(selectedService);
@@ -3048,8 +3060,8 @@ export default function ContabilidadApp() {
                               </p>
                               <p>
                                 <CircleUserRound className={stylesService.icon} />
-                                <span className="font-medium text-muted-foreground">Uso de Item:</span>
-                                <span className="ml-2 truncate">{servicio.usoDeItem}</span>
+                                <span className="font-medium text-muted-foreground">IVA:</span>
+                                <span className="ml-2 truncate">{servicio.tipoIVA}</span>
                               </p>
                               <p>
                                 <DollarSign className={stylesService.icon} />
@@ -3400,6 +3412,7 @@ export default function ContabilidadApp() {
                   {currentInvoice && (
                     <ScrollArea className="max-h-[80vh]">
                       <div className="space-y-4 p-4">
+
                         {/* Cabecera */}
                         <div className="grid grid-cols-2 gap-4">
 
@@ -3683,14 +3696,14 @@ export default function ContabilidadApp() {
                           {/* Inferior Derecha */}
                           <div className="border p-4 rounded-md space-y-2">
                             {[
-                              { id: "SubTotal12IVA", label: "Sub. Total 12% IVA" },
+                              { id: "SubTotal12IVA", label: "Sub. Total 15% IVA" },
                               { id: "SubTotal0IVA", label: "Sub. Total 0% IVA" },
                               { id: "SubTotalExentoIVA", label: "Sub. Total Exento IVA" },
                               { id: "SubTotalNoObjetoIVA", label: "Sub. Total No Objeto IVA" },
                               { id: "Descuento", label: "Descuento" },
                               { id: "SubTotal", label: "Sub Total" },
                               { id: "ICE", label: "ICE" },
-                              { id: "IVA12", label: "IVA 12%" },
+                              { id: "IVA12", label: "IVA 15%" },
                               { id: "Propina", label: "Propina" },
                               { id: "ValorTotalFinal", label: "Valor Total" },
                             ].map((item) => (
@@ -3891,7 +3904,7 @@ export default function ContabilidadApp() {
                         {/* Inferior Derecha */}
                         <div className="border p-4 rounded-md space-y-2">
                           <div className="space-y-2">
-                            <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
+                            <Label htmlFor="SubTotal12IVA">Sub. Total 15% IVA:</Label>
                             <Input
                               id="SubTotal12IVA"
                               type="number"
@@ -3961,7 +3974,7 @@ export default function ContabilidadApp() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="IVA12">IVA 12%:</Label>
+                            <Label htmlFor="IVA12">IVA 15%:</Label>
                             <Input
                               id="IVA12"
                               type="number"
@@ -4171,7 +4184,7 @@ export default function ContabilidadApp() {
                         {/* Inferior Derecha */}
                         <div className="border p-4 rounded-md space-y-2">
                           <div className="space-y-2">
-                            <Label htmlFor="SubTotal12IVA">Sub. Total 12% IVA:</Label>
+                            <Label htmlFor="SubTotal12IVA">Sub. Total 15% IVA:</Label>
                             <Input
                               id="SubTotal12IVA"
                               type="number"
@@ -4241,7 +4254,7 @@ export default function ContabilidadApp() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="IVA12">IVA 12%:</Label>
+                            <Label htmlFor="IVA12">IVA 15%:</Label>
                             <Input
                               id="IVA12"
                               type="number"
@@ -4390,6 +4403,23 @@ export default function ContabilidadApp() {
                         />
                       </div>
                       <div className={stylesService.camposIzq}>
+                        <Label htmlFor="tipoIVA">Tipo de IVA</Label>
+                        <Select
+                          value={newService.tipoIVA || "15"} // Valor por defecto "12"
+                          onValueChange={(value) => setNewService({ ...newService, tipoIVA: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar tipo de IVA" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">Sub. Total 15% IVA</SelectItem>
+                            <SelectItem value="0">Sub. Total 0% IVA</SelectItem>
+                            <SelectItem value="exento">Sub. Total Exento IVA</SelectItem>
+                            <SelectItem value="noObjeto">Sub. Total No Objeto IVA</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className={stylesService.camposIzq}>
                         <Label htmlFor="costoDeServicio">Costo de Servicio</Label>
                         <Input
                           id="costoDeServicio"
@@ -4473,17 +4503,7 @@ export default function ContabilidadApp() {
                         <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
                           Agregar Fila
                         </Button>
-                        <div className={stylesService.campoInfDere}>
-                          <div className={stylesService.campoExIVA}>
-                            <Label htmlFor="exento">Servicio exento de IVA</Label>
-                            <Checkbox
-                              id="exento"
-                              checked={newService.exento}
-                              onCheckedChange={(checked) => {
-                                setNewService({ ...newService, exento: checked as boolean });
-                              }}
-                            />
-                          </div>
+                        <div>
                           <div className={stylesService.campoVTot}>
                             <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
                             <Input
