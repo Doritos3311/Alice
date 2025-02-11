@@ -1987,19 +1987,19 @@ export default function ContabilidadApp() {
     {
       target: '#services-section',
       content: 'En la sección de servicios, puedes ver y gestionar todos los servicios que ofreces.',
-      placement: 'bottom',
+      placement: 'right',
       title: 'Servicios'
     },
     {
       target: '#inventory-section',
       content: 'Aquí puedes gestionar tu inventario, añadir nuevos productos o actualizar el stock existente.',
-      placement: 'left',
+      placement: 'right',
       title: 'Inventario'
     },
     {
       target: '#billing-section',
       content: 'En la sección de facturación, puedes crear nuevas facturas y ver el historial de facturación.',
-      placement: 'top',
+      placement: 'right',
       title: 'Facturación'
     },
     {
@@ -2011,7 +2011,7 @@ export default function ContabilidadApp() {
     {
       target: '#dashboard-section',
       content: 'El dashboard te ofrece una visión general de las finanzas de tu negocio con gráficos y estadísticas clave.',
-      placement: 'left',
+      placement: 'right',
       title: 'Dashboard'
     }
   ];
@@ -2222,11 +2222,19 @@ export default function ContabilidadApp() {
 
                 {/* Configuracion Interfaz Estilo */}
                 {activeTab === "configuracion" && (
-                  <ConfiguracionPage
-                    user={user}
-                    setShowLandingPage={setShowLandingPage}
-                    setActiveTab={setActiveTab}
-                  />
+                  <div>
+                    <div className="mb-4">
+                      <Button onClick={() => setRunTour(true)}>
+                        <Info className="mr-2"/> Iniciar Tour
+                      </Button>
+                    </div>
+                    <ConfiguracionPage
+                      user={user}
+                      setShowLandingPage={setShowLandingPage}
+                      setActiveTab={setActiveTab}
+                    />
+                  </div>
+                  
                 )}
 
                 {/* Grupos de Trabajo Interfaz Estilo */}
@@ -3073,9 +3081,6 @@ export default function ContabilidadApp() {
 
                       <div className={stylesService.serviciosContainer}>
                         <h2 className="text-3xl font-bold">Servicios</h2>
-                        <Button onClick={() => setRunTour(true)}>
-                          <Info />
-                        </Button>
                       </div>
 
                       <div className={`${stylesService.separacion} ${theme === "light" ? stylesService.separacionLight : stylesService.separacionDark}`}></div>

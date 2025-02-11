@@ -11,6 +11,7 @@
     width: 100%;
     height: min-content;
     border: 0;
+    box-shadow: none;
 }
 
 .cardLight {
