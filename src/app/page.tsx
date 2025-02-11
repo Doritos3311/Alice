@@ -18,7 +18,6 @@
 
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
-import dynamic from 'next/dynamic';
 
 //Estilos
 import stylesContent from "@/components/estilos/contenido.module.css"
@@ -47,7 +46,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info } from "lucide-react"
 import { toast } from "@/components/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -81,8 +80,12 @@ import { useTheme } from "next-themes"
 // Importaciones Archivo de Exel
 import { FileDown } from 'lucide-react'
 import GenerarRegistros from '@/components/GenerarRegistros/GenerarRegistros';
+
+// Uso de interfaz
 import { Toaster } from "@/components/ui/toaster";
-import { Checkbox } from "@/components/ui/checkbox";
+import JoyrideWrapper from "@/components/Joyride/JoyrideWrapper";
+import { Step } from '../components/Joyride/CustomJoyride';
+
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -121,6 +124,11 @@ interface UserData {
   type: 'personal' | 'empresa';
   companyName?: string; // Ahora es una propiedad opcional
   rucCI?: string;
+}
+
+interface State {
+  run: boolean;
+  steps: Step[];
 }
 
 {/* Declaracion de Tipados */}
@@ -227,7 +235,7 @@ export default function ContabilidadApp() {
   const [showLandingPage, setShowLandingPage] = useState<boolean>(true); 
 
   // Estado de Inicio de Aplicacion
-  const [activeTab, setActiveTab] = useState("grupos-trabajo")
+  const [activeTab, setActiveTab] = useState("configuracion")
   const [identificacionAdquiriente, setIdentificacionAdquiriente] = useState("v0")
   const [isMenuExpanded, setIsMenuExpanded] = useState(true); // Estado para controlar si el menú está expandido
 
@@ -398,6 +406,7 @@ export default function ContabilidadApp() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [runTour, setRunTour] = useState(false);
 
   const hayItems = (items: any[]): boolean => {
     return items.length > 0
@@ -1960,13 +1969,6 @@ export default function ContabilidadApp() {
     }
   };
 
-  useEffect(() => { // Al Inicio de App
-    if (activeTab !== "facturacion") {
-      setSelectedInventoryItem(null); // Vacia setSelectedInventoryItem
-      setLastCreatedInvoice(null); // Vacia setLastCreatedInvoice
-    }
-  }, [activeTab]);
-
   useEffect(() => {
     if (isInvoiceModalOpen && newInvoiceItem.tipoFactura === "recibida") {
       setIdentificacionAdquiriente("v0")
@@ -1975,6 +1977,44 @@ export default function ContabilidadApp() {
     }
   }, [isInvoiceModalOpen, newInvoiceItem.tipoFactura])
 
+  const steps: Step[] = [
+    {
+      target: '#menu-section',
+      content: 'Este es el menú principal. Aquí puedes navegar entre las diferentes secciones de la aplicación.',
+      placement: 'right',
+      title: 'Menú Principal'
+    },
+    {
+      target: '#services-section',
+      content: 'En la sección de servicios, puedes ver y gestionar todos los servicios que ofreces.',
+      placement: 'bottom',
+      title: 'Servicios'
+    },
+    {
+      target: '#inventory-section',
+      content: 'Aquí puedes gestionar tu inventario, añadir nuevos productos o actualizar el stock existente.',
+      placement: 'left',
+      title: 'Inventario'
+    },
+    {
+      target: '#billing-section',
+      content: 'En la sección de facturación, puedes crear nuevas facturas y ver el historial de facturación.',
+      placement: 'top',
+      title: 'Facturación'
+    },
+    {
+      target: '#journal-section',
+      content: 'El diario contable te permite registrar todas las transacciones financieras de tu negocio.',
+      placement: 'right',
+      title: 'Diario Contable'
+    },
+    {
+      target: '#dashboard-section',
+      content: 'El dashboard te ofrece una visión general de las finanzas de tu negocio con gráficos y estadísticas clave.',
+      placement: 'left',
+      title: 'Dashboard'
+    }
+  ];
 
   return (
     <>
@@ -2000,7 +2040,7 @@ export default function ContabilidadApp() {
               </div>
 
               {/* Menu Izquierda */}
-              <div className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
+              <div id="menu-section" className={`${stylesMenu.menuContentPrincipal} ${theme === "light" ? stylesMenu.themeLight : stylesMenu.themeDark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
                 <div className={`${stylesMenu.menucontent} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}>
 
                   <div className={stylesMenu.menuheader}>
@@ -2008,10 +2048,10 @@ export default function ContabilidadApp() {
                     
                     <Button
                       size="icon"
-                      className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+                      className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed} ${theme === "light" ? stylesMenu.menudesplegable1Light : stylesMenu.menudesplegable1Dark}`}
                       onClick={toggleMenu} // Controla la apertura/cierre del menú
                     >
-                      <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
+                      <IoMenu className={stylesMenu.iconmenu} /> {/* Icono para abrir/cerrar el menú */}
                     </Button>
                   </div>
 
@@ -2076,6 +2116,7 @@ export default function ContabilidadApp() {
                   
                   <nav className={stylesMenu.mainnav}>
                     <Button
+                      id="services-section"
                       variant={activeTab === "servicios" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("servicios")}
@@ -2085,6 +2126,7 @@ export default function ContabilidadApp() {
                     </Button>
 
                     <Button
+                      id="inventory-section"
                       variant={activeTab === "inventario" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("inventario")}
@@ -2095,6 +2137,7 @@ export default function ContabilidadApp() {
 
                     <div className={stylesMenu.navitemgroup}>
                       <Button
+                        id="billing-section"
                         variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
                         className={stylesMenu.navitem}
                         onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
@@ -2126,6 +2169,7 @@ export default function ContabilidadApp() {
                     </div>
 
                     <Button
+                      id="journal-section"
                       variant={activeTab === "libro-diario" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("libro-diario")}
@@ -2135,6 +2179,7 @@ export default function ContabilidadApp() {
                     </Button>
 
                     <Button
+                      id="dashboard-section"
                       variant={activeTab === "dashboard" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("dashboard")}
@@ -2164,12 +2209,11 @@ export default function ContabilidadApp() {
 
                 </div>
                 <Button
-
                   size="icon"
-                  className={`${stylesMenu.menudesplegable2} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
+                  className={`${stylesMenu.menudesplegable2} ${isMenuExpanded ? "" : stylesMenu.collapsed} ${theme === "light" ? stylesMenu.menudesplegable2Light : stylesMenu.menudesplegable2Dark} ${isMenuExpanded ? "" : stylesMenu.collapsed}`}
                   onClick={toggleMenu} // Controla la apertura/cierre del menú
                 >
-                  <IoMenu className={stylesMenu.iconconfig} /> {/* Icono para abrir/cerrar el menú */}
+                  <IoMenu className={stylesMenu.iconmenu} /> {/* Icono para abrir/cerrar el menú */}
                 </Button>
               </div>
 
@@ -3023,11 +3067,15 @@ export default function ContabilidadApp() {
 
                 {/* Servicios Interfaz Estilo */}
                 {activeTab === "servicios" && (
+                  
                   <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
                     <div>
 
                       <div className={stylesService.serviciosContainer}>
                         <h2 className="text-3xl font-bold">Servicios</h2>
+                        <Button onClick={() => setRunTour(true)}>
+                          <Info />
+                        </Button>
                       </div>
 
                       <div className={`${stylesService.separacion} ${theme === "light" ? stylesService.separacionLight : stylesService.separacionDark}`}></div>
@@ -3117,6 +3165,7 @@ export default function ContabilidadApp() {
                       )}
                     </div>
                   </AccesoRestringido>
+                  
                 )}
 
               </div>
@@ -4681,6 +4730,26 @@ export default function ContabilidadApp() {
 
           </div>
         )}
+
+        <JoyrideWrapper
+          steps={steps}
+          run={runTour}
+          continuous={true}
+          showSkipButton={true}
+          showProgress={true}
+          styles={{
+            options: {
+              primaryColor: '#4338ca',
+            },
+          }}
+          callback={(data) => {
+            const { status } = data;
+            if (status === 'finished' || status === 'skipped') {
+              setRunTour(false);
+            }
+          }}
+        />
+
       </div>
     )}
 

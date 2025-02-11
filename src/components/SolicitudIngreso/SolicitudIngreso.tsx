@@ -67,7 +67,7 @@ const SolicitudIngreso: React.FC<SolicitudIngresoProps> = ({ userId }) => {
             <Card key={id} className={`p-2 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
               <CardContent className="flex justify-between items-center p-4">
                 <div className="flex items-center">
-                  <Building className="h-7 w-7 mr-2 mr-5" />
+                  <Building className="h-7 w-7 mr-5" />
                   <div>
                     <p className="font-medium">{solicitud.nombreEmpresa}</p>
                     <p className="text-sm text-gray-500">ID: {id.substring(0, 8)}...</p>

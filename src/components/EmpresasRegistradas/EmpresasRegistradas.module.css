@@ -1,0 +1,102 @@
+.gridContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .gridContainer {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.card {
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.darkTheme {
+    background-color: rgb(30, 30, 30);
+    color: #d1d5db;
+}
+
+.lightTheme {
+    background-color: white;
+    color: #111827;
+}
+
+.cardContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.userIcon {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-right: 1.75rem;
+}
+
+.userName {
+    font-weight: 500;
+}
+
+.userId {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.cardContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.empresaContainer {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.empresaIcon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+.empresaNombre {
+    font-weight: 500;
+}
+
+.empresaID {
+    font-size: 0.75rem;
+    color: #6b7280; /* text-gray-500 */
+    margin-bottom: 0.25rem;
+}
+
+.botonContainer {
+    margin-top: 1.25rem; /* mt-5 */
+    display: flex;
+    gap: 0.5rem;
+}
+
+.botonCargar {
+    margin-right: 0.5rem;
+}
+
+.botonIcono {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+}
+
+.botonEliminar {
+    background-color: #dc2626; /* Color destructivo */
+    color: white;
+}

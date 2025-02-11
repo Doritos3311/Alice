@@ -61,11 +61,47 @@
   margin-bottom: 0.2rem;
 }
 
+.menudesplegable1Light {
+  background-color: rgb(248, 248, 248);
+  color: rgb(17, 24, 39);
+}
+
+.menudesplegable1Light:hover {
+  background-color: rgb(248, 248, 248);
+}
+
+.menudesplegable1Dark {
+  background-color: rgb(28, 28, 28);
+  color: rgb(209, 213, 219);
+}
+
+.menudesplegable1Dark:hover {
+  background-color: rgb(28, 28, 28);
+}
+
 .menudesplegable2 {
   display: none; /* Oculta el botón por defecto */
   visibility: hidden;
   justify-content: center;
   margin-bottom: 0.2rem;
+}
+
+.menudesplegable2Light {
+  background-color: rgb(248, 248, 248);
+  color: rgb(17, 24, 39);
+}
+
+.menudesplegable2Light:hover {
+  background-color: rgb(248, 248, 248);
+}
+
+.menudesplegable2Dark {
+  background-color: rgb(28, 28, 28);
+  color: rgb(209, 213, 219);
+}
+
+.menudesplegable2Dark:hover {
+  background-color: rgb(28, 28, 28);
 }
 
 .menuheader {
@@ -211,6 +247,11 @@
 .iconconfig {
   height: 1.3rem;
   width: 1.3rem;
+}
+
+.iconmenu {
+  height: 1.8rem;
+  width: 1.8rem;
 }
 
 .icon {

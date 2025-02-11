@@ -68,6 +68,20 @@ body {
   }
 }
 
+/* Estilos personalizados para el tooltip de Intro.js */
+.customTooltip {
+  z-index: 1000; /* Asegúrate de que el tooltip esté por encima de otros elementos */
+  background-color: #ffffff; /* Fondo blanco */
+  color: #000000; /* Texto negro */
+  border-radius: 8px; /* Bordes redondeados */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra */
+}
+
+/* Estilos para el overlay */
+.introjs-overlay {
+  z-index: 999; /* Asegúrate de que el overlay esté por debajo del tooltip */
+}
+
 @layer base {
   * {
     @apply border-border;

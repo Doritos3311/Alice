@@ -12,6 +12,8 @@ import { Check, User, X } from 'lucide-react'
 import { Dialog } from '@radix-ui/react-dialog';
 import { useTheme } from 'next-themes';
 
+import styleSoliPen from "@/components/SolicitudPendiente/SolicitudPendiente.module.css"
+
 {/* Definicion de Tipos de Datos */}
 
 // Definicion de Solicitud Recibida 
@@ -137,37 +139,37 @@ const SolicitudPendiente: React.FC<SolicitudPendienteProps> = ({ userId }) => {
 
   return (
     // Visualizador
-    <div className="space-y-4">
-        {/* Titulo */}
-        <h3 className="text-xl font-bold mt-10">Solicitudes Pendientes de Ingreso</h3>
+    <div className={styleSoliPen.container}>
+    {/* Titulo */}
+    <h3 className={styleSoliPen.title}>Solicitudes Pendientes de Ingreso</h3>
         
         {/* Contenido Principal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className={styleSoliPen.grid}>
 
           {/* Mapeado de las Solicitudes de Usuarios */}
-          {Object.entries(solicitudesPendientes).map(([usuarioId, solicitud]) => (
-            solicitud.estado === 'pendiente' && (
+            {Object.entries(solicitudesPendientes).map(([usuarioId, solicitud]) => (
+              solicitud.estado === 'pendiente' && (
 
-              // Listado de Solicitudes de Usuario
-              <Card key={usuarioId} className={`p-2 ${theme === "dark" ? "bg-[rgb(30,30,30)] text-gray-300" : "bg-white text-gray-900"}`}>
-                <CardContent className="flex justify-between items-center p-4">
+               // Listado de Solicitudes de Usuario
+                <Card key={usuarioId} className={`${styleSoliPen.card} ${theme === "dark" ? styleSoliPen.cardDark : styleSoliPen.cardLight}`}>
+                <CardContent className={styleSoliPen.cardContent}>
 
                   {/* Nombre de Usuario */}
-                  <div className="flex items-center">
-                  <User className="h-7 w-7 mr-2 mr-5" />
+                  <div className={styleSoliPen.cardInfo}>
+                    <User className={styleSoliPen.icon} />
                     <div>
                       <span>{solicitud.nombre}</span>
-                      <p className="text-sm text-gray-500">ID: {usuarioId.substring(0, 8)}...</p>
-                    </div>
+                        <p className={styleSoliPen.companyId}>ID: {usuarioId.substring(0, 8)}...</p>
+                      </div>
                   </div>
 
                   {/* Botones */}
-                  <div className="space-x-2">
-                    <Button size="sm" onClick={() => handleSolicitud(usuarioId, true)}>
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleSolicitud(usuarioId, false)}>
-                      <X className="h-4 w-4" />
+                  <div className={styleSoliPen.buttonsContainer}>
+                  <Button className={styleSoliPen.acceptButton} size="sm" onClick={() => handleSolicitud(usuarioId, true)}>
+                      <Check className={styleSoliPen.iconUse} />
+                      </Button>
+                      <Button variant="destructive" className={`${styleSoliPen.rejectButton} ${styleSoliPen.buttonDestructive}`} size="sm" onClick={() => handleSolicitud(usuarioId, false)}>
+                      <X className={styleSoliPen.iconUse} />
                     </Button>
                   </div>
                 </CardContent>
