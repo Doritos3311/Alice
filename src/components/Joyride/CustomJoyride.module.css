@@ -86,9 +86,11 @@
 }
 
 /* CustomJoyride.module.css */
+/* CustomJoyride.module.css */
 .highlight {
   position: absolute;
-  border-radius: 8px; /* Bordes redondeados para el resaltado */
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Sombra para simular el recorte */
-  z-index: 9999; /* Asegúrate de que esté encima del overlay */
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  transition: all 0.5s ease-in-out; /* Transición suave */
 }

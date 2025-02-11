@@ -45,10 +45,13 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
+      // Avanzar al siguiente paso
       setCurrentStep(currentStep + 1);
     } else {
-      setIsRunning(false);
-      callback?.({ status: 'finished' });
+      // Reiniciar el tour
+      setIsRunning(false); // Detener el tour temporalmente
+      setCurrentStep(0); // Reiniciar al primer paso
+      callback?.({ status: 'finished' }); // Ejecutar el callback si existe
     }
   };
 
@@ -82,9 +85,9 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
     left: rect.left,
     width: rect.width,
     height: rect.height,
-    borderRadius: '8px', // Bordes redondeados
-    boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.7)`, // Sombra para simular el recorte
-    zIndex: 9999, // Asegúrate de que esté encima del overlay
+    borderRadius: '8px',
+    boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.7)`,
+    zIndex: 9999,
   };
 
   return (
@@ -93,7 +96,7 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
       <div className={styles.overlay} />
 
       {/* Resaltado del componente */}
-      <div style={highlightStyle} />
+      <div style={highlightStyle} className={styles.highlight} />
 
       {/* Tooltip */}
       <div ref={tooltipRef} style={tooltipStyle} className={`${styles.tooltip} ${theme === "light" ? styles.tooltipLight : styles.tooltipDark}`}>
