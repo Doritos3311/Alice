@@ -2009,11 +2009,17 @@ export default function ContabilidadApp() {
       title: 'Diario Contable'
     },
     {
-      target: '#dashboard-section',
-      content: 'El dashboard te ofrece una visión general de las finanzas de tu negocio con gráficos y estadísticas clave.',
+      target: '#coo-work-section',
+      content: 'Conecta con tu grupo de trabajo para administrar eficientemente junto a tu equipo.',
       placement: 'right',
       title: 'Dashboard'
-    }
+    },
+    {
+      target: '#generate-section',
+      content: 'Genera un iforme de tus registros en tablas de exel para el manejo de tus datos.',
+      placement: 'right',
+      title: 'Dashboard'
+    },
   ];
 
   return (
@@ -2045,14 +2051,19 @@ export default function ContabilidadApp() {
 
                   <div className={stylesMenu.menuheader}>
                     <h1 className={stylesMenu.apptitle}>Alice</h1>
-                    
-                    <Button
-                      size="icon"
-                      className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed} ${theme === "light" ? stylesMenu.menudesplegable1Light : stylesMenu.menudesplegable1Dark}`}
-                      onClick={toggleMenu} // Controla la apertura/cierre del menú
-                    >
-                      <IoMenu className={stylesMenu.iconmenu} /> {/* Icono para abrir/cerrar el menú */}
-                    </Button>
+
+                    <div className={stylesMenu.contentButtons}>
+                      <Button className={`${stylesMenu.btnTour} ${theme === "light" ? stylesMenu.btnTourLight : stylesMenu.btnTourDark}`} onClick={() => setRunTour(true)}>
+                        <Info className={stylesMenu.iconTour}/>
+                      </Button>
+                      <Button
+                        size="icon"
+                        className={`${stylesMenu.menudesplegable1} ${isMenuExpanded ? "" : stylesMenu.collapsed} ${theme === "light" ? stylesMenu.menudesplegable1Light : stylesMenu.menudesplegable1Dark}`}
+                        onClick={toggleMenu} // Controla la apertura/cierre del menú
+                      >
+                        <IoMenu className={stylesMenu.iconmenu} /> {/* Icono para abrir/cerrar el menú */}
+                      </Button>
+                    </div>
                   </div>
 
                   {user ? (
@@ -2189,6 +2200,7 @@ export default function ContabilidadApp() {
                     </Button>
 
                     <Button
+                      id="coo-work-section"
                       variant={activeTab === "grupos-trabajo" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("grupos-trabajo")}
@@ -2198,6 +2210,7 @@ export default function ContabilidadApp() {
                     </Button>
 
                     <Button
+                      id="generate-section"
                       variant={activeTab === "generar-registros" ? "default" : "ghost"}
                       className={stylesMenu.navitem}
                       onClick={() => setActiveTab("generar-registros")}
@@ -2223,11 +2236,6 @@ export default function ContabilidadApp() {
                 {/* Configuracion Interfaz Estilo */}
                 {activeTab === "configuracion" && (
                   <div>
-                    <div className="mb-4">
-                      <Button onClick={() => setRunTour(true)}>
-                        <Info className="mr-2"/> Iniciar Tour
-                      </Button>
-                    </div>
                     <ConfiguracionPage
                       user={user}
                       setShowLandingPage={setShowLandingPage}

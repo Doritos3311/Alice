@@ -71,8 +71,7 @@
 }
 
 .menudesplegable1Dark {
-  background-color: rgb(28, 28, 28);
-  color: rgb(209, 213, 219);
+  
 }
 
 .menudesplegable1Dark:hover {
@@ -116,6 +115,10 @@
   font-weight: bold;
 }
 
+.contentButtons {
+  display: flex;
+}
+
 /* Estilos para el botón cuando está visible */
 .configbutton {
   display: none;
@@ -145,6 +148,30 @@
   align-items: center;
   justify-content: flex-start;
   padding: 0.5rem;
+}
+
+.btnTour {
+  justify-content: center;
+  margin-top: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.btnTourLight {
+  background-color: rgb(248, 248, 248);
+  color: rgb(17, 24, 39);
+}
+
+.btnTourLight:hover {
+  background-color: rgb(248, 248, 248);
+}
+
+.btnTourDark {
+  background-color: rgb(28, 28, 28);
+  color: rgb(209, 213, 219);
+}
+
+.btnTourDark:hover {
+  background-color: rgb(28, 28, 28);
 }
 
 .useravatar {
@@ -258,6 +285,11 @@
   margin-right: 0.5rem;
   height: 1rem;
   width: 1rem;
+}
+
+.iconTour {
+  height: 1.5rem;
+  width: 1.5rem;
 }
 
 .iconsmall {
