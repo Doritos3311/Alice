@@ -1985,16 +1985,16 @@ export default function ContabilidadApp() {
       title: 'Menú Principal'
     },
     {
-      target: '#services-section',
-      content: 'En la sección de servicios, puedes ver y gestionar todos los servicios que ofreces.',
-      placement: 'right',
-      title: 'Servicios'
-    },
-    {
       target: '#inventory-section',
       content: 'Aquí puedes gestionar tu inventario, añadir nuevos productos o actualizar el stock existente.',
       placement: 'right',
       title: 'Inventario'
+    },
+    {
+      target: '#services-section',
+      content: 'En la sección de servicios, puedes ver y gestionar todos los servicios que ofreces.',
+      placement: 'right',
+      title: 'Servicios'
     },
     {
       target: '#billing-section',
@@ -2132,15 +2132,6 @@ export default function ContabilidadApp() {
                   )}
                   
                   <nav className={stylesMenu.mainnav}>
-                    <Button
-                      id="services-section"
-                      variant={activeTab === "servicios" ? "default" : "ghost"}
-                      className={stylesMenu.navitem}
-                      onClick={() => setActiveTab("servicios")}
-                    >
-                      <Handshake className={stylesMenu.icon} />
-                      Servicios
-                    </Button>
 
                     <Button
                       id="inventory-section"
@@ -2150,6 +2141,16 @@ export default function ContabilidadApp() {
                     >
                       <Package className={stylesMenu.icon} />
                       Registro de Inventario
+                    </Button>
+
+                    <Button
+                      id="services-section"
+                      variant={activeTab === "servicios" ? "default" : "ghost"}
+                      className={stylesMenu.navitem}
+                      onClick={() => setActiveTab("servicios")}
+                    >
+                      <Handshake className={stylesMenu.icon} />
+                      Servicios
                     </Button>
 
                     <div className={stylesMenu.navitemgroup}>
