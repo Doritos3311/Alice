@@ -110,14 +110,14 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
           <div>
             {showSkipButton && currentStep < steps.length - 1 && (
               <button onClick={handleSkip} className={styles.buttonBack}>
-                Skip
+                Cerrar
               </button>
             )}
             <button
               onClick={handleNext}
               className={`${styles.buttonNext} ${theme === "light" ? styles.buttonNextLight : styles.buttonNextDark}`}
             >
-              {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+              {currentStep === steps.length - 1 ? 'Finalizar' : 'Siguiente'}
             </button>
           </div>
         </div>

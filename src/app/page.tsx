@@ -2009,16 +2009,22 @@ export default function ContabilidadApp() {
       title: 'Diario Contable'
     },
     {
+      target: '#dashboard-section',
+      content: 'El dashboard te ofrece una visión general de las finanzas de tu negocio con gráficos y estadísticas clave.',
+      placement: 'right',
+      title: 'Dashboard'
+    },
+    {
       target: '#coo-work-section',
       content: 'Conecta con tu grupo de trabajo para administrar eficientemente junto a tu equipo.',
       placement: 'right',
-      title: 'Dashboard'
+      title: 'Grupos de Trabajo'
     },
     {
       target: '#generate-section',
       content: 'Genera un iforme de tus registros en tablas de exel para el manejo de tus datos.',
       placement: 'right',
-      title: 'Dashboard'
+      title: 'Generar Registros'
     },
   ];
 
@@ -4743,25 +4749,27 @@ export default function ContabilidadApp() {
 
           </div>
         )}
-
-        <JoyrideWrapper
-          steps={steps}
-          run={runTour}
-          continuous={true}
-          showSkipButton={true}
-          showProgress={true}
-          styles={{
-            options: {
-              primaryColor: '#4338ca',
-            },
-          }}
-          callback={(data) => {
-            const { status } = data;
-            if (status === 'finished' || status === 'skipped') {
-              setRunTour(false);
-            }
-          }}
-        />
+        
+        <div>
+          <JoyrideWrapper
+            steps={steps}
+            run={runTour}
+            continuous={true}
+            showSkipButton={true}
+            showProgress={true}
+            styles={{
+              options: {
+                primaryColor: '#4338ca',
+              },
+            }}
+            callback={(data) => {
+              const { status } = data;
+              if (status === 'finished' || status === 'skipped') {
+                setRunTour(false);
+              }
+            }}
+          />
+        </div>
 
       </div>
     )}
