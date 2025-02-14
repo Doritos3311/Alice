@@ -25,6 +25,7 @@ import stylesMenu from "@/components/estilos/menu.module.css"
 import stylesService from "@/components/estilos/servicio.module.css"
 import stylesLDiario from "@/components/estilos/libroDiario.module.css"
 import stylesGruposdeTrabajointerfaz from "@/components/estilos/gruposTrabajo.module.css"
+import stylesEstFacturacionRec from "@/components/estilos/esFacRec.module.css" 
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage";
@@ -2833,108 +2834,103 @@ export default function ContabilidadApp() {
                 {/* Facturacion Emitidas Interfaz Estilo */}
                 {activeTab === "facturacion-emitidas" && (
                   <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
-                  <div>
-                    <div className="flex justify-between items-center mb-4 mr-10">
-                      <h2 className="text-3xl font-bold">Registro de Facturación Emitida</h2>
+                  <div className={stylesEstFacturacionRec.facturaContainer}>
+
+                    <div className={stylesEstFacturacionRec.headerContainer}>
+                      <h2 className={stylesEstFacturacionRec.headerTitle}>Registro de Facturación Emitida</h2>
                     </div>
+                    
+                    <div className={`${stylesEstFacturacionRec.divider} ${theme === "light" ? stylesEstFacturacionRec.dividerLight : stylesEstFacturacionRec.dividerDark}`}></div>
+                    
+                    <div className={stylesEstFacturacionRec.contentContainer}>
+                      <div className={stylesEstFacturacionRec.innerContainer}>
+                        
+                          {/* Crear Factura Emitida */}
+                          <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
 
-                    <div className="border-t border-gray-400 my-4"></div>
-
-                    <div className="flex justify-between items-center mb-4 mr-10">
-                      <div className="mb-4 flex items-center space-x-4">
-                        {/* Crear Factura */}
-                        <Button onClick={() => setIsInvoiceModalOpen(true)}>Emitir Factura</Button>
-
-                        {/* Seleccionar Fecha */}
-                        <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                          <SelectTrigger className="w-[180px] ml-4">
-                            <SelectValue placeholder="Filtrar por fecha" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Todas las fechas</SelectItem>
-                            <SelectItem value="day">Por día</SelectItem>
-                            <SelectItem value="month">Por mes</SelectItem>
-                            <SelectItem value="year">Por año</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {invoiceFilterType === "day" && (// Si es la funcion invoiceFilterType es igual a day entonces llama a la funcion setInvoiceFilterDate
-                          <Input
-                            type="date"// Tipo de dato que es usado
-                            value={invoiceFilterDate}// Devolver el valor del filtro seleccionado
-                            onChange={(e) => setInvoiceFilterDate(e.target.value)}//LLama a la funcion setInvoiceFilterDate con el valor del dato seleccionado
-                            className="ml-4" />//Recuadro donde se muestra la fecha seleccionada
-                        )}
-                        {invoiceFilterType === "month" && (
-                          <Input
-                            type="month"
-                            value={invoiceFilterMonth}
-                            onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                            className="ml-4" />
-                        )}
-                        {invoiceFilterType === "year" && (
-                          <Input
-                            type="number"
-                            value={invoiceFilterYear}
-                            onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                            min="1900"
-                            max="2099"
-                            step="1"
-                            className="ml-4" />
-                        )}
-
-                      </div>
+                          {/* Seleccionar Fecha */}
+                          <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                          <SelectTrigger className={stylesEstFacturacionRec.selectContainer}>
+                              <SelectValue placeholder="Filtrar por fecha" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas las fechas</SelectItem>
+                              <SelectItem value="day">Por día</SelectItem>
+                              <SelectItem value="month">Por mes</SelectItem>
+                              <SelectItem value="year">Por año</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {invoiceFilterType === "day" && (
+                            <Input
+                              type="date"
+                              value={invoiceFilterDate}
+                              onChange={(e) => setInvoiceFilterDate(e.target.value)}
+                              className={stylesEstFacturacionRec.inputField} />
+                          )}
+                          {invoiceFilterType === "month" && (
+                            <Input
+                              type="month"
+                              value={invoiceFilterMonth}
+                              onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                              className={stylesEstFacturacionRec.inputField} />
+                          )}
+                          {invoiceFilterType === "year" && (
+                            <Input
+                              type="number"
+                              value={invoiceFilterYear}
+                              onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                              min="1900"
+                              max="2099"
+                              step="1"
+                              className={stylesEstFacturacionRec.inputField} />
+                          )}
+                        </div>
                     </div>
                       
                     {hayItems(filteredInvoiceItems) ? (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className={stylesEstFacturacionRec.invoiceGrid}>
                         {filteredInvoiceItems.map((factura) => (
-                          <Card key={factura.id} className="rounded-lg border flex flex-col">
-
-                            <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                              <CardTitle className="text-xl font-bold flex justify-between items-center">
-                                <span>Factura N°{factura.numeroFactura}</span>
+                          <Card key={factura.id} className={stylesEstFacturacionRec.cardContainer}>
+                            <CardHeader className={`${stylesEstFacturacionRec.cardHeader} ${theme === "light" ? stylesEstFacturacionRec.cardHeaderLight : stylesEstFacturacionRec.cardHeaderDark}`}>
+                          <CardTitle className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.cardTitleLight : stylesService.cardTitleDark}`}>
+                                <span className={stylesEstFacturacionRec.titulo}>Factura N°{factura.numeroFactura}</span>
                               </CardTitle>
                             </CardHeader>
                             
-                            <CardContent className="flex-grow p-4 bg-card">
-                              <div className="space-y-2">
-                                <p className="text-sm flex items-center">
-                                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Emisión:</span>
-                                  <span className="ml-2">{factura.fechaEmision}</span>
+                            <CardContent className={stylesEstFacturacionRec.cardContent}>
+                            <div className={stylesEstFacturacionRec.container}>
+                            <p className={stylesEstFacturacionRec.textSmall}>
+                            <Calendar className={stylesEstFacturacionRec.icon} />
+                                <span className="font-medium text-muted-foreground">Emisión:</span>
+                                <span className={stylesEstFacturacionRec.fecha}>{factura.fechaEmision}</span>
                                 </p>
-                                <p className="text-sm flex items-center">
-                                  <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span className="font-medium text-muted-foreground">Cliente:</span>
-                                  <span className="ml-2 truncate">{factura.nombreCliente}</span>
+                                <p className={stylesEstFacturacionRec.textSmall}>
+                                <CircleUserRound className={stylesEstFacturacionRec.icon} />
+                                <span className="font-medium text-muted-foreground">Cliente:</span>
+                                <span className={stylesEstFacturacionRec.truncate}>{factura.nombreCliente}</span>
                                 </p>
-                                <p className="text-sm flex items-center">
-                                  <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <p className={stylesEstFacturacionRec.textSmall}>
+                                <UserCircle className={stylesEstFacturacionRec.icon} />
                                   <span className="font-medium text-muted-foreground">Emisor:</span>
-                                  <span className="ml-2 truncate">
-                                    {factura.nombreEmisor}
-                                  </span>
+                                  <span className={stylesEstFacturacionRec.truncate}>{factura.empresaGuardada}</span>
                                 </p>
-                                <p className="text-sm flex items-center">
-                                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <p className={stylesEstFacturacionRec.textSmall}>
+                                  <Mail className={stylesEstFacturacionRec.icon} />
                                   <span className="font-medium text-muted-foreground">Correo:</span>
-                                  <span className="ml-2 truncate">
-                                    {factura.correoEmisor}
-                                  </span>
+                                  <span className={stylesEstFacturacionRec.truncate}>{factura.correoEmisorRecibido}</span>
                                 </p>
                               </div>
                             </CardContent>
 
-                            <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                              <p className="text-sm font-semibold text-muted-foreground">
+                            <CardFooter className={`${stylesEstFacturacionRec.cardFooter} ${theme === "light" ? stylesEstFacturacionRec.cardFooterLight : stylesEstFacturacionRec.cardFooterDark}`}>
+                              <p className={stylesEstFacturacionRec.textSmallBold}>
                                 Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
                               </p>
                               <Button
                                   size="icon"
-                                  onClick={() => handleViewInvoice(factura)}
-                                >
-                                  <Eye className="h-5 w-5"/>
+                                  onClick={() => handleViewInvoice(factura)}>
+                                  <Eye className={stylesEstFacturacionRec.iconLarge} />
                                 </Button>
                             </CardFooter>
                           </Card>
@@ -2957,115 +2953,110 @@ export default function ContabilidadApp() {
                 {/* Facturacion Recibidas Interfaz Estilo */}
                 {activeTab === "facturacion-recibidas" && (
                   <AccesoRestringido tienePermiso={permisosUsuario.permisoFacturacion}>
-                    <div>
-                      <div className="flex justify-between items-center mb-4 mr-10">
-                        <h2 className="text-3xl font-bold">Registro de Facturación Recibida</h2>
+                    <div className={stylesEstFacturacionRec.facturaContainer}>
+                      <div className={stylesEstFacturacionRec.headerContainer}>
+                        <h2 className={stylesEstFacturacionRec.headerTitle}>Registro de Facturación Recibida</h2>
                       </div>
 
-                      <div className="border-t border-gray-400 my-4"></div>
+                      <div className={`${stylesEstFacturacionRec.divider} ${theme === "light" ? stylesEstFacturacionRec.dividerLight : stylesEstFacturacionRec.dividerDark}`}></div>
 
-                      <div className="flex justify-between items-center mb-4 mr-10">
-                        <div className="mb-4 flex items-center space-x-4">
+                      <div className={stylesEstFacturacionRec.contentContainer}>
+                        <div className={stylesEstFacturacionRec.innerContainer}>
+                          
+                            {/* Crear Factura Recibida */}
+                            <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
 
-                          {/* Crear Factura Recibida */}
-                          <Button onClick={() => setIsInvoiceReceivedModalOpen(true)}>Registrar Factura Recibida</Button>
-
-                          {/* Seleccionar Fecha */}
-                          <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
-                            <SelectTrigger className="w-[180px] ml-4">
-                              <SelectValue placeholder="Filtrar por fecha" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Todas las fechas</SelectItem>
-                              <SelectItem value="day">Por día</SelectItem>
-                              <SelectItem value="month">Por mes</SelectItem>
-                              <SelectItem value="year">Por año</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {invoiceFilterType === "day" && (
-                            <Input
-                              type="date"
-                              value={invoiceFilterDate}
-                              onChange={(e) => setInvoiceFilterDate(e.target.value)}
-                              className="ml-4" />
-                          )}
-                          {invoiceFilterType === "month" && (
-                            <Input
-                              type="month"
-                              value={invoiceFilterMonth}
-                              onChange={(e) => setInvoiceFilterMonth(e.target.value)}
-                              className="ml-4" />
-                          )}
-                          {invoiceFilterType === "year" && (
-                            <Input
-                              type="number"
-                              value={invoiceFilterYear}
-                              onChange={(e) => setInvoiceFilterYear(e.target.value)}
-                              min="1900"
-                              max="2099"
-                              step="1"
-                              className="ml-4" />
-                          )}
-                        </div>
+                            {/* Seleccionar Fecha */}
+                            <Select value={invoiceFilterType} onValueChange={setInvoiceFilterType}>
+                            <SelectTrigger className={stylesEstFacturacionRec.selectContainer}>
+                                <SelectValue placeholder="Filtrar por fecha" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Todas las fechas</SelectItem>
+                                <SelectItem value="day">Por día</SelectItem>
+                                <SelectItem value="month">Por mes</SelectItem>
+                                <SelectItem value="year">Por año</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {invoiceFilterType === "day" && (
+                              <Input
+                                type="date"
+                                value={invoiceFilterDate}
+                                onChange={(e) => setInvoiceFilterDate(e.target.value)}
+                                className={stylesEstFacturacionRec.inputField} />
+                            )}
+                            {invoiceFilterType === "month" && (
+                              <Input
+                                type="month"
+                                value={invoiceFilterMonth}
+                                onChange={(e) => setInvoiceFilterMonth(e.target.value)}
+                                className={stylesEstFacturacionRec.inputField} />
+                            )}
+                            {invoiceFilterType === "year" && (
+                              <Input
+                                type="number"
+                                value={invoiceFilterYear}
+                                onChange={(e) => setInvoiceFilterYear(e.target.value)}
+                                min="1900"
+                                max="2099"
+                                step="1"
+                                className={stylesEstFacturacionRec.inputField} />
+                            )}
+                          </div>
                       </div>
                       
                       {hayItems(filteredInvoiceItems.filter(item => item.tipoFactura === 'recibida')) ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className={stylesEstFacturacionRec.invoiceGrid}>
                           {filteredInvoiceItems
                             .filter(factura => factura.tipoFactura === 'recibida')
                             .map((factura) => (
-                              <Card key={factura.id} className="rounded-lg border flex flex-col">
-                                <CardHeader className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground p-4">
-                                  <CardTitle className="text-xl font-bold flex justify-between items-center">
-                                    <span>Factura N°{factura.numeroFactura}</span>
-                                  </CardTitle>
-                                </CardHeader>
-                                
-                                <CardContent className="flex-grow p-4 bg-card">
-                                  <div className="space-y-2">
-                                    <p className="text-sm flex items-center">
-                                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <Card key={factura.id} className={stylesEstFacturacionRec.cardContainer}>
+                                <CardHeader className={`${stylesEstFacturacionRec.cardHeader} ${theme === "light" ? stylesEstFacturacionRec.cardHeaderLight : stylesEstFacturacionRec.cardHeaderDark}`}>
+                                <CardTitle className={`${stylesEstFacturacionRec.cardTitle} ${theme === "light" ? stylesEstFacturacionRec.cardTitleLight : stylesEstFacturacionRec.cardTitleDark}`}>
+                                      <span className={stylesEstFacturacionRec.titulo}>Factura N°{factura.numeroFactura}</span>
+                                    </CardTitle>
+                                  </CardHeader>
+                                  
+                                  <CardContent className={stylesEstFacturacionRec.cardContent}>
+                                  <div className={stylesEstFacturacionRec.container}>
+                                  <p className={stylesEstFacturacionRec.textSmall}>
+                                  <Calendar className={stylesEstFacturacionRec.icon} />
                                       <span className="font-medium text-muted-foreground">Emisión:</span>
-                                      <span className="ml-2">{factura.fechaEmision}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center">
-                                      <CircleUserRound className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span className={stylesEstFacturacionRec.fecha}>{factura.fechaEmision}</span>
+                                      </p>
+                                      <p className={stylesEstFacturacionRec.textSmall}>
+                                      <CircleUserRound className={stylesEstFacturacionRec.icon} />
                                       <span className="font-medium text-muted-foreground">Cliente:</span>
-                                      <span className="ml-2 truncate">{factura.nombreCliente}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center">
-                                      <UserCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-                                      <span className="font-medium text-muted-foreground">Emisor:</span>
-                                      <span className="ml-2 truncate">
-                                        {factura.empresaGuardada}
-                                      </span>
-                                    </p>
-                                    <p className="text-sm flex items-center">
-                                      <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                                      <span className="font-medium text-muted-foreground">Correo:</span>
-                                      <span className="ml-2 truncate">
-                                        {factura.correoEmisorRecibido}
-                                      </span>
-                                    </p>
-                                  </div>
-                                </CardContent>
+                                      <span className={stylesEstFacturacionRec.truncate}>{factura.nombreCliente}</span>
+                                      </p>
+                                      <p className={stylesEstFacturacionRec.textSmall}>
+                                      <UserCircle className={stylesEstFacturacionRec.icon} />
+                                        <span className="font-medium text-muted-foreground">Emisor:</span>
+                                        <span className={stylesEstFacturacionRec.truncate}>{factura.empresaGuardada}</span>
+                                      </p>
+                                      <p className={stylesEstFacturacionRec.textSmall}>
+                                        <Mail className={stylesEstFacturacionRec.icon} />
+                                        <span className="font-medium text-muted-foreground">Correo:</span>
+                                        <span className={stylesEstFacturacionRec.truncate}>{factura.correoEmisorRecibido}</span>
+                                      </p>
+                                    </div>
+                                  </CardContent>
 
-                                <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                                  <p className="text-sm font-semibold text-muted-foreground">
-                                    Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
-                                  </p>
-                                  <Button
-                                      size="icon"
-                                      onClick={() => handleViewInvoice(factura)}
-                                    >
-                                      <Eye className="h-5 w-5"/>
-                                    </Button>
-                                </CardFooter>
+                                  <CardFooter className={`${stylesEstFacturacionRec.cardFooter} ${theme === "light" ? stylesEstFacturacionRec.cardFooterLight : stylesEstFacturacionRec.cardFooterDark}`}>
+                                    <p className={stylesEstFacturacionRec.textSmallBold}>
+                                      Total: ${typeof factura.ValorTotalFinal === 'number' ? factura.ValorTotalFinal.toFixed(2) : (parseFloat(factura.ValorTotalFinal) || 0).toFixed(2)}
+                                    </p>
+                                    <Button
+                                        size="icon"
+                                        onClick={() => handleViewInvoice(factura)}>
+                                        <Eye className={stylesEstFacturacionRec.iconLarge} />
+                                      </Button>
+                                  </CardFooter>
                               </Card>
                             ))}
                         </div>
                       ) : (
-                        <div className={stylesContent.contentNoItems}>
+                        <div className={stylesEstFacturacionRec.contenedor}>
                           <MensajeNoItems
                             mensaje="Aún no has agregado ninguna factura recibida."
                             accion={() => setIsInvoiceReceivedModalOpen(true)}
@@ -3092,7 +3083,7 @@ export default function ContabilidadApp() {
                 {activeTab === "servicios" && (
                   
                   <AccesoRestringido tienePermiso={permisosUsuario.permisoServicios}>
-                    <div>
+                    <div className={stylesService.serviciosPrincipalContent}>
 
                       <div className={stylesService.serviciosContainer}>
                         <h2 className="text-3xl font-bold">Servicios</h2>

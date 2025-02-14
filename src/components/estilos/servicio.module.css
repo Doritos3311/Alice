@@ -274,6 +274,9 @@
 
 /* Adaptación a móviles */
 @media (max-width: 768px) {
+  .serviciosPrincipalContent {
+    width: max-content;
+  }
 
   .serviciosContentent {
     display: grid;
@@ -283,7 +286,7 @@
   }
 
   .separacion {
-    width: max-content;
+    width: 100%;
   }
 
   .contenidoservicio {

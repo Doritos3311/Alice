@@ -48,6 +48,7 @@
 @media (max-width: 768px) {
   .card {
     min-width: auto; /* Permite que el contenido se ajuste al ancho de la pantalla */
+    justify-content: flex-start;
   }
 
   .cardContent {

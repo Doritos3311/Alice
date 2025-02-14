@@ -1,0 +1,197 @@
+/* Facturacion Recibidas Interfaz Estilo */
+.headerContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    margin-right: 2.5rem;
+    max-height: 36px;
+}
+
+.headerTitle {
+    font-size: 1.875rem;
+    font-weight: bold;
+}
+
+.divider {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.dividerLight {
+    border-top: 1px solid #000000;
+    /* Equivalente a border-gray-400 */
+}
+
+.dividerDark {
+    border-top: 1px solid #ffffff;
+    /* Equivalente a border-gray-400 */
+}
+
+.contentContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    margin-right: 2.5rem;
+}
+
+.innerContainer {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Btn Editar Campos*/
+.iconoEditar {
+    height: 16px;
+    /* Equivalente a h-4 */
+    width: 16px;
+    /* Equivalente a w-4 */
+    margin-right: 8px;
+    /* Equivalente a mr-2 */
+}
+
+/* Seleccionar Fecha */
+
+.selectContainer {
+    width: 180px;
+    margin-left: 1rem;
+}
+
+.inputField {
+    margin-left: 1rem;
+}
+
+.invoiceGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.cardContainer {
+    border-radius: 0.5rem;
+    color: var(--card-foreground);
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+    width: 352px;
+    height: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+    padding: 1.4rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.cardHeaderLight {
+    background-color: rgb(49, 49, 49);
+}
+
+.cardHeaderDark {
+    background-color: rgb(247, 247, 247);
+}
+
+.cardTitle {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.cardTitleLight {
+    color: rgb(255, 255, 255);
+}
+
+.cardTitleDark {
+    color: rgb(17, 24, 39);
+}
+
+.titulo {
+    font-size: 1.4rem;
+}
+
+.cardContent {
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 11.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.textSmall {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 320px;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    color: #6b7280;
+}
+
+.textMuted {
+    font-weight: 500;
+}
+
+.fecha {
+    margin-left: 8px;
+    font-weight: normal;
+    color: #374151;
+}
+
+.truncate {
+    margin-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.email {
+    color: #1d4ed8;
+    font-weight: 400;
+}
+
+.contenedor {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem;
+    border-bottom-right-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+}
+
+.cardFooterLight {
+    background-color: #e3e3e3;
+}
+
+.cardFooterDark {
+    background-color: #1c1c1c;
+}
+
+@media (max-width: 768px) {
+
+    .invoiceGrid {
+        flex-wrap: nowrap;
+    }
+    
+    .facturaContainer {
+        width: max-content;
+    }
+}
