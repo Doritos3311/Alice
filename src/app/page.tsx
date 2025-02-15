@@ -47,7 +47,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info, Check, Building2, CircleUser } from "lucide-react"
 import { toast } from "@/components/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -272,12 +272,26 @@ export default function ContabilidadApp() {
   const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false)
   const [newProveedor, setNewProveedor] = useState<Proveedor>({} as Proveedor)
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null)
+  const [filteredProveedores, setFilteredProveedores] = useState<Proveedor[]>([])
+  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null)
+  const [searchTermProveedor, setSearchTermProveedor] = useState("")
+  const [proveedorNombre, setProveedorNombre] = useState("")
+  const [proveedorCorreo, setProveedorCorreo] = useState("")
+  const [proveedorRucCi, setProveedorRucCi] = useState("")
+  const [proveedorDireccionMatriz, setProveedorDireccionMatriz] = useState("")
+  const [proveedorDireccionSucursal, setProveedorDireccionSucursal] = useState("")
 
   // Estados Clientes
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [isClienteModalOpen, setIsClienteModalOpen] = useState(false)
   const [newCliente, setNewCliente] = useState<Cliente>({} as Cliente)
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null)
+  const [searchTermCliente, setSearchTermCliente] = useState("")
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([])
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
+  const [clienteNombre, setClienteNombre] = useState("")
+  const [clienteCorreo, setClienteCorreo] = useState("")
+  const [clienteRucCi, setClienteRucCi] = useState("")
 
   // Estados Facturacion
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
@@ -1241,6 +1255,16 @@ export default function ContabilidadApp() {
     }
   }
 
+  const filterProveedores = (term: string) => {
+    const filtered = proveedores.filter((proveedor) => proveedor.nombre.toLowerCase().includes(term.toLowerCase()))
+    setFilteredProveedores(filtered)
+    if (filtered.length > 0) {
+      setSelectedProveedor(filtered[0])
+    } else {
+      setSelectedProveedor(null)
+    }
+  }
+
   {/* Clientes */}
 
   const handleAddCliente = async () => {
@@ -1308,6 +1332,16 @@ export default function ContabilidadApp() {
     }
   }
 
+  const filterClientes = (term: string) => {
+    const filtered = clientes.filter((cliente) => cliente.nombre.toLowerCase().includes(term.toLowerCase()))
+    setFilteredClientes(filtered)
+    if (filtered.length > 0) {
+      setSelectedCliente(filtered[0])
+    } else {
+      setSelectedCliente(null)
+    }
+  }
+
   {/* Facturacion */}
 
   const handleCreateInvoice = (tipo: 'emitida' | 'recibida') => () => {
@@ -1338,6 +1372,8 @@ export default function ContabilidadApp() {
         idElemento: newInvoiceItem.idElemento || Date.now().toString(),
         nombreEmisor: nombreEmisor,
         correoEmisor: user?.email || correoEmisor || "Sin correo",
+        direccionCliente: (document.getElementById("direccionCliente") as HTMLInputElement)?.value || "",
+        telefono: (document.getElementById("telefono") as HTMLInputElement)?.value || "",
         rucEmisor: (document.getElementById("rucEmisor") as HTMLInputElement)?.value || "",
         numeroAutorizacion: (document.getElementById("numeroAutorizacion") as HTMLInputElement)?.value || "",
         numeroFactura: (document.getElementById("numeroFactura") as HTMLInputElement)?.value || "",
@@ -2352,7 +2388,7 @@ export default function ContabilidadApp() {
                         className={stylesMenu.navitem}
                         onClick={() => setIsTercerosOpen(!isTercerosOpen)}
                       >
-                        <FileText className={stylesMenu.icon} />
+                        <Users className={stylesMenu.icon} />
                         Terceros
                         {isTercerosOpen ? <ChevronUp className={stylesMenu.iconsmall} /> : <ChevronDown className={stylesMenu.iconsmall} />}
                       </Button>
@@ -2363,7 +2399,7 @@ export default function ContabilidadApp() {
                             className={stylesMenu.navitem}
                             onClick={() => setActiveTab("proveedores")}
                           >
-                            <Users className={stylesMenu.icon} />
+                            <Building2 className={stylesMenu.icon} />
                             Proveedores
                           </Button>
                           <Button
@@ -2371,7 +2407,7 @@ export default function ContabilidadApp() {
                             className={stylesMenu.navitem}
                             onClick={() => setActiveTab("clientes")}
                           >
-                            <Users className={stylesMenu.icon} />
+                            <CircleUser className={stylesMenu.icon} />
                             Clientes
                           </Button>
                         </div>
@@ -3126,12 +3162,12 @@ export default function ContabilidadApp() {
                             <p className={stylesEstFacturacionRec.textSmall}>
                             <Calendar className={stylesEstFacturacionRec.icon} />
                                 <span className="font-medium text-muted-foreground">Emisión:</span>
-                                <span className={stylesEstFacturacionRec.fecha}>{factura.fechaEmision}</span>
+                                <span className={stylesEstFacturacionRec.truncate}>{factura.fechaEmision}</span>
                                 </p>
                                 <p className={stylesEstFacturacionRec.textSmall}>
                                 <CircleUserRound className={stylesEstFacturacionRec.icon} />
                                 <span className="font-medium text-muted-foreground">Cliente:</span>
-                                <span className={stylesEstFacturacionRec.truncate}>{factura.nombreCliente}</span>
+                                <span className={stylesEstFacturacionRec.truncate}>{factura.identificacionAdquiriente}</span>
                                 </p>
                                 <p className={stylesEstFacturacionRec.textSmall}>
                                 <UserCircle className={stylesEstFacturacionRec.icon} />
@@ -3245,12 +3281,12 @@ export default function ContabilidadApp() {
                                   <p className={stylesEstFacturacionRec.textSmall}>
                                   <Calendar className={stylesEstFacturacionRec.icon} />
                                       <span className="font-medium text-muted-foreground">Emisión:</span>
-                                      <span className={stylesEstFacturacionRec.fecha}>{factura.fechaEmision}</span>
+                                      <span className={stylesEstFacturacionRec.truncate}>{factura.fechaEmision}</span>
                                       </p>
                                       <p className={stylesEstFacturacionRec.textSmall}>
                                       <CircleUserRound className={stylesEstFacturacionRec.icon} />
                                       <span className="font-medium text-muted-foreground">Cliente:</span>
-                                      <span className={stylesEstFacturacionRec.truncate}>{factura.nombreCliente}</span>
+                                      <span className={stylesEstFacturacionRec.truncate}>{factura.identificacionAdquiriente}</span>
                                       </p>
                                       <p className={stylesEstFacturacionRec.textSmall}>
                                       <UserCircle className={stylesEstFacturacionRec.icon} />
@@ -3964,7 +4000,7 @@ export default function ContabilidadApp() {
                                 <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
                                 <Input 
                                   id="direccionMatriz" 
-                                  className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                   style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={currentInvoice.direccionMatriz || ''} 
                                   onChange={(e) => setCurrentInvoice({...currentInvoice, direccionMatriz: e.target.value})}
@@ -3975,7 +4011,7 @@ export default function ContabilidadApp() {
                                 <Label htmlFor="direccionSucursal">Dirección Sucursal:</Label>
                                 <Input 
                                   id="direccionSucursal" 
-                                  className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                  className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                   style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                   value={currentInvoice.direccionSucursal || ''} 
                                   onChange={(e) => setCurrentInvoice({...currentInvoice, direccionSucursal: e.target.value})}
@@ -3991,7 +4027,7 @@ export default function ContabilidadApp() {
                               <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
                               <Input 
                                 id="rucEmisor" 
-                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                 value={currentInvoice.rucEmisor || ''} 
                                 onChange={(e) => setCurrentInvoice({...currentInvoice, rucEmisor: e.target.value})}
@@ -4002,7 +4038,7 @@ export default function ContabilidadApp() {
                               <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
                               <Input 
                                 id="numeroAutorizacion" 
-                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                 value={currentInvoice.numeroAutorizacion || ''} 
                                 onChange={(e) => setCurrentInvoice({...currentInvoice, numeroAutorizacion: e.target.value})}
@@ -4013,7 +4049,7 @@ export default function ContabilidadApp() {
                               <Label htmlFor="numeroFactura">Número de Factura:</Label>
                               <Input 
                                 id="numeroFactura" 
-                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                 value={currentInvoice.numeroFactura || ''} 
                                 onChange={(e) => setCurrentInvoice({...currentInvoice, numeroFactura: e.target.value})}
@@ -4025,7 +4061,7 @@ export default function ContabilidadApp() {
                               <Input 
                                 id="fechaAutorizacion" 
                                 type="date" 
-                                className={`${!isEditingInvoice ? 'bg-background border-none' : ''}`} 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                 value={currentInvoice.fechaAutorizacion || ''} 
                                 onChange={(e) => setCurrentInvoice({...currentInvoice, fechaAutorizacion: e.target.value})}
@@ -4051,6 +4087,28 @@ export default function ContabilidadApp() {
                               />
                             </div>
                             <div className="space-y-2">
+                              <Label htmlFor="correoEmisorRecibido">Correo Adquiriente:</Label>
+                              <Input 
+                                id="correoEmisorRecibido" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.correoEmisorRecibido} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, correoEmisorRecibido: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="telefono">Teléfono Adquiriente:</Label>
+                              <Input 
+                                id="telefono" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.telefono} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, telefono: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
                               <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
                               <Input 
                                 id="fechaEmision" 
@@ -4072,6 +4130,17 @@ export default function ContabilidadApp() {
                                 style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
                                 value={currentInvoice.rucCi || ''} 
                                 onChange={(e) => setCurrentInvoice({...currentInvoice, rucCi: e.target.value})}
+                                disabled={!isEditingInvoice}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="direccionCliente">Dirección Adquiriente:</Label>
+                              <Input 
+                                id="direccionCliente" 
+                                className={`${!isEditingInvoice ? 'bg-background' : ''}`}
+                                style={!isEditingInvoice ? { color: 'white', opacity: 1, cursor: 'default' } : {}}
+                                value={currentInvoice.direccionCliente} 
+                                onChange={(e) => setCurrentInvoice({...currentInvoice, direccionCliente: e.target.value})}
                                 disabled={!isEditingInvoice}
                               />
                             </div>
@@ -4269,6 +4338,7 @@ export default function ContabilidadApp() {
 
                   <ScrollArea className="max-h-[80vh]">
                     <div className="space-y-4 p-4">
+
                       
                       {/* Cabecera */}
                       <div className="grid grid-cols-2 gap-4">
@@ -4315,13 +4385,64 @@ export default function ContabilidadApp() {
                           </div>
                         </div>
                       </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Button onClick={() => setIsClienteModalOpen(true)}>
+                          Agregar Nuevo Cliente
+                        </Button>
+                        <Input
+                          placeholder="Buscar cliente"
+                          value={searchTermCliente}
+                          onChange={(e) => {
+                            setSearchTermCliente(e.target.value)
+                            filterClientes(e.target.value)
+                          }}
+                        />
+                        <Select
+                          value={selectedCliente?.id || ""}
+                          onValueChange={(value) => {
+                            const cliente = filteredClientes.find((c) => c.id === value)
+                            if (cliente) setSelectedCliente(cliente)
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Seleccionar cliente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredClientes.map((cliente) => (
+                              <SelectItem key={cliente.id} value={cliente.id}>
+                                {cliente.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={() => {
+                            if (selectedCliente) {
+                              setClienteNombre(selectedCliente.nombre)
+                              setClienteCorreo(selectedCliente.correo)
+                              setClienteRucCi(selectedCliente.rucCi)
+                            }
+                          }}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
                       
                       {/* Inferior de Cabecera */}
                       <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
                         <div className="space-y-2">
                           <div className="space-y-2">
                             <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
-                            <Input id="identificacionAdquiriente" placeholder="Ingrese la identificación del adquiriente" />
+                            <Input id="identificacionAdquiriente" placeholder="Ingrese la identificación del adquiriente" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="correoEmisorRecibido">Correo Adquiriente:</Label>
+                            <Input id="correoEmisorRecibido" placeholder="Correo del adquiriente" value={clienteCorreo} onChange={(e) => setClienteCorreo(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="telefono">Teléfono Adquiriente:</Label>
+                            <Input id="telefono" placeholder="Teléfono del adquiriente" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
@@ -4331,7 +4452,11 @@ export default function ContabilidadApp() {
                         <div className="space-y-2">
                           <div className="space-y-2">
                             <Label htmlFor="rucCi">R.U.C/C.I:</Label>
-                            <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" />
+                            <Input id="rucCi" placeholder="Ingrese el R.U.C o C.I" type="number" value={clienteRucCi} onChange={(e) => setClienteRucCi(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="direccionCliente">Dirección Adquiriente:</Label>
+                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
@@ -4546,27 +4671,76 @@ export default function ContabilidadApp() {
 
                   <ScrollArea className="max-h-[80vh]">
                     <div className="space-y-4 p-4">
+
+                      <div className="flex items-center space-x-2">
+                        <Button onClick={() => setIsProveedorModalOpen(true)}>
+                          Agregar Proveedor
+                        </Button>
+                        <Input
+                          placeholder="Buscar proveedor"
+                          value={searchTermProveedor}
+                          onChange={(e) => {
+                            setSearchTermProveedor(e.target.value)
+                            filterProveedores(e.target.value)
+                          }}
+                        />
+                        <Select
+                          value={selectedProveedor?.id || ""}
+                          onValueChange={(value) => {
+                            const proveedor = filteredProveedores.find((p) => p.id === value)
+                            if (proveedor) setSelectedProveedor(proveedor)
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Seleccionar proveedor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredProveedores.map((proveedor) => (
+                              <SelectItem key={proveedor.id} value={proveedor.id}>
+                                {proveedor.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                        onClick={() => {
+                          if (selectedProveedor) {
+                            setProveedorNombre(selectedProveedor.nombre)
+                            setProveedorRucCi(selectedProveedor.rucCi)
+                            setProveedorDireccionMatriz(selectedProveedor.direccionMatriz)
+                            setProveedorDireccionSucursal(selectedProveedor.direccionSucursal)
+                          }
+                        }}
+                      >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
+
                       {/* Cabecera */}
                       <div className="grid grid-cols-2 gap-4">
 
                         {/* Superior Izquierda */}
                         <div className="border p-4 rounded-md">
                           <div className="col-span-2">
+                            <div className="space-y-2">
                             <Label htmlFor="empresaGuardada">Empresa Emisora:</Label>
-                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa emisora" />
+                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa emisora" value={proveedorNombre} onChange={(e) => setProveedorNombre(e.target.value)} />
+                            </div>
                           </div>
                           <div className="col-span-2 mt-2">
+                            <div className="space-y-2">
                             <Label htmlFor="correoEmisorRecibido">Correo Empresa Emisora:</Label>
-                            <Input id="correoEmisorRecibido" placeholder="Ingrese el correo de la empresa emisora" />
+                            <Input id="correoEmisorRecibido" placeholder="Ingrese el correo de la empresa emisora" value={proveedorCorreo} onChange={(e) => setProveedorCorreo(e.target.value)} />
+                            </div>
                           </div>
                           <div className="mt-4 pt-4 border-t">
                             <div className="space-y-2">
                               <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
-                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" value={proveedorDireccionMatriz} onChange={(e) => setProveedorDireccionMatriz(e.target.value)}/>
                             </div>
                             <div className="space-y-2 mt-2">
                               <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
-                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" value={proveedorDireccionSucursal} onChange={(e) => setProveedorDireccionSucursal(e.target.value)}/>
                             </div>
                           </div>
                         </div>
@@ -4575,7 +4749,7 @@ export default function ContabilidadApp() {
                         <div className="border p-4 rounded-md space-y-2">
                           <div className="space-y-2">
                             <Label htmlFor="rucEmisor">R.U.C Emisor:</Label>
-                            <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" />
+                            <Input id="rucEmisor" placeholder="Ingrese el R.U.C del emisor" type="number" value={proveedorRucCi} onChange={(e) => setProveedorRucCi(e.target.value)} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
@@ -4596,13 +4770,21 @@ export default function ContabilidadApp() {
                       <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
                         <div className="space-y-2">
                           <div className="space-y-2">
-                            <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente</Label>
+                            <Label htmlFor="identificacionAdquiriente">Identificación Adquiriente:</Label>
                             <Input
                               id="identificacionAdquiriente"
                               value={nombreEmisor}
                               onChange={(e) => setIdentificacionAdquiriente(e.target.value)}
                               placeholder="Identificación del adquiriente"
                             />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="correoCliente">Correo Adquiriente:</Label>
+                            <Input id="correoCliente" placeholder="Correo del adquiriente" value={correoEmisor} onChange={(e) => setIdentificacionAdquiriente(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="telefono">Teléfono Adquiriente:</Label>
+                            <Input id="telefono" placeholder="Teléfono del adquiriente" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
@@ -4619,11 +4801,19 @@ export default function ContabilidadApp() {
                               type="number" />
                           </div>
                           <div className="space-y-2">
+                            <Label htmlFor="direccionCliente">Dirección Adquiriente:</Label>
+                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" />
+                          </div>
+                          <div className="space-y-2">
                             <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
                             <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
                           </div>
                         </div>
                       </div>
+
+                      <Button onClick={() => setIsInventoryModalOpen(true)}>
+                        Agregar Nuevo Ítem
+                      </Button>
 
                       {/* Contenido */}
                       <div className="border p-4 rounded-md">
