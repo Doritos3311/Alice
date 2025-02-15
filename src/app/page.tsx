@@ -127,11 +127,6 @@ interface UserData {
   rucCI?: string;
 }
 
-interface State {
-  run: boolean;
-  steps: Step[];
-}
-
 {/* Declaracion de Tipados */}
 
 // Definición de Libro Diario
@@ -220,6 +215,24 @@ type AppConfig = {
   facturacionRecibida: SectionConfig  // Añade esta línea
 }
 
+// Definición de Proveedor
+type Proveedor = {
+  id: string
+  nombre: string
+  correo: string
+  rucCi: string
+  direccionMatriz: string
+  direccionSucursal: string
+}
+
+// Definición de Cliente
+type Cliente = {
+  id: string
+  nombre: string
+  correo: string
+  rucCi: string
+}
+
 {/* Configuracion de Items */}
 
 //Chatgpt IA Key
@@ -250,6 +263,21 @@ export default function ContabilidadApp() {
   // Estados Inventario
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [newInventoryItem, setNewInventoryItem] = useState<InventoryItem>({} as InventoryItem)
+
+  // Estados Terceros
+  const [isTercerosOpen, setIsTercerosOpen] = useState(false)
+
+  // Estados Provedores 
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
+  const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false)
+  const [newProveedor, setNewProveedor] = useState<Proveedor>({} as Proveedor)
+  const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null)
+
+  // Estados Clientes
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [isClienteModalOpen, setIsClienteModalOpen] = useState(false)
+  const [newCliente, setNewCliente] = useState<Cliente>({} as Cliente)
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null)
 
   // Estados Facturacion
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
@@ -577,6 +605,21 @@ export default function ContabilidadApp() {
           setServicios(serviciosData);
         }
       );
+
+      // Cargar proveedores
+      const proveedoresUnsubscribe = onSnapshot(
+        collection(db, `users/${uidToUse}/proveedores`),
+        (proveedoresSnapshot) => {
+          const proveedoresData = proveedoresSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Proveedor[]
+          setProveedores(proveedoresData)
+        },
+      )
+
+      // Cargar clientes
+      const clientesUnsubscribe = onSnapshot(collection(db, `users/${uidToUse}/clientes`), (clientesSnapshot) => {
+        const clientesData = clientesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Cliente[]
+        setClientes(clientesData)
+      })
   
       // Establecer UID de visualización
       setViewingUID(uidToUse);
@@ -587,6 +630,8 @@ export default function ContabilidadApp() {
         inventarioUnsubscribe();
         facturacionUnsubscribe();
         serviciosUnsubscribe();
+        proveedoresUnsubscribe();
+        clientesUnsubscribe();
       };
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -758,6 +803,18 @@ export default function ContabilidadApp() {
     setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
     setShowCancelConfirmModalFacturacion(false);
   };
+
+  const handleCloseProveedorModal = () => {
+    setIsProveedorModalOpen(false)
+    setNewProveedor({} as Proveedor)
+    setEditingProveedor(null)
+  }
+
+  const handleCloseClienteModal = () => {
+    setIsClienteModalOpen(false)
+    setNewCliente({} as Cliente)
+    setEditingCliente(null)
+  }
 
 
   {/* Manejo de Campos */}
@@ -1116,6 +1173,140 @@ export default function ContabilidadApp() {
     return [...categoriasOrdenadas, ...categoriasAdicionales]
   }
 
+  {/* Provedores */}
+
+  // Función para agregar un nuevo proveedor
+  const handleAddProveedor = async () => {
+    if (!viewingUID) return
+
+    try {
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/proveedores`), newProveedor)
+      setProveedores([...proveedores, { ...newProveedor, id: docRef.id }])
+      setNewProveedor({} as Proveedor)
+      setIsProveedorModalOpen(false)
+      toast({
+        title: "Éxito",
+        description: "Nuevo proveedor agregado.",
+      })
+    } catch (error) {
+      console.error("Error al agregar proveedor:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el proveedor. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Función para editar un proveedor
+  const handleEditProveedor = async (proveedor: Proveedor) => {
+    if (!viewingUID) return
+
+    try {
+      await updateDoc(doc(db, `users/${viewingUID}/proveedores`, proveedor.id), proveedor)
+      setProveedores(proveedores.map((p) => (p.id === proveedor.id ? proveedor : p)))
+      setEditingProveedor(null)
+      toast({
+        title: "Éxito",
+        description: "Proveedor actualizado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al actualizar proveedor:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al actualizar el proveedor. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Función para eliminar un proveedor
+  const handleDeleteProveedor = async (id: string) => {
+    if (!viewingUID) return
+
+    try {
+      await deleteDoc(doc(db, `users/${viewingUID}/proveedores`, id))
+      setProveedores(proveedores.filter((p) => p.id !== id))
+      toast({
+        title: "Éxito",
+        description: "Proveedor eliminado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al eliminar proveedor:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al eliminar el proveedor. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  {/* Clientes */}
+
+  const handleAddCliente = async () => {
+    if (!viewingUID) return
+
+    try {
+      const docRef = await addDoc(collection(db, `users/${viewingUID}/clientes`), newCliente)
+      setClientes([...clientes, { ...newCliente, id: docRef.id }])
+      setNewCliente({} as Cliente)
+      setIsClienteModalOpen(false)
+      toast({
+        title: "Éxito",
+        description: "Nuevo cliente agregado.",
+      })
+    } catch (error) {
+      console.error("Error al agregar cliente:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al agregar el cliente. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Función para editar un cliente
+  const handleEditCliente = async (cliente: Cliente) => {
+    if (!viewingUID) return
+
+    try {
+      await updateDoc(doc(db, `users/${viewingUID}/clientes`, cliente.id), cliente)
+      setClientes(clientes.map((c) => (c.id === cliente.id ? cliente : c)))
+      setEditingCliente(null)
+      toast({
+        title: "Éxito",
+        description: "Cliente actualizado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al actualizar cliente:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al actualizar el cliente. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Función para eliminar un cliente
+  const handleDeleteCliente = async (id: string) => {
+    if (!viewingUID) return
+
+    try {
+      await deleteDoc(doc(db, `users/${viewingUID}/clientes`, id))
+      setClientes(clientes.filter((c) => c.id !== id))
+      toast({
+        title: "Éxito",
+        description: "Cliente eliminado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al eliminar cliente:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al eliminar el cliente. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
 
   {/* Facturacion */}
 
@@ -2157,6 +2348,39 @@ export default function ContabilidadApp() {
                     <div className={stylesMenu.navitemgroup}>
                       <Button
                         id="billing-section"
+                        variant={activeTab.startsWith("terceros") ? "default" : "ghost"}
+                        className={stylesMenu.navitem}
+                        onClick={() => setIsTercerosOpen(!isTercerosOpen)}
+                      >
+                        <FileText className={stylesMenu.icon} />
+                        Terceros
+                        {isTercerosOpen ? <ChevronUp className={stylesMenu.iconsmall} /> : <ChevronDown className={stylesMenu.iconsmall} />}
+                      </Button>
+                      {isTercerosOpen && (
+                        <div className={stylesMenu.subnav}>
+                          <Button
+                            variant={activeTab === "proveedores" ? "default" : "ghost"}
+                            className={stylesMenu.navitem}
+                            onClick={() => setActiveTab("proveedores")}
+                          >
+                            <Users className={stylesMenu.icon} />
+                            Proveedores
+                          </Button>
+                          <Button
+                            variant={activeTab === "clientes" ? "default" : "ghost"}
+                            className={stylesMenu.navitem}
+                            onClick={() => setActiveTab("clientes")}
+                          >
+                            <Users className={stylesMenu.icon} />
+                            Clientes
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={stylesMenu.navitemgroup}>
+                      <Button
+                        id="billing-section"
                         variant={activeTab.startsWith("facturacion") ? "default" : "ghost"}
                         className={stylesMenu.navitem}
                         onClick={() => setIsFacturacionOpen(!isFacturacionOpen)}
@@ -2303,7 +2527,6 @@ export default function ContabilidadApp() {
                           Editar Campos
                         </Button>
                         <Button onClick={() => setIsCreatingAccountingEntry(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
                           Crear Asiento Contable
                         </Button>
 
@@ -3179,6 +3402,78 @@ export default function ContabilidadApp() {
                   
                 )}
 
+                {/* Proveedores Interfaz Estilo */}
+                {activeTab === "proveedores" && (
+                  <div>
+                    <h2 className="text-3xl font-bold mb-4">Proveedores</h2>
+                    <div className="border-t border-gray-400 my-4"></div>
+                    <Button onClick={() => setIsProveedorModalOpen(true)}>Agregar Proveedor</Button>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Correo</TableHead>
+                          <TableHead>RUC/CI</TableHead>
+                          <TableHead>Dirección Matriz</TableHead>
+                          <TableHead>Dirección Sucursal</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {proveedores.map((proveedor) => (
+                          <TableRow key={proveedor.id}>
+                            <TableCell>{proveedor.nombre}</TableCell>
+                            <TableCell>{proveedor.correo}</TableCell>
+                            <TableCell>{proveedor.rucCi}</TableCell>
+                            <TableCell>{proveedor.direccionMatriz}</TableCell>
+                            <TableCell>{proveedor.direccionSucursal}</TableCell>
+                            <TableCell>
+                              <Button onClick={() => setEditingProveedor(proveedor)}>Editar</Button>
+                              <Button variant="destructive" onClick={() => handleDeleteProveedor(proveedor.id)}>
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* Clientes Interfaz Estilo */}
+                {activeTab === "clientes" && (
+                  <div>
+                    <h2 className="text-3xl font-bold mb-4">Clientes</h2>
+                    <div className="border-t border-gray-400 my-4"></div>
+                    <Button onClick={() => setIsClienteModalOpen(true)}>Agregar Cliente</Button>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Correo</TableHead>
+                          <TableHead>RUC/CI</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientes.map((cliente) => (
+                          <TableRow key={cliente.id}>
+                            <TableCell>{cliente.nombre}</TableCell>
+                            <TableCell>{cliente.correo}</TableCell>
+                            <TableCell>{cliente.rucCi}</TableCell>
+                            <TableCell>
+                              <Button onClick={() => setEditingCliente(cliente)}>Editar</Button>
+                              <Button variant="destructive" onClick={() => handleDeleteCliente(cliente.id)}>
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
               </div>
 
               {/* Panel de IA desplegable */}
@@ -3457,7 +3752,159 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
-              {/* Agregar Nuevos Items */}
+              {/* Modal Provedores */}
+
+              {/* Modal para agregar/editar proveedor */}
+              <Dialog open={isProveedorModalOpen || editingProveedor !== null} onOpenChange={handleCloseProveedorModal}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingProveedor ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="nombre">Nombre</Label>
+                      <Input
+                        id="nombre"
+                        value={editingProveedor?.nombre || newProveedor.nombre || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, nombre: e.target.value })
+                            : setNewProveedor({ ...newProveedor, nombre: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="correo">Correo</Label>
+                      <Input
+                        id="correo"
+                        type="email"
+                        value={editingProveedor?.correo || newProveedor.correo || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, correo: e.target.value })
+                            : setNewProveedor({ ...newProveedor, correo: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rucCi">RUC/CI</Label>
+                      <Input
+                        id="rucCi"
+                        value={editingProveedor?.rucCi || newProveedor.rucCi || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, rucCi: e.target.value })
+                            : setNewProveedor({ ...newProveedor, rucCi: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="direccionMatriz">Dirección Matriz</Label>
+                      <Input
+                        id="direccionMatriz"
+                        value={editingProveedor?.direccionMatriz || newProveedor.direccionMatriz || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, direccionMatriz: e.target.value })
+                            : setNewProveedor({ ...newProveedor, direccionMatriz: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="direccionSucursal">Dirección Sucursal</Label>
+                      <Input
+                        id="direccionSucursal"
+                        value={editingProveedor?.direccionSucursal || newProveedor.direccionSucursal || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, direccionSucursal: e.target.value })
+                            : setNewProveedor({ ...newProveedor, direccionSucursal: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleCloseProveedorModal}>Cancelar</Button>
+                    <Button
+                      onClick={() => {
+                        if (editingProveedor) {
+                          handleEditProveedor(editingProveedor)
+                        } else {
+                          handleAddProveedor()
+                        }
+                      }}
+                    >
+                      {editingProveedor ? "Guardar Cambios" : "Agregar"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal Clientes */}
+
+              {/* Modal para agregar/editar cliente */}
+              <Dialog open={isClienteModalOpen || editingCliente !== null} onOpenChange={handleCloseClienteModal}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingCliente ? "Editar Cliente" : "Agregar Nuevo Cliente"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="nombre">Nombre</Label>
+                      <Input
+                        id="nombre"
+                        value={editingCliente?.nombre || newCliente.nombre || ""}
+                        onChange={(e) =>
+                          editingCliente
+                            ? setEditingCliente({ ...editingCliente, nombre: e.target.value })
+                            : setNewCliente({ ...newCliente, nombre: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="correo">Correo</Label>
+                      <Input
+                        id="correo"
+                        type="email"
+                        value={editingCliente?.correo || newCliente.correo || ""}
+                        onChange={(e) =>
+                          editingCliente
+                            ? setEditingCliente({ ...editingCliente, correo: e.target.value })
+                            : setNewCliente({ ...newCliente, correo: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rucCi">RUC/CI</Label>
+                      <Input
+                        id="rucCi"
+                        value={editingCliente?.rucCi || newCliente.rucCi || ""}
+                        onChange={(e) =>
+                          editingCliente
+                            ? setEditingCliente({ ...editingCliente, rucCi: e.target.value })
+                            : setNewCliente({ ...newCliente, rucCi: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleCloseClienteModal}>Cancelar</Button>
+                    <Button
+                      onClick={() => {
+                        if (editingCliente) {
+                          handleEditCliente(editingCliente)
+                        } else {
+                          handleAddCliente()
+                        }
+                      }}
+                    >
+                      {editingCliente ? "Guardar Cambios" : "Agregar"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modales Facturacion */}
 
               {/* Modal para visualizar una factura */}
               <Dialog open={isViewInvoiceModalOpen} onOpenChange={setIsViewInvoiceModalOpen}>
@@ -4365,6 +4812,8 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
+              {/* Modal Inventario */}
+
               {/* Modal para agregar nuevo ítem al inventario */}
               <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
                 <DialogContent aria-describedby={undefined}>
@@ -4401,6 +4850,8 @@ export default function ContabilidadApp() {
 
                 </DialogContent>
               </Dialog>
+
+              {/* Modal Libro Diario */}
 
               {/* Modal para crear asiento contable */}
               <Dialog open={isCreatingAccountingEntry} onOpenChange={setIsCreatingAccountingEntry}>
@@ -4439,6 +4890,8 @@ export default function ContabilidadApp() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Modal Servicio */}
 
               {/* Modal para crear/editar servicio */}
               <Dialog open={isCreatingService || isEditingService} onOpenChange={() => { setIsCreatingService(false); setIsEditingService(false); resetNewService();}}>
