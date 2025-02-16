@@ -17,7 +17,7 @@
 */}
 
 {/* Importacion de Librerias */}
-import { useState, useMemo, useRef, useEffect, SetStateAction } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 
 //Estilos
 import stylesContent from "@/components/estilos/contenido.module.css"
@@ -67,12 +67,11 @@ import { TfiEmail } from "react-icons/tfi";
 import { RiEditLine } from "react-icons/ri";
 import { IoIosSave } from "react-icons/io";
 import { IoMenu, IoTrashBinSharp } from "react-icons/io5";
-import { grid } from 'ldrs';
 
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot } from "firebase/firestore"
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot, orderBy, query } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
 // Modo Obscuro
@@ -149,6 +148,7 @@ type InvoiceItem = {
   [key: string]: any
 }
 
+// Definicion de Totales de Facturas
 type TotalesFactura = {
   SubTotal12IVA: number
   SubTotal0IVA: number
@@ -183,6 +183,7 @@ interface Service {
   [key: string]: any
 }
 
+// Definicion de detalles de servicios
 interface ServiceDetail {
   usoDeItem: string;
   gastosPorItem: string;
@@ -220,6 +221,7 @@ type Proveedor = {
   id: string
   nombre: string
   correo: string
+  telefono: string
   rucCi: string
   direccionMatriz: string
   direccionSucursal: string
@@ -230,6 +232,8 @@ type Cliente = {
   id: string
   nombre: string
   correo: string
+  telefono: string
+  direccion: string
   rucCi: string
 }
 
@@ -347,7 +351,6 @@ export default function ContabilidadApp() {
 
   // Estados de edicion de inventario
   const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null)
-  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   
   // Estado Seleccion de Fecha
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -622,18 +625,23 @@ export default function ContabilidadApp() {
 
       // Cargar proveedores
       const proveedoresUnsubscribe = onSnapshot(
-        collection(db, `users/${uidToUse}/proveedores`),
+        query(collection(db, `users/${uidToUse}/proveedores`), orderBy("nombre")),
         (proveedoresSnapshot) => {
           const proveedoresData = proveedoresSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Proveedor[]
           setProveedores(proveedoresData)
+          setFilteredProveedores(proveedoresData)
         },
       )
 
       // Cargar clientes
-      const clientesUnsubscribe = onSnapshot(collection(db, `users/${uidToUse}/clientes`), (clientesSnapshot) => {
-        const clientesData = clientesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Cliente[]
-        setClientes(clientesData)
-      })
+      const clientesUnsubscribe = onSnapshot(
+        query(collection(db, `users/${uidToUse}/clientes`), orderBy("nombre")),
+        (clientesSnapshot) => {
+          const clientesData = clientesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Cliente[]
+          setClientes(clientesData)
+          setFilteredClientes(clientesData)
+        },
+      )
   
       // Establecer UID de visualización
       setViewingUID(uidToUse);
@@ -815,15 +823,18 @@ export default function ContabilidadApp() {
 
     setDetallesFactura([{ idElemento: '', cantidad: "0", detalle: '', precioUnitario: '0', valorTotal: 0, tipoIVA: "" }])
     setTotales({ SubTotal12IVA: 0, SubTotal0IVA: 0, SubTotalExentoIVA: 0, SubTotalNoObjetoIVA: 0, Descuento: 0, SubTotal: 0, ICE: 0, IVA12: 0, Propina: 0, ValorTotalFinal: 0, })
+    cleanTerceros ();
     setShowCancelConfirmModalFacturacion(false);
   };
 
+  // Funcion para Cancelar Proveedor
   const handleCloseProveedorModal = () => {
     setIsProveedorModalOpen(false)
     setNewProveedor({} as Proveedor)
     setEditingProveedor(null)
   }
 
+  // Funcion para Cancelar Cliente
   const handleCloseClienteModal = () => {
     setIsClienteModalOpen(false)
     setNewCliente({} as Cliente)
@@ -1181,6 +1192,7 @@ export default function ContabilidadApp() {
 
   const ordenDeseadoIv = ["idElemento", "category", "descripcion", "cantidadDisponible", "stockMinimo", "precioCompra" , "precioVenta" , "fechaIngreso", "proveedor"]
 
+  // Funcion para ordenar categorias en inventario
   const ordenarCategoriasIv = (categorias: string[]): string[] => {
     const categoriasOrdenadas = ordenDeseadoIv.filter((cat) => categorias.includes(cat))
     const categoriasAdicionales = categorias.filter((cat) => !ordenDeseadoIv.includes(cat))
@@ -1255,7 +1267,8 @@ export default function ContabilidadApp() {
     }
   }
 
-  const filterProveedores = (term: string) => {
+  // Filtro seleccion en factura
+  const filterProveedoresFac = (term: string) => {
     const filtered = proveedores.filter((proveedor) => proveedor.nombre.toLowerCase().includes(term.toLowerCase()))
     setFilteredProveedores(filtered)
     if (filtered.length > 0) {
@@ -1263,6 +1276,16 @@ export default function ContabilidadApp() {
     } else {
       setSelectedProveedor(null)
     }
+  }
+
+  // Filtro Proveedores
+  const filterProveedores = (term: string) => {
+    const filtered = proveedores.filter(
+      (proveedor) =>
+        proveedor.nombre.toLowerCase().includes(term.toLowerCase()) ||
+        (proveedor.rucCi && proveedor.rucCi.toString().toLowerCase().includes(term.toLowerCase()))
+    )
+    setFilteredProveedores(filtered)
   }
 
   {/* Clientes */}
@@ -1332,7 +1355,8 @@ export default function ContabilidadApp() {
     }
   }
 
-  const filterClientes = (term: string) => {
+  // Filtro para Seleccion en Factura
+  const filterClientesFac = (term: string) => {
     const filtered = clientes.filter((cliente) => cliente.nombre.toLowerCase().includes(term.toLowerCase()))
     setFilteredClientes(filtered)
     if (filtered.length > 0) {
@@ -1342,8 +1366,19 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Filtro Clientes
+  const filterClientes = (term: string) => {
+    const filtered = clientes.filter(
+      (cliente) =>
+        cliente.nombre.toLowerCase().includes(term.toLowerCase()) ||
+        (cliente.rucCi && cliente.rucCi.toString().toLowerCase().includes(term.toLowerCase()))
+    )
+    setFilteredClientes(filtered)
+  }
+
   {/* Facturacion */}
 
+  // Funcion llamar al modal para separar entre factura emitida y recibida
   const handleCreateInvoice = (tipo: 'emitida' | 'recibida') => () => {
     handleAddInvoiceItem(tipo);
   };
@@ -1429,6 +1464,7 @@ export default function ContabilidadApp() {
     }
   };
 
+  // Funcion para calcular totales Edicion
   const calcularTotales = (detalles: any[] = []) => {
     if (!Array.isArray(detalles) || detalles.length === 0) {
       return { sumaTotalFilas: 0, iva12: 0, subTotal12IVA: 0 }
@@ -1444,6 +1480,7 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Funcion calcular total en base al iva aplicado
   const calcularValorTotal = (invoice: InvoiceItem) => {
     const { sumaTotalFilas, iva12 } = calcularTotales(invoice.detalles || [])
     const subTotal = Number.parseFloat(invoice.subtotal?.toString() || "0")
@@ -1453,6 +1490,7 @@ export default function ContabilidadApp() {
     return sumaTotalFilas + subTotal + ice + iva12 + propina
   }
 
+  // Funcion para calcular totales creacion
   const calcularTotalesFactura = (detalles: DetalleFactura[], servicios: Service[]): TotalesFactura => {
     let subTotal12IVA = 0;
     let subTotal0IVA = 0;
@@ -1505,6 +1543,56 @@ export default function ContabilidadApp() {
       ValorTotalFinal: valorTotalFinal,
     };
   };
+
+  const calcularTotalesFacturaV2 = (detalles: DetalleFactura[]): TotalesFactura => {
+    let subTotal12IVA = 0
+    let subTotal0IVA = 0
+    let subTotalExentoIVA = 0
+    let subTotalNoObjetoIVA = 0
+
+    detalles.forEach((detalle) => {
+      const valorTotal = detalle.valorTotal || 0
+
+      switch (detalle.tipoIVA) {
+        case "12":
+          subTotal12IVA += valorTotal
+          break
+        case "0":
+          subTotal0IVA += valorTotal
+          break
+        case "exento":
+          subTotalExentoIVA += valorTotal
+          break
+        case "noObjeto":
+          subTotalNoObjetoIVA += valorTotal
+          break
+        default:
+          subTotal12IVA += valorTotal
+          break
+      }
+    })
+
+    const descuento = 0 // Siempre 0
+    const ice = 0 // Siempre 0
+    const propina = 0 // Siempre 0
+
+    const subTotal = subTotal12IVA + subTotal0IVA + subTotalExentoIVA + subTotalNoObjetoIVA - descuento
+    const iva12 = subTotal12IVA * 0.15 // Calcular IVA solo para los items/servicios con IVA del 12%
+    const valorTotalFinal = subTotal + ice + iva12 + propina
+
+    return {
+      SubTotal12IVA: subTotal12IVA,
+      SubTotal0IVA: subTotal0IVA,
+      SubTotalExentoIVA: subTotalExentoIVA,
+      SubTotalNoObjetoIVA: subTotalNoObjetoIVA,
+      Descuento: descuento,
+      SubTotal: subTotal,
+      ICE: ice,
+      IVA12: iva12,
+      Propina: propina,
+      ValorTotalFinal: valorTotalFinal,
+    }
+  }
 
   // Función para editar una factura
   const handleEditInvoiceItem = () => {
@@ -1629,8 +1717,7 @@ export default function ContabilidadApp() {
     if (field === "valorTotal") {
       newDetalles[index].valorTotal = Number.parseFloat(value) || 0;
     }
-  
-    // Recalcular los totales basados en los nuevos detalles y la lista de servicios
+
     const nuevosTotales = calcularTotalesFactura(newDetalles, servicios);
   
     // Actualizar el estado de detallesFactura y totales
@@ -1638,21 +1725,54 @@ export default function ContabilidadApp() {
     setTotales(nuevosTotales);
   };
 
-  const handleTotalesChange = (field: keyof TotalesFactura, value: string) => {
-    // Convertir el valor a número
-    const numericValue = parseFloat(value) || 0;
+  const handleDetalleChangeIv = (index: number, field: string, value: string) => {
+    const newDetalles = [...detallesFactura];
+    newDetalles[index] = { ...newDetalles[index], [field]: value };
   
-    // Actualizar el estado de totales
-    setTotales((prevTotales) => ({
-      ...prevTotales,
-      [field]: numericValue,
-    }));
-    
+    // Si el campo es "cantidad" o "precioUnitario", recalcular el valorTotal
+    if (field === "cantidad" || field === "precioUnitario") {
+      const cantidad = Number.parseFloat(newDetalles[index].cantidad) || 0;
+      const precioUnitario = Number.parseFloat(newDetalles[index].precioUnitario) || 0;
+      newDetalles[index].valorTotal = cantidad * precioUnitario;
+    }
+  
+    // Si el campo es "valorTotal", asegúrate de que el valor sea un número válido
+    if (field === "valorTotal") {
+      newDetalles[index].valorTotal = Number.parseFloat(value) || 0;
+    }
+  
+    // Recalcular los totales basados en los nuevos detalles y la lista de servicios
+    const nuevosTotales = calcularTotalesFacturaV2(newDetalles)
+
+    // Actualizar el estado de detallesFactura y totales
+    setDetallesFactura(newDetalles);
+    setTotales(nuevosTotales)
   };
-  
+
+  // Funcion para limiar los inputs de terceros seleccionados en factura
+  const cleanTerceros = () => {
+    // Proveedores
+    setSelectedProveedor(null)
+    setSearchTermProveedor('')
+    setProveedorNombre('')
+    setProveedorCorreo('')
+    setProveedorRucCi('')
+    setProveedorDireccionMatriz('')
+    setProveedorDireccionSucursal('')
+    setProveedorDireccionMatriz('')
+    setProveedorDireccionSucursal('')
+
+    //Clientes
+    setSelectedCliente(null)
+    setSearchTermCliente('')
+    setClienteNombre('')
+    setClienteCorreo('')
+    setClienteRucCi('')
+  }
 
   {/* Servicios */}
 
+  // Funcion para agregar nuevo servicio
   const handleAddService = async () => {
     if (!viewingUID) return;
   
@@ -1702,6 +1822,7 @@ export default function ContabilidadApp() {
     }
   };
 
+  // Funcion para editar servicio
   const handleEditService = (service: Service) => {
     setNewService({ ...service })
     setDetallesServicio(service.detalles || [])
@@ -1745,6 +1866,7 @@ export default function ContabilidadApp() {
     }
   };
 
+  // Funcion para limpiar campos del servicio
   const resetNewService = () => {
     setNewService({
       id: "",
@@ -1834,6 +1956,7 @@ export default function ContabilidadApp() {
     }
   }
 
+  // Funcion para agregar nuevos items seleccionables dentro de servicio
   const agregarNuevaFilaService = () => {
     const newDetalles = [...detallesServicio, { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }];
     setDetallesServicio(newDetalles);
@@ -1848,6 +1971,7 @@ export default function ContabilidadApp() {
     });
   };
 
+  // Funcion para eliminar items agregados
   const eliminarFilaService = (index: number) => {
     if (detallesServicio.length > 1) {
       const newDetalles = detallesServicio.filter((_, i) => i !== index);
@@ -1995,26 +2119,37 @@ export default function ContabilidadApp() {
     });
   }, [invoiceItems, invoiceFilterType, invoiceFilterDate, invoiceFilterMonth, invoiceFilterYear, activeTab]);//Devolver las funciones en base al analisis de la funcion filteredInvoiceItems
 
+  // Filtrado de Proveedores
+  useEffect(() => {
+    filterProveedores(searchTermProveedor)
+  }, [searchTermProveedor])
+
+  // Filtrado de Clientes
+  useEffect(() => {
+    filterClientes(searchTermCliente)
+  }, [searchTermCliente])
 
   {/* Vinculacion entre tablas */}
 
   // Función para Seleccionar Item en Facturacion
   const handleInventoryItemSelect = (itemId: string, index: number) => {
-    const selectedItem = inventoryItems.find(item => item.idElemento === itemId);
+    const selectedItem = inventoryItems.find((item) => item.idElemento === itemId)
     if (selectedItem) {
-      const newDetalles = [...detallesFactura];
+      const newDetalles = [...detallesFactura]
       newDetalles[index] = {
         idElemento: selectedItem.idElemento,
-        cantidad: '0', // Valor por defecto, el usuario puede cambiarlo
-        detalle: selectedItem.descripcion,
-        precioUnitario: selectedItem.precioVenta.toString(),
-        valorTotal: Number(selectedItem.precioVenta.toString()),
-        tipoIVA: "15"
-      };
-      setDetallesFactura(newDetalles);
-      setSelectedInventoryItem(selectedItem);
+        cantidad: "1",
+        detalle: selectedItem.descripcion || selectedItem.nombre,
+        precioUnitario: selectedItem.precioCompra,
+        valorTotal: Number(selectedItem.precioCompra),
+        tipoIVA: selectedItem.tipoIVA,
+      }
+      setDetallesFactura(newDetalles)
+
+      const nuevosTotales = calcularTotalesFacturaV2(newDetalles)
+      setTotales(nuevosTotales)
     }
-  };
+  }
 
   // Función para Seleccionar un Servicio en Facturacion
   const handleServiceSelect = (serviceId: string, index: number) => {
@@ -2022,7 +2157,7 @@ export default function ContabilidadApp() {
     if (selectedService) {
       const newDetalles = [...detallesFactura];
       newDetalles[index] = {
-        idElemento: selectedService.nombre || "nanai",
+        idElemento: selectedService.nombre || "nombre",
         cantidad: '0',
         detalle: selectedService.descripcion,
         precioUnitario: selectedService.costoDeServicio,
@@ -2197,14 +2332,6 @@ export default function ContabilidadApp() {
     }
   };
 
-  useEffect(() => {
-    if (isInvoiceModalOpen && newInvoiceItem.tipoFactura === "recibida") {
-      setIdentificacionAdquiriente("v0")
-    } else {
-      setIdentificacionAdquiriente("")
-    }
-  }, [isInvoiceModalOpen, newInvoiceItem.tipoFactura])
-
   const steps: Step[] = [
     {
       target: '#menu-section',
@@ -2255,6 +2382,8 @@ export default function ContabilidadApp() {
       title: 'Generar Registros'
     },
   ];
+
+  
 
   return (
     <>
@@ -3348,7 +3477,7 @@ export default function ContabilidadApp() {
                         <h2 className="text-3xl font-bold">Servicios</h2>
                       </div>
 
-                      <div className={`${stylesService.separacion} ${theme === "light" ? stylesService.separacionLight : stylesService.separacionDark}`}></div>
+                      <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
 
                       <div className={stylesService.serviciosCabecera}>
                         <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
@@ -3442,37 +3571,59 @@ export default function ContabilidadApp() {
                 {activeTab === "proveedores" && (
                   <div>
                     <h2 className="text-3xl font-bold mb-4">Proveedores</h2>
-                    <div className="border-t border-gray-400 my-4"></div>
-                    <Button onClick={() => setIsProveedorModalOpen(true)}>Agregar Proveedor</Button>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nombre</TableHead>
-                          <TableHead>Correo</TableHead>
-                          <TableHead>RUC/CI</TableHead>
-                          <TableHead>Dirección Matriz</TableHead>
-                          <TableHead>Dirección Sucursal</TableHead>
-                          <TableHead>Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {proveedores.map((proveedor) => (
-                          <TableRow key={proveedor.id}>
-                            <TableCell>{proveedor.nombre}</TableCell>
-                            <TableCell>{proveedor.correo}</TableCell>
-                            <TableCell>{proveedor.rucCi}</TableCell>
-                            <TableCell>{proveedor.direccionMatriz}</TableCell>
-                            <TableCell>{proveedor.direccionSucursal}</TableCell>
-                            <TableCell>
-                              <Button onClick={() => setEditingProveedor(proveedor)}>Editar</Button>
-                              <Button variant="destructive" onClick={() => handleDeleteProveedor(proveedor.id)}>
-                                Eliminar
-                              </Button>
-                            </TableCell>
+
+                    <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
+
+                    <div className="flex items-center mb-4">
+                      <Button onClick={() => setIsProveedorModalOpen(true)}>Agregar Proveedor</Button>
+                      <Input
+                        placeholder="Buscar proveedor"
+                        value={searchTermProveedor}
+                        onChange={(e) => setSearchTermProveedor(e.target.value)}
+                        className="max-w-sm ml-4"
+                      />
+                    </div>
+                    {filteredProveedores.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Correo</TableHead>
+                            <TableHead>Telefono</TableHead>
+                            <TableHead>RUC/CI</TableHead>
+                            <TableHead>Dirección Matriz</TableHead>
+                            <TableHead>Dirección Sucursal</TableHead>
+                            <TableHead>Acciones</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredProveedores.map((proveedor) => (
+                            <TableRow key={proveedor.id}>
+                              <TableCell>{proveedor.nombre}</TableCell>
+                              <TableCell>{proveedor.correo}</TableCell>
+                              <TableCell>{proveedor.telefono}</TableCell>
+                              <TableCell>{proveedor.rucCi}</TableCell>
+                              <TableCell>{proveedor.direccionMatriz}</TableCell>
+                              <TableCell>{proveedor.direccionSucursal}</TableCell>
+                              <TableCell>
+                                <Button onClick={() => setEditingProveedor(proveedor)}>Editar</Button>
+                                <Button variant="destructive" onClick={() => handleDeleteProveedor(proveedor.id)}>
+                                  Eliminar
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className={stylesContent.contentNoItems}>
+                        <MensajeNoItems
+                          mensaje="Aún no has agregado ningún proveedor."
+                          accion={() => setIsProveedorModalOpen(true)}
+                          textoBoton="Agregar Proveedor"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -3480,22 +3631,37 @@ export default function ContabilidadApp() {
                 {activeTab === "clientes" && (
                   <div>
                     <h2 className="text-3xl font-bold mb-4">Clientes</h2>
-                    <div className="border-t border-gray-400 my-4"></div>
-                    <Button onClick={() => setIsClienteModalOpen(true)}>Agregar Cliente</Button>
+
+                    <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
+
+                    <div className="flex items-center mb-4">
+                      <Button onClick={() => setIsClienteModalOpen(true)}>Agregar Cliente</Button>
+                      <Input
+                        placeholder="Buscar cliente"
+                        value={searchTermCliente}
+                        onChange={(e) => setSearchTermCliente(e.target.value)}
+                        className="max-w-sm ml-4"
+                      />
+                    </div>
+                    {filteredClientes.length > 0 ? (
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Nombre</TableHead>
                           <TableHead>Correo</TableHead>
+                          <TableHead>Teléfono</TableHead>
+                          <TableHead>Dirección</TableHead>
                           <TableHead>RUC/CI</TableHead>
                           <TableHead>Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {clientes.map((cliente) => (
+                        {filteredClientes.map((cliente) => (
                           <TableRow key={cliente.id}>
                             <TableCell>{cliente.nombre}</TableCell>
                             <TableCell>{cliente.correo}</TableCell>
+                            <TableCell>{cliente.telefono}</TableCell>
+                            <TableCell>{cliente.direccion}</TableCell>
                             <TableCell>{cliente.rucCi}</TableCell>
                             <TableCell>
                               <Button onClick={() => setEditingCliente(cliente)}>Editar</Button>
@@ -3507,6 +3673,15 @@ export default function ContabilidadApp() {
                         ))}
                       </TableBody>
                     </Table>
+                    ) : (
+                      <div className={stylesContent.contentNoItems}>
+                        <MensajeNoItems
+                          mensaje="Aún no has agregado ningún cliente."
+                          accion={() => setIsClienteModalOpen(true)}
+                          textoBoton="Agregar Cliente"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -3823,6 +3998,18 @@ export default function ContabilidadApp() {
                       />
                     </div>
                     <div>
+                      <Label htmlFor="telefono">Teléfono</Label>
+                      <Input
+                        id="telefono"
+                        value={editingProveedor?.telefono || newProveedor.telefono || ""}
+                        onChange={(e) =>
+                          editingProveedor
+                            ? setEditingProveedor({ ...editingProveedor, telefono: e.target.value })
+                            : setNewProveedor({ ...newProveedor, telefono: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
                       <Label htmlFor="rucCi">RUC/CI</Label>
                       <Input
                         id="rucCi"
@@ -3907,6 +4094,30 @@ export default function ContabilidadApp() {
                           editingCliente
                             ? setEditingCliente({ ...editingCliente, correo: e.target.value })
                             : setNewCliente({ ...newCliente, correo: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="telefono">Teléfono</Label>
+                      <Input
+                        id="telefono"
+                        value={editingCliente?.telefono || newCliente.telefono || ""}
+                        onChange={(e) =>
+                          editingCliente
+                            ? setEditingCliente({ ...editingCliente, telefono: e.target.value })
+                            : setNewCliente({ ...newCliente, telefono: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="direccion">Direccion</Label>
+                      <Input
+                        id="direccion"
+                        value={editingCliente?.direccion || newCliente.direccion || ""}
+                        onChange={(e) =>
+                          editingCliente
+                            ? setEditingCliente({ ...editingCliente, direccion: e.target.value })
+                            : setNewCliente({ ...newCliente, direccion: e.target.value })
                         }
                       />
                     </div>
@@ -4395,7 +4606,7 @@ export default function ContabilidadApp() {
                           value={searchTermCliente}
                           onChange={(e) => {
                             setSearchTermCliente(e.target.value)
-                            filterClientes(e.target.value)
+                            filterClientesFac(e.target.value)
                           }}
                         />
                         <Select
@@ -4681,7 +4892,7 @@ export default function ContabilidadApp() {
                           value={searchTermProveedor}
                           onChange={(e) => {
                             setSearchTermProveedor(e.target.value)
-                            filterProveedores(e.target.value)
+                            filterProveedoresFac(e.target.value)
                           }}
                         />
                         <Select
@@ -4832,26 +5043,26 @@ export default function ContabilidadApp() {
                             {detallesFactura.map((detalle, index) => (
                               <tr key={index}>
                                 <td>
-                                  <Select
-                                    value={detalle.idElemento}
-                                    onValueChange={(value) => handleInventoryItemSelect(value, index)}
-                                  >
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Seleccionar item" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {inventoryItems.map((item) => (
-                                        <SelectItem key={item.idElemento} value={item.idElemento}>
-                                          {item.idElemento}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                <Select
+                                  value={detalle.idElemento}
+                                  onValueChange={(value) => handleInventoryItemSelect(value, index)}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Seleccionar item" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {inventoryItems.map((item) => (
+                                      <SelectItem key={item.idElemento} value={item.idElemento}>
+                                        {item.idElemento}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 </td>
-                                <td><Input className="w-full"  type="number" value={detalle.cantidad} onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)} /></td>
-                                <td><Input className="w-full" value={detalle.detalle} onChange={(e) => handleDetalleChange(index, 'detalle', e.target.value)} /></td>
-                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario} onChange={(e) => handleDetalleChange(index, 'precioUnitario', e.target.value)} /></td>
-                                <td><Input className="w-full"  type="number" readOnly value={detalle.valorTotal} onChange={(e) => handleDetalleChange(index, 'valorTotal', e.target.value)}/></td>
+                                <td><Input className="w-full"  type="number" value={detalle.cantidad || ""} onChange={(e) => handleDetalleChangeIv(index, 'cantidad', e.target.value)} /></td>
+                                <td><Input className="w-full" value={detalle.detalle || ""} onChange={(e) => handleDetalleChangeIv(index, 'detalle', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.precioUnitario || "0.00"} onChange={(e) => handleDetalleChangeIv(index, 'precioUnitario', e.target.value)} /></td>
+                                <td><Input className="w-full"  type="number" value={detalle.valorTotal || "0.00"} readOnly/></td>
                                 <td>
                                   <Button 
                                     variant="destructive" 
@@ -4892,7 +5103,7 @@ export default function ContabilidadApp() {
                               id="SubTotal12IVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal12IVA.toFixed(2)}
+                              value={totales.SubTotal12IVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4902,7 +5113,7 @@ export default function ContabilidadApp() {
                               id="SubTotal0IVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal0IVA.toFixed(2)}
+                              value={totales.SubTotal0IVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4912,7 +5123,7 @@ export default function ContabilidadApp() {
                               id="SubTotalExentoIVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotalExentoIVA.toFixed(2)}
+                              value={totales.SubTotalExentoIVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4922,7 +5133,7 @@ export default function ContabilidadApp() {
                               id="SubTotalNoObjetoIVA"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotalNoObjetoIVA.toFixed(2)}
+                              value={totales.SubTotalNoObjetoIVA.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4932,7 +5143,7 @@ export default function ContabilidadApp() {
                               id="Descuento"
                               type="number"
                               placeholder="0.00"
-                              value={totales.Descuento.toFixed(2)}
+                              value={totales.Descuento.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4942,7 +5153,7 @@ export default function ContabilidadApp() {
                               id="SubTotal"
                               type="number"
                               placeholder="0.00"
-                              value={totales.SubTotal.toFixed(2)}
+                              value={totales.SubTotal.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4952,7 +5163,7 @@ export default function ContabilidadApp() {
                               id="ICE"
                               type="number"
                               placeholder="0.00"
-                              value={totales.ICE.toFixed(2)}
+                              value={totales.ICE.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4962,7 +5173,7 @@ export default function ContabilidadApp() {
                               id="IVA12"
                               type="number"
                               placeholder="0.00"
-                              value={totales.IVA12.toFixed(2)}
+                              value={totales.IVA12.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -4972,8 +5183,8 @@ export default function ContabilidadApp() {
                               id="Propina"
                               type="number"
                               placeholder="0.00"
-                              value={totales.Propina.toFixed(2)}
-                              onChange={(e) => handleTotalesChange("Propina", e.target.value)}
+                              value={totales.Propina.toFixed(2) || "0.00"}
+                              readOnly
                             />
                           </div>
                           <div className="space-y-2">
@@ -4982,7 +5193,7 @@ export default function ContabilidadApp() {
                               id="ValorTotalFinal"
                               type="number"
                               placeholder="0.00"
-                              value={totales.ValorTotalFinal.toFixed(2)}
+                              value={totales.ValorTotalFinal.toFixed(2) || "0.00"}
                               readOnly
                             />
                           </div>
@@ -5000,6 +5211,7 @@ export default function ContabilidadApp() {
                     <Button onClick={handleCreateInvoice('recibida')}>Crear</Button>
                   </DialogFooter>
                 </DialogContent>
+
               </Dialog>
 
               {/* Modal Inventario */}
@@ -5081,7 +5293,7 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
-              {/* Modal Servicio */}
+              {/* Modales Servicios */}
 
               {/* Modal para crear/editar servicio */}
               <Dialog open={isCreatingService || isEditingService} onOpenChange={() => { setIsCreatingService(false); setIsEditingService(false); resetNewService();}}>
@@ -5345,7 +5557,7 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
-              {/* Modal for accounting entry confirmation */}
+              {/* Modal Generacion Asiento Contable desde Servicios */}
               <Dialog open={isAccountingEntryModalOpen} onOpenChange={setIsAccountingEntryModalOpen}>
                 <DialogContent>
                   <DialogHeader>

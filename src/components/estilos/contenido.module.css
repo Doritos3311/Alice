@@ -12,3 +12,23 @@
 .contentNoItemsLDiario {
     margin-top: 2rem;
 }
+
+.separacion {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.separacionLight {
+    border-top: 1px solid #000000;
+}
+
+.separacionDark {
+    border-top: 1px solid #ffffff;
+}
+
+@media (max-width: 768px) {
+    
+    .separacion {
+        width: 100%;
+    }
+}
