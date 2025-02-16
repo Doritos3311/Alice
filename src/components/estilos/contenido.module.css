@@ -13,6 +13,28 @@
     margin-top: 2rem;
 }
 
+.pantallaCarga {
+    background: #000;
+}
+
+.pantallaCargaLight {
+    background: #ffffff;
+    
+}
+
+.pantallaCargaDark {
+    background: #000;
+    
+}
+
+.bolitaLight {
+    color: #000;
+}
+
+.bolitaDark {
+    color: #ffffff;
+}
+
 .separacion {
     margin-top: 1rem;
     margin-bottom: 1rem;

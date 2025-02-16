@@ -1,5 +1,7 @@
 import React, { useEffect, useRef  } from "react";
 
+import Link from 'next/link';
+
 //Estilop
 import styles from "./LandingPage.module.css";
 import { useState } from "react"
@@ -38,7 +40,6 @@ const auth = getAuth(app);
 interface LandingPageProps {
   theme: string;
   user: any;
-  setShowLandingPage: (show: boolean) => void;
   setIsLoginModalOpen: (isOpen: boolean) => void;
   setIsLogOutModalOpen: (isOpen: boolean) => void;
   setActiveTab: (tab: string) => void;
@@ -46,11 +47,10 @@ interface LandingPageProps {
 }
 
 
-const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPage, setActiveTab }) => {
+const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) => {
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showInice, setShowInice] = useState(true)
-  const [showPricing, setShowPricing] = useState(false)
   const [showLogIn, setShowLogIn] = useState(false)
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
 
@@ -223,11 +223,13 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
                     </div>
                   </div>
                   <div className={styles.divider}></div>
-                  <Button variant="ghost" size="sm" className={styles.menu_button} onClick={() => setShowLandingPage(true)}>
-                    <ChartColumnBig className={styles.icon} />
-                    Contabilidad
-                  </Button>
-                  <Button variant="ghost" size="sm" className={styles.menu_buttonContent} onClick={() => {setActiveTab("configuracion"); setShowLandingPage(true)}}>
+                  <Link href="/app" passHref>
+                    <Button variant="ghost" size="sm" className={styles.menu_button}>
+                      <ChartColumnBig className={styles.icon} />
+                      Contabilidad
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="sm" className={styles.menu_buttonContent} onClick={() => {setActiveTab("configuracion");}}>
                     <Settings className={styles.icon} />
                     Configuracion
                   </Button>
@@ -300,7 +302,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setShowLandingPag
             <p>Optimiza tu contabilidad con un sistema moderno y eficiente.</p>
             {user ? (
               // Si el usuario existe, muestra este botón
-              <Button className={styles.cta_button} onClick={() => setShowLandingPage(true)}>
+              <Button className={styles.cta_button}>
                 Explorar Funciones
               </Button>
             ) : (

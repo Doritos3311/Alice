@@ -177,7 +177,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
       if (permisosDoc.exists()) {
         const permisosData = permisosDoc.data()[user.uid] as Permisos
         if (userIdToEdit === user.uid) {
-          // For the company owner, set all permissions to true
+          // Para el usuario principal, todos los permisos en verdaders
           setPermisos({
             permisoLibroDiario: true,
             permisoInventario: true,
@@ -187,7 +187,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
             permisoServicios: true,
           })
         } else {
-          // For other users, use the stored permissions
+          // Para otros usuarios colocar estos permisos
           setPermisos(
             permisosData || {
               permisoLibroDiario: false,
@@ -200,7 +200,7 @@ const UsuariosRegistrados: React.FC<UserProfileProps> = ({ user }) => {
           )
         }
       } else {
-        // If no permissions document exists, set default permissions
+        // Si los permisos no existen entonces colocar todos en faltos
         setPermisos({
           permisoLibroDiario: false,
           permisoInventario: false,

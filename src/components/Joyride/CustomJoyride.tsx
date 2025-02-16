@@ -36,6 +36,7 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isRunning, setIsRunning] = useState(run);
   const tooltipRef = useRef<HTMLDivElement>(null); // Referencia para el tooltip
+  const [targetElement, setTargetElement] = useState<Element | null>(null);
 
   const { theme } = useTheme()
 
@@ -63,7 +64,13 @@ const CustomJoyride: React.FC<CustomJoyrideProps> = ({
   if (!isRunning) return null;
 
   const step = steps[currentStep];
-  const targetElement = document.querySelector(step.target);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && step?.target) {
+      setTargetElement(document.querySelector(step.target));
+    }
+  }, [step?.target]); // Se ejecuta cada vez que `step.target` cambia
+  
 
   if (!targetElement) return null;
 
