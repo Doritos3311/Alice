@@ -6,6 +6,7 @@
     min-height: 100vh;
     overflow: hidden;
     background-color: #1E1E1E; /* Fondo oscuro */
+    color: #FFFF;
   }
   
   #animated-background {
@@ -24,18 +25,6 @@
     overflow: hidden;
     z-index: 1;
   }
-
-  /* Estilos para el tema claro */
-  .themeLight {
-    background-color: rgb(243 244 246);
-    color: black;
-  }
-
-  /* Estilos para el tema oscuro */
-  .themeDark {
-    background-color: rgb(15 15 15);
-    color: white;
-  }
   
   .header {
     width: 100%;
@@ -44,23 +33,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: #1e1e1e;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Estilos para el tema claro */
-  .themeLightNanvar {
-    background-color: rgb(255 255 255);
-  }
-
-  /* Estilos para el tema oscuro */
-  .themeDarkNanvar {
-    background-color: #1E1E1E;
   }
   
   .logo {
     font-size: 1.5rem;
     font-weight: bold;
     margin-left: 2rem;
+    color: #FFFF;
   }
   
   .nav {
@@ -74,6 +55,7 @@
     display: flex;
     font-size: 1rem;
     transition: color 0.3s;
+    color: #FFFF;
   }
   
   .dark .nav_link {
@@ -92,6 +74,7 @@
     margin-top: 1.25rem;
     margin-bottom: 0.25rem;
     margin-right: 20px;
+    background-color: #1E1E1E;
   }
 
   .user_button {
@@ -109,24 +92,28 @@
     width: 2.5rem;
     margin-right: 0.5rem;
   }
+
+  .avatarImg{
+    background-color: #373737;
+  }
   
   .user_name {
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #FFFF;
   }
   
   .popover_content {
+    background-color: #1E1E1E;
+    color: #FFFF;
+    border-color: #292524;
     width: 20rem;
     padding: 0;
     transform: translateY(0.75rem);
     border-radius: 1rem;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Agrega una sombra */
-  }
-
-  .popover_contentLight {
-    background-color: #ffffff;
   }
 
   .popover_contentDark {
@@ -150,6 +137,7 @@
   .avatar_fallback {
     font-size: 1.125rem;
     font-weight: bold;
+    background-color: #373737;
   }
   
   .user_display_name {
@@ -255,7 +243,7 @@
 }
 
   .hero {
-    background-color: rgb(255, 255, 255, 0.25);
+    background-color: rgba(124, 124, 124, 0.39);
     padding: 5rem 2rem;
     width: 100%;
     border-radius: 1rem;
@@ -336,11 +324,12 @@
     width: 400px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #131313;;
+    color: #FFFF;
   }
 
   .planCard:hover {
-    transform: translateY(-15px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.397);
   }
 
   .planCard h3 {
@@ -759,11 +748,11 @@
       padding-right: 0;
       margin-bottom: 0.5rem;
     }
-  
-    .logo {
-      margin-left: 0;
-      font-size: 1.4rem;
+
+    .user_button:hover {
+      background: #292524;
     }
+
 
     .nav_link {
       display: none;

@@ -19,7 +19,8 @@
 {/* Importacion de Librerias */}
 import { useState, useMemo, useRef, useEffect } from "react"
 
-import Link from "next/link"; // Importa Link de next/link
+//Enrutamiento
+import Link from 'next/link';
 
 //Estilos
 import stylesContent from "@/components/estilos/contenido.module.css"
@@ -30,13 +31,13 @@ import stylesGruposdeTrabajointerfaz from "@/components/estilos/gruposTrabajo.mo
 import stylesEstFacturacionRec from "@/components/estilos/esFacRec.module.css" 
 
 //Componentes Aplicacion
-import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage";
-import UsuariosRegistrados from '@/components/UsuariosRegistrados/UsuariosRegistrados';
-import { EmpresasRegistradas } from '@/components/EmpresasRegistradas/EmpresasRegistradas';
-import SolicitudIngreso from '@/components/SolicitudIngreso/SolicitudIngreso';
-import SolicitudPendiente from '@/components/SolicitudPendiente/SolicitudPendiente';
-import AccesoRestringido from '@/components/AccesoRestringido/AccesoRestringido';
-import MensajeNoItems from "@/components/MensajeNoItems/MensajeNoItems";
+import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage"
+import UsuariosRegistrados from '@/components/UsuariosRegistrados/UsuariosRegistrados'
+import { EmpresasRegistradas } from '@/components/EmpresasRegistradas/EmpresasRegistradas'
+import SolicitudIngreso from '@/components/SolicitudIngreso/SolicitudIngreso'
+import SolicitudPendiente from '@/components/SolicitudPendiente/SolicitudPendiente'
+import AccesoRestringido from '@/components/AccesoRestringido/AccesoRestringido'
+import MensajeNoItems from "@/components/MensajeNoItems/MensajeNoItems"
 
 //Enrutamiento
 
@@ -87,7 +88,7 @@ import GenerarRegistros from '@/components/GenerarRegistros/GenerarRegistros';
 // Uso de interfaz
 import { Toaster } from "@/components/ui/toaster";
 import JoyrideWrapper from "@/components/Joyride/JoyrideWrapper";
-import { Step } from './Joyride/CustomJoyride';
+import { Step } from '../Joyride/CustomJoyride';
 
 
 // Configuración de Firebase
@@ -1936,12 +1937,6 @@ export default function ContabilidadApp() {
     }
   }
 
-  // Funcion abrir modal auto generar facturacion
-  const handleGenerarFacturacion = (serviceId: string) => {
-    setCurrentServiceId(serviceId)
-    setIsInvoiceConfirmeModalOpen(true)
-  }
-
   // Funcion abrir modal auto generar asiento contable
   const handleGenerarLibroDiario = (serviceId: string) => {
     setCurrentServiceId(serviceId)
@@ -3558,9 +3553,6 @@ export default function ContabilidadApp() {
 
                           <CardFooter className={`${stylesService.cardFooter} ${theme === "light" ? stylesService.cardFooterLight : stylesService.cardFooterDark}`}>
                             <div className={stylesService.buttonGroupA}>
-                              <Button size="sm" onClick={() => handleGenerarFacturacion(servicio.id)}>
-                                Generar Facturación
-                              </Button>
                               <Button size="sm" onClick={() => handleGenerarLibroDiario(servicio.id)}>
                                 Generar Asiento Contable
                               </Button>
@@ -3941,12 +3933,15 @@ export default function ContabilidadApp() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex flex-col space-y-4 mr-0 mb-4 items-center">
-                    <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
-                    onClick={()=> {
-                      handleLogout()
-                      setIsLogOutModalOpen(false)}}>
-                      Confirmar
-                    </Button>
+                    <Link href="/" passHref> 
+                      <Button className="flex items-center justify-center space-x-3 w-full bg-red-600 hover:bg-red-400"
+                      onClick={()=> {
+                        handleLogout()
+                        setIsLogOutModalOpen(false)
+                        }}>
+                        Confirmar
+                      </Button>
+                    </Link>
                   </div>
                 </DialogContent>
               </Dialog>

@@ -6,9 +6,8 @@ import Link from 'next/link';
 import styles from "./LandingPage.module.css";
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Home, LogOut, Check, ChartColumnBig, Settings } from "lucide-react"
@@ -17,12 +16,12 @@ import { FcGoogle } from "react-icons/fc"
 import {
   signInWithPopup,
   GoogleAuthProvider,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   getAuth,
 } from "firebase/auth"
 import { toast } from "../hooks/use-toast";
-import { initializeApp } from "firebase/app"
+import { FirebaseError, initializeApp } from "firebase/app"
+import { useTheme } from "next-themes"
 
 const firebaseConfig = {
   apiKey: "AIzaSyBl1TjSQX82qh60XGIHEtp_i9RCoTTFv_w",
@@ -46,14 +45,13 @@ interface LandingPageProps {
   onUpdateUserType: (newType: 'personal' | 'empresa') => void; // Añadir aquí
 }
 
-
-const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showLogIn, setShowLogIn] = useState(false)
   const [isLogOutModalOpen, setIsLogOutModalOpen] = useState(false);
-
+  const { setTheme, theme } = useTheme()
 
   const plans = [
     {
@@ -114,41 +112,46 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
     }
   }
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Función para manejar el inicio de sesión
+  const handleSignIn = async (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+  
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
-      toast({
-        title: "Registro exitoso",
-        description: "Tu cuenta ha sido creada.",
-      })
-    } catch (error) {
-      console.error("Error al registrarse:", error)
-      toast({
-        title: "Error",
-        description: "Hubo un problema al crear tu cuenta. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Inicio de sesión exitoso",
-        description: "Has iniciado sesión con éxito.",
-      })
+        description: "Has iniciado sesión correctamente.",
+        variant: "default",
+      });
+      setShowLogIn(false);
     } catch (error) {
-      console.error("Error al iniciar sesión:", error)
-      toast({
-        title: "Error",
-        description: "Hubo un problema al iniciar sesión. Por favor, verifica tus credenciales e intenta de nuevo.",
-        variant: "destructive",
-      })
+      // Verifica si el error es de tipo FirebaseError
+      if (error instanceof FirebaseError) {
+        let errorMessage = "Hubo un problema al iniciar sesión. Por favor, intenta de nuevo.";
+  
+        if (error.code === "auth/user-not-found") {
+          errorMessage = "El correo electrónico no está registrado. ¿Quieres registrarte?";
+        } else if (error.code === "auth/wrong-password") {
+          errorMessage = "La contraseña es incorrecta. Inténtalo de nuevo.";
+        } else if (error.code === "auth/too-many-requests") {
+          errorMessage = "Demasiados intentos fallidos. Inténtalo de nuevo más tarde.";
+        }
+  
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        // Si el error no es de Firebase, muestra un mensaje genérico
+        toast({
+          title: "Error",
+          description: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+          variant: "destructive",
+        });
+      }
     }
-  }
+  };
 
   const handleShowLogIn = () => {
     setShowLogIn(true)
@@ -173,10 +176,10 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
   }
 
   return (
-    <div className={`${styles.landing_page} ${theme === "light" ? styles.themeLight : styles.themeDark}`}>
+    <div className={`${styles.landing_page}`}>
 
       {/* Nanvar */}
-      <header className={`${styles.header} ${theme === "light" ? styles.themeLightNanvar : styles.themeDarkNanvar}`}>
+      <header className={`${styles.header} ${theme === "light" ? styles.themeNanvar : styles.themeDarkNanvar}`}>
         {user ? (
           <div className={styles.logo}>Alice</div>
         ) : (
@@ -202,14 +205,14 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
                 <PopoverTrigger asChild >
                   <Button variant="ghost" className={styles.user_button}>
                     <Avatar className={styles.avatar}>
-                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} className={styles.avatarImg}/>
                       <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                     </Avatar>
                     <span className={styles.user_name}>{user.displayName || user.email}</span>
                   </Button>
                 </PopoverTrigger>
                 
-                <PopoverContent className={`${styles.popover_content} ${theme === "light" ? styles.popover_contentLight : styles.popover_contentDark}`}>
+                <PopoverContent className={`${styles.popover_content}`}>
                   <div className={styles.user_info}>
                     <Avatar className={styles.avatar_large}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
@@ -245,7 +248,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
             <div className={styles.login_button}>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_linkLight : styles.login_linkDark}`}>
+                  <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}>
                     Iniciar Sesión
                   </Button>
                 </DialogTrigger>
@@ -260,7 +263,7 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
                         placeholder="Correo electrónico"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`${styles.input} ${theme === "light" ? styles.inputLight : styles.inputDark}`}
+                        className={`${styles.input} ${theme === "light" ? styles.input : styles.inputDark}`}
                       />
                       <Input
                         type="password"
@@ -269,15 +272,21 @@ const LandingPage: React.FC<LandingPageProps> = ({theme, user, setActiveTab }) =
                         onChange={(e) => setPassword(e.target.value)}
                         className={styles.input}
                       />
-                      <Button type="submit" className={styles.submit_button}>
+                      <Button
+                        onClick={handleShowLogIn}
+                        variant="link"
+                        className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}
+                      >
                         Iniciar Sesión
                       </Button>
                     </form>
                     <div className={styles.signup_link}>
                       <p>¿No tienes una cuenta?</p>
-                      <Button variant="link" onClick={handleSignUp} className={styles.signup_button}>
-                        Registrarse
-                      </Button>
+                      <Link href="/registro" passHref>
+                        <Button variant="link" className={styles.signup_button}>
+                          Registrarse
+                        </Button>
+                      </Link>
                     </div>
                     <div className={styles.google_button}>
                       <Button onClick={handleGoogleLogin} variant="outline" className={styles.google_login}>

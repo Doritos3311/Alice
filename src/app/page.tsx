@@ -20,7 +20,6 @@
 import { useState, useEffect } from "react"
 import React from "react";
 
-import AppContent from "../components/AppContent"
 import LandingPage from "@/components/Landing Page/LandingPage";
 
 //Enrutamiento
@@ -121,7 +120,7 @@ export default function ContabilidadApp() {
 
   return (
     <LandingPage
-      theme={theme || "dark"}
+      theme="dark"
       user={user}
       setIsLoginModalOpen={() => {}}
       setIsLogOutModalOpen={() => {}}
