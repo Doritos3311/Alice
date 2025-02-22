@@ -1,17 +1,19 @@
 // SignUp.js
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import { auth, googleProvider } from "../Firebase/firebase"; // Importa auth y googleProvider
 import { toast } from "../hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Importa useRouter
 import { motion } from "framer-motion"; // Importa motion desde framer-motion
 import styles from "./SingUp.module.css"; // Importa los estilos CSS Modules
+import { Toaster } from "../ui/toaster";
 
 // Componente para los paths animados del fondo
 const FloatingPaths = ({ position }: { position: number }) => {
@@ -61,6 +63,19 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Si el usuario está autenticado, redirige a la ruta "/"
+        router.push("/");
+      }
+    });
+
+    // Limpia el listener cuando el componente se desmonta
+    return () => unsubscribe();
+  }, [router]);
 
   const handleSignUp = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -115,6 +130,11 @@ const SignUp = () => {
 
   return (
     <div className={styles.container}>
+
+      <div>
+        <Toaster/>
+      </div>
+
       {/* Fondo animado */}
       <div className="absolute inset-0">
         <FloatingPaths position={1} />
@@ -167,7 +187,7 @@ const SignUp = () => {
         </div>
         <div className={styles.login_link}>
           <p>¿Ya tienes una cuenta?</p>
-          <Link href="/iniciar-sesion" passHref>
+          <Link href="/" passHref>
             <Button variant="link" className={styles.login_button}>
               Iniciar Sesión
             </Button>
