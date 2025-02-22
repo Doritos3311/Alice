@@ -17,7 +17,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = ({ user, setShowLand
 
   useEffect(() => {
     if (theme == "dark" || theme == "light") {
-      console.log(theme);
+      setTheme(theme)
     } else {
       setTheme("dark"); // Define el tema por defecto si no hay uno establecido
     }

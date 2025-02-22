@@ -1,95 +1,179 @@
-"use client"; // Asegúrate de que este componente se ejecute en el cliente
+// SignUp.js
+"use client";
 
 import React, { useState } from "react";
-import { auth } from "../Firebase/firebase"; // Importa desde firebase.js
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { toast } from "../hooks/use-toast"; // Asegúrate de que la ruta de importación sea correcta
-import { useRouter } from "next/navigation"; // Importa useRouter para la navegación
+import { FirebaseError } from "firebase/app";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth, googleProvider } from "../Firebase/firebase"; // Importa auth y googleProvider
+import { toast } from "../hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FcGoogle } from "react-icons/fc";
+import Link from "next/link";
+import { motion } from "framer-motion"; // Importa motion desde framer-motion
+import styles from "./SingUp.module.css"; // Importa los estilos CSS Modules
+
+// Componente para los paths animados del fondo
+const FloatingPaths = ({ position }: { position: number }) => {
+  const paths = Array.from({ length: 36 }, (_, i) => ({
+    id: i,
+    d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
+      380 - i * 5 * position
+    } -${189 + i * 6} -${312 - i * 5 * position} ${216 - i * 6} ${
+      152 - i * 5 * position
+    } ${343 - i * 6}C${616 - i * 5 * position} ${470 - i * 6} ${
+      684 - i * 5 * position
+    } ${875 - i * 6} ${684 - i * 5 * position} ${875 - i * 6}`,
+    color: `rgba(15,23,42,${0.1 + i * 0.03})`,
+    width: 0.5 + i * 0.03,
+  }));
+
+  return (
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: -1 }}> {/* Fondo detrás de todo */}
+      <svg className="w-full h-full text-slate-950 dark:text-white" viewBox="0 0 696 316" fill="none">
+        <title>Background Paths</title>
+        {paths.map((path) => (
+          <motion.path
+            key={path.id}
+            d={path.d}
+            stroke="currentColor"
+            strokeWidth={path.width}
+            strokeOpacity={0.1 + path.id * 0.03}
+            initial={{ pathLength: 0.3, opacity: 0.6 }}
+            animate={{
+              pathLength: 1,
+              opacity: [0.3, 0.6, 0.3],
+              pathOffset: [0, 1, 0],
+            }}
+            transition={{
+              duration: 20 + Math.random() * 10,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+};
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter(); // Inicializa useRouter
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-
-    // Validación básica de campos
-    if (!email || !password) {
-      setError("Por favor, completa todos los campos.");
-      return;
-    }
-
     try {
-      // Crear usuario con Firebase
       await createUserWithEmailAndPassword(auth, email, password);
-
-      // Mostrar notificación de éxito
       toast({
         title: "Registro exitoso",
         description: "Te has registrado correctamente.",
         variant: "default",
       });
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        let errorMessage = "Hubo un problema al registrarse. Por favor, intenta de nuevo.";
 
-      // Limpiar el formulario después del registro exitoso
-      setEmail("");
-      setPassword("");
-      setError("");
+        if (error.code === "auth/email-already-in-use") {
+          errorMessage = "El correo electrónico ya está en uso. ¿Quieres iniciar sesión?";
+        } else if (error.code === "auth/weak-password") {
+          errorMessage = "La contraseña es demasiado débil. Usa al menos 6 caracteres.";
+        }
 
-      // Redirigir a la página principal después del registro exitoso
-      router.push("/"); // Cambia "/" por la ruta que desees
-    } catch (error: any) {
-      // Manejo de errores
-      console.error("Error al registrar usuario:", error);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Ocurrió un error inesperado. Por favor, intenta de nuevo.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
-      // Mostrar notificación de error
+  const handleGoogleSignUp = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
+        title: "Registro exitoso",
+        description: "Te has registrado con Google correctamente.",
+        variant: "default",
+      });
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Error al registrar usuario.",
+        description: "Hubo un problema al registrarse con Google. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
-
-      // Mostrar el error en la interfaz
-      setError(error.message || "Error al registrar usuario.");
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "0 auto", padding: "20px" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>Registrarse</h2>
-      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
-      <form onSubmit={handleSignUp} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "10px",
-            borderRadius: "5px",
-            border: "none",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-        >
-          Registrarse
-        </button>
-      </form>
+    <div className={styles.container}>
+      {/* Fondo animado */}
+      <div className="absolute inset-0">
+        <FloatingPaths position={1} />
+        <FloatingPaths position={-1} />
+      </div>
+
+      {/* Contenido del formulario */}
+      <header className={styles.header}>
+        <div className={styles.logo}>Alice</div>
+      </header>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className={styles.cardContainer}
+        style={{ zIndex: 10 }}
+      >
+        <h2 className={styles.title}>Registrarse</h2>
+        {error && <p className={styles.error}>{error}</p>}
+        <form onSubmit={handleSignUp} className={styles.form}>
+          <Input
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={styles.input}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={styles.input}
+            required
+          />
+          <Button type="submit" className={styles.submit_button}>
+            Registrarse
+          </Button>
+        </form>
+        <div className={styles.separator}>
+          <span>o</span>
+        </div>
+        <div className={styles.google_button}>
+          <Button onClick={handleGoogleSignUp} variant="outline" className={styles.google_login}>
+            <FcGoogle className={styles.google_icon} />
+            Registrarse con Google
+          </Button>
+        </div>
+        <div className={styles.login_link}>
+          <p>¿Ya tienes una cuenta?</p>
+          <Link href="/iniciar-sesion" passHref>
+            <Button variant="link" className={styles.login_button}>
+              Iniciar Sesión
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
     </div>
   );
 };

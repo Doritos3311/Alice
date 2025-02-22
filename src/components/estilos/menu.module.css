@@ -221,9 +221,14 @@
   margin-top: 1rem;
 }
 
+.avatar {
+  background: #373737;
+}
+
 .avatarfallback {
   font-size: 1.125rem;
   font-weight: bold;
+  background: #373737;
 }
 
 .userdisplayname {

@@ -14,6 +14,12 @@
     box-shadow: none;
 }
 
+.avatar{
+    background: #373737;
+    display: flex;
+    align-items: center;
+}
+
 .cardLight {
     background-color: rgb(243, 244, 246);
 }

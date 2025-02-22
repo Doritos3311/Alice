@@ -118,7 +118,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLa
           <h2 className={styles.nameTitle}>Foto de Perfil</h2>
           <Avatar className={styles.avatar}>
             <AvatarImage src={user?.photoURL || undefined} alt={userData.displayName || "Usuario"} />
-            <AvatarFallback>{userData.displayName ? userData.displayName[0].toUpperCase() : "U"}</AvatarFallback>
+            <AvatarFallback className={styles.avatar}>{userData.displayName ? userData.displayName[0].toUpperCase() : "U"}</AvatarFallback>
           </Avatar>
 
           <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>

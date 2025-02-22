@@ -114,8 +114,6 @@ const auth = getAuth(app);
 auth.onAuthStateChanged((user) => {
   if (user) {
     const uid = user.uid;
-    console.log("Usuario autenticado con UID:", uid);
-
     // Aquí puedes llamar a las funciones para obtener o guardar datos
   } else {
     console.log("Ningún usuario autenticado.");
@@ -468,7 +466,6 @@ export default function ContabilidadApp() {
   // Simula un tiempo de carga
   useEffect(() => {
     if (theme == "dark" || theme == "light") {
-      console.log(theme)
     } else {
       setTheme("dark"); // Define el tema por defecto si no hay uno establecido
     }
@@ -2466,7 +2463,7 @@ export default function ContabilidadApp() {
                         <Button variant="ghost" className={stylesMenu.userbutton}>
                           <Avatar className={stylesMenu.useravatar}>
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} />
-                            <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                            <AvatarFallback className={stylesMenu.avatar}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                           </Avatar>
                           <span className={stylesMenu.username}>{user.displayName || user.email}</span>
                         </Button>

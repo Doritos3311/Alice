@@ -205,8 +205,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
                 <PopoverTrigger asChild >
                   <Button variant="ghost" className={styles.user_button}>
                     <Avatar className={styles.avatar}>
-                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"} className={styles.avatarImg}/>
-                      <AvatarFallback>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "Usuario"}/>
+                      <AvatarFallback className={styles.avatarImg}>{user.displayName ? user.displayName[0] : "U"}</AvatarFallback>
                     </Avatar>
                     <span className={styles.user_name}>{user.displayName || user.email}</span>
                   </Button>
