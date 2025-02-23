@@ -7,6 +7,7 @@ const validRoutes = [
   "/registro",         // Ruta /registro
   "/app",              // Ruta /app
   "/test",  // Ruta /otro-componente
+  "/prompt.txt",
 ];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

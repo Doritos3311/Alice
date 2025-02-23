@@ -180,11 +180,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
 
       {/* Nanvar */}
       <header className={`${styles.header} ${theme === "light" ? styles.themeNanvar : styles.themeDarkNanvar}`}>
-        {user ? (
-          <div className={styles.logo}>Alice</div>
-        ) : (
-          <div className={styles.logo}>Alice</div>
-        )}
+        
+        <div className={styles.logo}>Alice</div>
 
         <nav className={styles.nav}>
           <a href="#sectionIniced" className={styles.nav_link}>
@@ -297,6 +294,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
                   </DialogContent>
                 )}
               </Dialog>
+              <Link href="/registro" passHref>
+                <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}>
+                  Iniciar Sesión
+                </Button>
+              </Link>
             </div>
           )}
         </nav>

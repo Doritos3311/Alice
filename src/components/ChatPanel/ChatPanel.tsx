@@ -1,10 +1,9 @@
-import React, { useState, useRef, KeyboardEvent } from 'react';
+import React, { useState, useRef, KeyboardEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button'; // Asegúrate de importar los componentes correctos
 import { Input } from "@/components/ui/input"
 import { Settings, X, Bot, Upload, Mic } from 'lucide-react'; // Asegúrate de importar los íconos correctos
 import styles from '@/components/ChatPanel/ChatPanel.module.css'; // Asegúrate de importar los estilos correctos
 import { useTheme } from "next-themes"
-
 
 // Definir el tipo Message
 type Message = {
@@ -17,20 +16,52 @@ interface ChatPanelProps {
     isIAOpen: boolean;
     setIsIAOpen: (isOpen: boolean) => void;
     setActiveTab: (tab: string) => void;
+    setIsCreatingAccountingEntry: (isOpen: boolean) => void;
+    setNewRow: (row: Record<string, string>) => void; // Acepta un objeto, no un string
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setNewRow }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
+
     const chatRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
+    const [PROMT, setPROMT] = useState("");
 
     // Configuración de la API
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
     const SITE_URL = "https://aliceapp.vercel.app"; // Cambia esto por la URL de tu sitio
     const SITE_NAME = "AliceApp"; // Cambia esto por el nombre de tu sitio
+
+    useEffect(() => {
+        const loadPrompt = async () => {
+            try {
+                const response = await fetch("/prompt.txt");
+                const text = await response.text();
+                setPROMT(text);
+                console.log(text);
+            } catch (error) {
+                console.error("Error cargando el PROMT:", error);
+            }
+        };
+
+        loadPrompt();
+    }, []);
+
+    const functions: Record<string, (params?: any) => void> = {
+        crearAsientoContable: (fields) => {
+            setActiveTab("libro-diario")
+            setIsCreatingAccountingEntry(true);
+            setNewRow(fields);
+            console.log("Se ejecutó crearLibroDiario");
+        },
+        crearFactura: () => {
+            console.log("Se ejecutó crearFactura");
+        },
+    };
 
     // Función para enviar mensajes a OpenRouter
     const sendMessageToOpenRouter = async (message: string, context: Message[] = []) => {
@@ -44,13 +75,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "deepseek/deepseek-r1:free", // Modelo de DeepSeek
+                    model: "deepseek/deepseek-r1:free",
                     messages: [
+                        { role: "system", content: PROMT },
                         ...context,
                         { role: "user", content: message },
                     ],
                 }),
             });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}. Detalles: ${errorText}`);
+            }
 
             const data = await response.json();
             return data.choices[0].message.content;
@@ -69,15 +106,47 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                 const userMessage: Message = { role: "user", content: inputMessage };
                 setMessages((prev) => [...prev, userMessage]);
                 setInputMessage("");
+                setIsProcessing(true);
 
                 try {
-                    const assistantResponse = await sendMessageToOpenRouter(inputMessage, messages);
-                    const assistantMessage: Message = { role: "assistant", content: assistantResponse };
-                    setMessages((prev) => [...prev, assistantMessage]);
+                    // Enviar mensaje a la IA
+                    const aiResponse = await sendMessageToOpenRouter(inputMessage, messages);
+
+                    // Intentar extraer JSON desde la respuesta de IA
+                    let responseData: { function?: string; params?: any; message?: string } = {};
+                    const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/); // Extraer JSON entre ```json```
+
+                    if (jsonMatch) {
+                        responseData = JSON.parse(jsonMatch[1]); // Parsear el JSON extraído
+                    } else {
+                        responseData = { function: undefined, message: aiResponse }; // Si no es JSON, tratarlo como mensaje
+                    }
+
+                    // Mostrar la confirmación en lenguaje natural
+                    if (responseData.message) {
+                        const assistantMessage: Message = {
+                            role: "assistant",
+                            content: responseData.message || "Lo siento, no entendí la solicitud.", // Asegurar que `content` no sea `undefined`
+                        };
+                        setMessages((prev) => [...prev, assistantMessage]);
+                    }
+
+                    // Ejecutar la función si existe (después de mostrar la confirmación)
+                    if (responseData.function) {
+                        const functionName = responseData.function.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()); // Convertir snake_case a camelCase
+
+                        if (functionName in functions) {
+                            // Retrasar la ejecución de la función para que el usuario vea la confirmación
+                            setTimeout(() => {
+                                functions[functionName](responseData.params || {});
+                            }, 1000); // Retraso de 1 segundo (ajusta según sea necesario)
+                        }
+                    }
                 } catch (error) {
                     console.error("Error:", error);
-                    const errorMessage: Message = { role: "assistant", content: "Lo siento, hubo un error al procesar tu solicitud." };
-                    setMessages((prev) => [...prev, errorMessage]);
+                    setMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, hubo un error." }]);
+                } finally {
+                    setIsProcessing(false);
                 }
             }
         } else if (e.key === 'Enter' && e.shiftKey) {
@@ -133,6 +202,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
             {isIAOpen && (
                 <>
                     <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
+                        {/* Mensaje */}
                         {messages.map((message, index) => (
                             <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                                 <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
@@ -140,6 +210,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                                 </div>
                             </div>
                         ))}
+                        {/* Mensaje de carga */}
+                        {isProcessing && (
+                            <div className="text-left mb-4">
+                                <div className="inline-block p-2 rounded-lg">
+                                    Procesando...
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="p-4 border-t">
                         <div className="flex mb-2">
