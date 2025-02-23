@@ -123,19 +123,6 @@
   display: flex;
 }
 
-/* Estilos para el botón cuando está visible */
-.configbutton {
-  display: none;
-  position: absolute; /* Posicionamiento absoluto */
-  top: 5rem; /* top-20 */
-  left: 0.5rem; /* left-2 */
-}
-
-/* Estilos para ocultar el botón */
-.configbutton.hidden {
-  display: flex; /* Oculta el botón */
-}
-
 .menudesplegable {
   display: none;
   margin-left: 2.5rem;

@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Define las rutas válidas en tu aplicación
-const validRoutes = ["/", "/app", "/registro"]; // Agrega aquí todas las rutas que existen en tu aplicación
-
+const validRoutes = [
+  "/",                  // Ruta principal (si existe)
+  "/registro",         // Ruta /registro
+  "/app",              // Ruta /app
+  "/test",  // Ruta /otro-componente
+];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 

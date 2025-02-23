@@ -1,4 +1,4 @@
-// src/app/nuevo-componente/page.tsx
+  // my-next-app\src\app\routes\registro\page.tsx
 "use client";
 
 import SignUp from "@/components/Registrarse/SignUp";

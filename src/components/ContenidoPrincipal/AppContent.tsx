@@ -38,6 +38,7 @@ import SolicitudIngreso from '@/components/SolicitudIngreso/SolicitudIngreso'
 import SolicitudPendiente from '@/components/SolicitudPendiente/SolicitudPendiente'
 import AccesoRestringido from '@/components/AccesoRestringido/AccesoRestringido'
 import MensajeNoItems from "@/components/MensajeNoItems/MensajeNoItems"
+import ChatPanel from "@/components/ChatPanel/ChatPanel";
 
 //Enrutamiento
 
@@ -195,9 +196,9 @@ interface ServiceDetail {
 
 // Definicion Mensaje
 type Message = {
-  role: 'user' | 'assistant'
-  content: string
-}
+  role: "user" | "assistant";
+  content: string;
+};
 
 // Definicion de Campos
 type FieldConfig = {
@@ -246,6 +247,12 @@ const openai = new OpenAI({
   apiKey: "",
   dangerouslyAllowBrowser: true
 });
+
+// Configuración de la API
+const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const SITE_URL = "https://tusitio.com"; // Cambia esto por la URL de tu sitio
+const SITE_NAME = "Mi Sitio"; // Cambia esto por el nombre de tu sitio
 
 export default function ContabilidadApp() {
 
@@ -1039,75 +1046,59 @@ export default function ContabilidadApp() {
 
   {/* IA */}
 
-  // Función para manejar el envío de mensajes al asistente IA
+  // Función para enviar mensajes a OpenRouter
+  const sendMessageToOpenRouter = async (message: string, context: Message[] = []) => {
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "HTTP-Referer": SITE_URL,
+          "X-Title": SITE_NAME,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-r1:free", // Modelo de DeepSeek
+          messages: [
+            ...context,
+            { role: "user", content: message },
+          ],
+        }),
+      });
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error("Error al comunicarse con OpenRouter:", error);
+      return "Lo siento, hubo un error al procesar tu solicitud.";
+    }
+  };
+
+  // Función para manejar el envío de mensajes
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-  
+
       if (inputMessage.trim()) {
-        // Añadir mensaje del usuario a la conversación
-        const userMessage = { role: 'user' as const, content: inputMessage };
-        setMessages(prev => [...prev, userMessage]);
+        const userMessage: Message = { role: "user", content: inputMessage };
+        setMessages((prev) => [...prev, userMessage]);
         setInputMessage("");
-  
+
         try {
-          // Verificar y recortar mensajes para no superar el límite de tokens
-          const maxTokens = 3000; // Límite ajustado según las especificaciones
-          const trimmedMessages = [...messages, userMessage].slice(-maxTokens);
-  
-          // Llamada a la API de OpenAI
-          const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [
-              { role: "system", content: "Eres un asistente en contabilidad y manejo de empresas..." },
-              ...trimmedMessages,
-            ],
-          });
-  
-          // Añadir respuesta de la IA a los mensajes
-          const assistantMessage = {
-            role: 'assistant' as const,
-            content: completion.choices[0]?.message.content || "Lo siento, no pude generar una respuesta.",
-          };
-          setMessages(prev => [...prev, assistantMessage]);
-  
-          //Generación de audio (si es compatible)
-          //Comentar esta parte si no usas un SDK compatible o tienes problemas
-           try {
-             const speech = await openai.audio.speech.create({
-               model: "tts-1",
-               voice: "nova",
-               input: assistantMessage.content,
-             });
-  
-             const audioUrl = URL.createObjectURL(new Blob([await speech.arrayBuffer()], { type: 'audio/mpeg' }));
-             const audio = new Audio(audioUrl);
-             audio.play();
-           } catch (audioError) {
-             console.error("Error al generar audio:", audioError);
-           }
-  
-        } catch (error: any) {
-          console.error("Error al comunicarse con la IA:", error.response?.data || error.message);
-  
-          // Mostrar mensaje de error en la conversación
-          setMessages(prev => [
-            ...prev,
-            { role: 'assistant', content: "Lo siento, hubo un error al procesar tu solicitud." },
-          ]);
+          const assistantResponse = await sendMessageToOpenRouter(inputMessage, messages);
+          const assistantMessage: Message = { role: "assistant", content: assistantResponse };
+          setMessages((prev) => [...prev, assistantMessage]);
+        } catch (error) {
+          console.error("Error:", error);
+          const errorMessage: Message = { role: "assistant", content: "Lo siento, hubo un error al procesar tu solicitud." };
+          setMessages((prev) => [...prev, errorMessage]);
         }
       }
     } else if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
-      setInputMessage(prev => prev + '\n');
+      setInputMessage((prev) => prev + '\n');
     }
   };
-
-  // Función para manejar la subida de archivos
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Aquí iría la lógica para manejar la subida de archivos
-    console.log("Archivo seleccionado:", event.target.files?.[0])
-  }
 
   // Función para manejar la entrada de voz
   const handleVoiceInput = () => {
@@ -3710,92 +3701,7 @@ export default function ContabilidadApp() {
               </div>
 
               {/* Panel de IA desplegable */}
-              <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
-
-              {/* Btn Configuracion */}
-              {isIAOpen ? (
-                <Button
-                  variant={activeTab === "configuracion" ? "default" : "ghost"}
-                  className={`${stylesMenu.configbutton}`} // Clase cuando el botón está visible
-                  onClick={() => setActiveTab("configuracion")}
-                >
-                  <Settings className={stylesMenu.iconconfig} />
-                </Button>
-              ) : (
-                <Button
-                  variant={activeTab === "configuracion" ? "default" : "ghost"}
-                  className={`${stylesMenu.configbutton} ${stylesMenu.hidden}`} // Clase cuando el botón está oculto
-                  onClick={() => setActiveTab("configuracion")}
-                >
-                  <Settings className={stylesMenu.iconconfig} />
-                </Button>
-              )}
-              
-
-                {/* Btn Desplegar Panel */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 left-4"
-                  onClick={() => setIsIAOpen(!isIAOpen)}
-                  aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
-                >
-                  {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
-                </Button>
-
-                {/* Interfaz Panel IA */}
-                {isIAOpen && (
-                  <>
-                    <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
-                      {messages.map((message, index) => (
-                        <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                          <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
-                            {message.content}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 border-t">
-                      <div className="flex mb-2">
-
-                        {/* Barra de Texto */}
-                        <Input
-                          type="text"
-                          placeholder="Escribe tu mensaje..."
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          onKeyDown={handleSendMessage}
-                          className="flex-grow mr-2" />
-                      </div>
-                      <div className="flex justify-between">
-
-                        {/* Btn Subir Archivo */}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Upload className="h-4 w-4" />
-                          <span className="sr-only">Subir archivo</span>
-                        </Button>
-
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          id="file-upload"
-                          className="hidden"
-                        />
-
-                        {/* Btn Hablar Para Escuchar */}
-                        <Button variant="outline" size="icon" onClick={handleVoiceInput}>
-                          <Mic className="h-4 w-4" />
-                          <span className="sr-only">Entrada de voz</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              <ChatPanel isIAOpen={isIAOpen} setIsIAOpen={setIsIAOpen} setActiveTab={setActiveTab}/>
 
             {/* MODALES */}
             <div>

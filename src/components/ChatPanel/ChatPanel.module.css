@@ -1,0 +1,20 @@
+/* Estilos para el botón cuando está visible */
+.configbutton {
+    display: none;
+    position: absolute;
+    top: 5rem;
+    left: 0.8rem;
+}
+
+/* Estilos para ocultar el botón */
+.configbutton.hidden {
+    display: flex;
+}
+
+.iaButton {
+    position: absolute;
+    top: 1rem;
+    left: 0.8rem;
+}
+
+/*"absolute top-4 left-4"*/
