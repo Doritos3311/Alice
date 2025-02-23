@@ -17,13 +17,18 @@ interface ChatPanelProps {
     setIsIAOpen: (isOpen: boolean) => void;
     setActiveTab: (tab: string) => void;
     setIsCreatingAccountingEntry: (isOpen: boolean) => void;
+    setIsInventoryModalOpen: (isOpen: boolean) => void;
+    setIsInvoiceModalOpen: (isOpen: boolean) => void;
+    setIsInvoiceReceivedModalOpen: (isOpen: boolean) => void;
     setNewRow: (row: Record<string, string>) => void; // Acepta un objeto, no un string
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setNewRow }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setIsInventoryModalOpen, setIsInvoiceModalOpen, setIsInvoiceReceivedModalOpen, setNewRow }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
+    const [typedMessage, setTypedMessage] = useState(""); // Estado para el mensaje que se está escribiendo
+    const typingSpeed = 10;
 
     const chatRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +47,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                 const response = await fetch("/prompt.txt");
                 const text = await response.text();
                 setPROMT(text);
-                console.log(text);
             } catch (error) {
                 console.error("Error cargando el PROMT:", error);
             }
@@ -58,8 +62,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
             setNewRow(fields);
             console.log("Se ejecutó crearLibroDiario");
         },
-        crearFactura: () => {
-            console.log("Se ejecutó crearFactura");
+        agregarInventario: (fields) => {
+            setActiveTab("inventario")
+            setIsInventoryModalOpen(true);
+            setNewRow(fields);
+        },
+        crearFactura: (fields) => {
+            setActiveTab("facturacion-emitidas")
+            setIsInvoiceModalOpen(true);
+            setNewRow(fields);
+        },
+        crearFacturaRecibida: (fields) => {
+            setActiveTab("facturacion-recibidas")
+            setIsInvoiceReceivedModalOpen(true);
+            setNewRow(fields);
         },
     };
 
@@ -165,6 +181,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
         console.log("Iniciando entrada de voz...");
     };
 
+    // Función para simular la escritura letra por letra
+    const typeMessage = (message: string, onComplete?: () => void) => {
+        let index = 0;
+        const interval = setInterval(() => {
+            setTypedMessage((prev) => prev + message[index]);
+            index++;
+            if (index >= message.length) {
+                clearInterval(interval);
+                if (onComplete) onComplete();
+            }
+        }, typingSpeed);
+    };
+
     return (
         <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
             {/* Btn Configuracion */}
@@ -215,6 +244,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                             <div className="text-left mb-4">
                                 <div className="inline-block p-2 rounded-lg">
                                     Procesando...
+                                </div>
+                            </div>
+                        )}
+                        {/* Mensaje que se está escribiendo */}
+                        {typedMessage && (
+                            <div className="text-left mb-4">
+                                <div className="inline-block p-2 rounded-lg bg-gray-200 text-gray-900">
+                                    {typedMessage}
                                 </div>
                             </div>
                         )}

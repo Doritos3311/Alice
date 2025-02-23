@@ -3701,7 +3701,16 @@ export default function ContabilidadApp() {
               </div>
 
               {/* Panel de IA desplegable */}
-              <ChatPanel isIAOpen={isIAOpen} setIsIAOpen={setIsIAOpen} setActiveTab={setActiveTab} setIsCreatingAccountingEntry={setIsCreatingAccountingEntry} setNewRow={setNewRow}/>
+              <ChatPanel 
+              isIAOpen={isIAOpen} 
+                setIsIAOpen={setIsIAOpen} 
+                setActiveTab={setActiveTab} 
+                setIsCreatingAccountingEntry={setIsCreatingAccountingEntry} 
+                setIsInventoryModalOpen={setIsInventoryModalOpen} 
+                setIsInvoiceModalOpen={setIsInvoiceModalOpen}
+                setIsInvoiceReceivedModalOpen={setIsInvoiceReceivedModalOpen}
+                setNewRow={setNewRow}
+              />
 
             {/* MODALES */}
             <div>
