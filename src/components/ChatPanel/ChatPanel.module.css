@@ -17,4 +17,32 @@
     left: 0.8rem;
 }
 
+/* Estilos para los mensajes */
+.message {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    max-width: 80%;
+  }
+  
+  .message.user {
+    margin-left: auto;
+  }
+  
+  .message.assistant {
+    margin-right: auto;
+  }
+  
+  /* Estilos para títulos */
+  .message strong {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Saltos de línea */
+  .message pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
 /*"absolute top-4 left-4"*/

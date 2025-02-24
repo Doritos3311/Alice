@@ -3710,6 +3710,7 @@ export default function ContabilidadApp() {
                 setIsInvoiceModalOpen={setIsInvoiceModalOpen}
                 setIsInvoiceReceivedModalOpen={setIsInvoiceReceivedModalOpen}
                 setNewRow={setNewRow}
+                setNewInventoryItem={setNewInventoryItem}
               />
 
             {/* MODALES */}

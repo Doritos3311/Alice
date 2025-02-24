@@ -11,6 +11,11 @@ type Message = {
     content: string;
 };
 
+type InventoryItem = {
+    id: string;
+    [key: string]: any; // Permite campos dinámicos
+};
+
 // Props del componente ChatPanel
 interface ChatPanelProps {
     isIAOpen: boolean;
@@ -21,9 +26,10 @@ interface ChatPanelProps {
     setIsInvoiceModalOpen: (isOpen: boolean) => void;
     setIsInvoiceReceivedModalOpen: (isOpen: boolean) => void;
     setNewRow: (row: Record<string, string>) => void; // Acepta un objeto, no un string
+    setNewInventoryItem: (row: InventoryItem) => void; // Cambiado a InventoryItem
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setIsInventoryModalOpen, setIsInvoiceModalOpen, setIsInvoiceReceivedModalOpen, setNewRow }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setIsInventoryModalOpen, setIsInvoiceModalOpen, setIsInvoiceReceivedModalOpen, setNewRow, setNewInventoryItem }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
@@ -47,6 +53,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                 const response = await fetch("/prompt.txt");
                 const text = await response.text();
                 setPROMT(text);
+                console.log(text)
             } catch (error) {
                 console.error("Error cargando el PROMT:", error);
             }
@@ -65,7 +72,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
         agregarInventario: (fields) => {
             setActiveTab("inventario")
             setIsInventoryModalOpen(true);
-            setNewRow(fields);
+            setNewInventoryItem(fields);
+            console.log("Se ejecutó crearItemInventario");
         },
         crearFactura: (fields) => {
             setActiveTab("facturacion-emitidas")
@@ -125,37 +133,37 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                 setIsProcessing(true);
 
                 try {
-                    // Enviar mensaje a la IA
                     const aiResponse = await sendMessageToOpenRouter(inputMessage, messages);
 
-                    // Intentar extraer JSON desde la respuesta de IA
                     let responseData: { function?: string; params?: any; message?: string } = {};
-                    const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/); // Extraer JSON entre ```json```
+                    const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
 
                     if (jsonMatch) {
-                        responseData = JSON.parse(jsonMatch[1]); // Parsear el JSON extraído
+                        responseData = JSON.parse(jsonMatch[1]);
                     } else {
-                        responseData = { function: undefined, message: aiResponse }; // Si no es JSON, tratarlo como mensaje
+                        responseData = { function: undefined, message: aiResponse };
                     }
 
-                    // Mostrar la confirmación en lenguaje natural
+                    // Simular escritura letra por letra
                     if (responseData.message) {
-                        const assistantMessage: Message = {
-                            role: "assistant",
-                            content: responseData.message || "Lo siento, no entendí la solicitud.", // Asegurar que `content` no sea `undefined`
-                        };
-                        setMessages((prev) => [...prev, assistantMessage]);
+                        setTypedMessage(""); // Reinicia el mensaje antes de empezar
+                        typeMessage(responseData.message, () => {
+                            const assistantMessage: Message = {
+                                role: "assistant",
+                                content: responseData.message || "Lo siento, no entendí la solicitud.",
+                            };
+                            setMessages((prev) => [...prev, assistantMessage]);
+                            setTypedMessage(""); // Limpia el mensaje escrito después de completar
+                        });
                     }
 
-                    // Ejecutar la función si existe (después de mostrar la confirmación)
                     if (responseData.function) {
-                        const functionName = responseData.function.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()); // Convertir snake_case a camelCase
+                        const functionName = responseData.function.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
                         if (functionName in functions) {
-                            // Retrasar la ejecución de la función para que el usuario vea la confirmación
                             setTimeout(() => {
                                 functions[functionName](responseData.params || {});
-                            }, 1000); // Retraso de 1 segundo (ajusta según sea necesario)
+                            }, 1000);
                         }
                     }
                 } catch (error) {
@@ -184,14 +192,29 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
     // Función para simular la escritura letra por letra
     const typeMessage = (message: string, onComplete?: () => void) => {
         let index = 0;
+        setTypedMessage(""); // Reinicia el mensaje antes de empezar a escribir
+
         const interval = setInterval(() => {
-            setTypedMessage((prev) => prev + message[index]);
+            const currentText = message.substring(0, index + 1); // Obtiene el texto hasta el índice actual
+            const formattedText = formatMessage(currentText); // Formatea el texto en tiempo real
+            setTypedMessage(formattedText); // Actualiza el estado con el texto formateado
             index++;
+
             if (index >= message.length) {
                 clearInterval(interval);
                 if (onComplete) onComplete();
             }
-        }, typingSpeed);
+        }, typingSpeed); // Velocidad de escritura (en milisegundos)
+    };
+
+    const formatMessage = (message: string) => {
+        // Convertir **TEXTO** a <strong>TEXTO</strong>
+        message = message.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Convertir saltos de línea a <br />
+        message = message.replace(/\n/g, "<br />");
+
+        return message;
     };
 
     return (
@@ -235,7 +258,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                         {messages.map((message, index) => (
                             <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                                 <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
-                                    {message.content}
+                                    <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
                                 </div>
                             </div>
                         ))}
@@ -250,8 +273,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
                         {/* Mensaje que se está escribiendo */}
                         {typedMessage && (
                             <div className="text-left mb-4">
-                                <div className="inline-block p-2 rounded-lg bg-gray-200 text-gray-900">
-                                    {typedMessage}
+                                <div className={`inline-block p-2 rounded-lg ${theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900'}`}>
+                                    <div dangerouslySetInnerHTML={{ __html: typedMessage }} />
                                 </div>
                             </div>
                         )}
