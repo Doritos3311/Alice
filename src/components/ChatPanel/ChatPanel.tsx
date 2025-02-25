@@ -16,6 +16,14 @@ type InventoryItem = {
     [key: string]: any; // Permite campos dinámicos
 };
 
+// Definicion Factura
+type InvoiceItem = {
+    id: string
+    tipoFactura: 'emitida' | 'recibida';
+    fechaEmision?: any;
+    [key: string]: any
+}
+
 // Props del componente ChatPanel
 interface ChatPanelProps {
     isIAOpen: boolean;
@@ -25,11 +33,31 @@ interface ChatPanelProps {
     setIsInventoryModalOpen: (isOpen: boolean) => void;
     setIsInvoiceModalOpen: (isOpen: boolean) => void;
     setIsInvoiceReceivedModalOpen: (isOpen: boolean) => void;
+
+    // Libro Diario
     setNewRow: (row: Record<string, string>) => void; // Acepta un objeto, no un string
+
+    // Inventario
     setNewInventoryItem: (row: InventoryItem) => void; // Cambiado a InventoryItem
+
+    // Facturación
+    setNewInvoiceItem: (row: InvoiceItem) => void;
+    setSearchTermCliente: (term: string) => void; // Cambiado a string en lugar de Record<string, string>
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveTab, setIsCreatingAccountingEntry, setIsInventoryModalOpen, setIsInvoiceModalOpen, setIsInvoiceReceivedModalOpen, setNewRow, setNewInventoryItem }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({
+    isIAOpen,
+    setIsIAOpen,
+    setActiveTab,
+    setIsCreatingAccountingEntry,
+    setIsInventoryModalOpen,
+    setIsInvoiceModalOpen,
+    setIsInvoiceReceivedModalOpen,
+    setNewRow,
+    setNewInventoryItem,
+    setNewInvoiceItem,
+    setSearchTermCliente,
+}) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
@@ -76,14 +104,24 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isIAOpen, setIsIAOpen, setActiveT
             console.log("Se ejecutó crearItemInventario");
         },
         crearFactura: (fields) => {
-            setActiveTab("facturacion-emitidas")
+            setActiveTab("facturacion-emitidas");
             setIsInvoiceModalOpen(true);
-            setNewRow(fields);
+
+            // Actualiza el campo de búsqueda de cliente
+            setSearchTermCliente(fields.identificacionAdquiriente);
+
+            // Actualiza los campos de guiaRemision y metodoPago
+            setNewInvoiceItem(fields);
+
+            console.log("Se ejecutó crearFactura");
+            console.log(fields);
         },
         crearFacturaRecibida: (fields) => {
             setActiveTab("facturacion-recibidas")
             setIsInvoiceReceivedModalOpen(true);
-            setNewRow(fields);
+            setNewInvoiceItem(fields);
+            console.log("Se ejecutó crearItemInventario");
+            console.log(fields);
         },
     };
 

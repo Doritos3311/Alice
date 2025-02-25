@@ -1380,101 +1380,93 @@ export default function ContabilidadApp() {
   const handleAddInvoiceItem = async (tipo: 'emitida' | 'recibida') => {
     if (!viewingUID || !db) {
       toast({
-        title: "Error",
-        description: "Debes iniciar sesión para crear una factura.",
-        variant: "destructive",
+          title: "Error",
+          description: "Debes iniciar sesión para crear una factura.",
+          variant: "destructive",
       });
       return;
     }
-  
     try {
       if (typeof window === "undefined") return;
-  
-      const getValue = (id: string) => {
-        if (typeof document !== "undefined") {
-          return (document.getElementById(id) as HTMLInputElement)?.value || "";
-        }
-        return "";
-      };
-  
+
       // Calcular los totales usando los valores del DOM y la lista de servicios
       const totalesFactura = calcularTotalesFactura(detallesFactura, servicios);
-  
+
       // Recopilar todos los datos de la factura
       const newInvoiceData = {
-        ...newInvoiceItem,
-        tipoFactura: tipo,
-        empresaGuardada: getValue("empresaGuardada"),
-        correoEmisorRecibido: getValue("correoEmisorRecibido"),
-        idElemento: newInvoiceItem.idElemento || Date.now().toString(),
-        nombreEmisor: nombreEmisor,
-        correoEmisor: user?.email || correoEmisor || "Sin correo",
-        direccionCliente: getValue("direccionCliente"),
-        telefono: getValue("telefono"),
-        rucEmisor: getValue("rucEmisor"),
-        numeroAutorizacion: getValue("numeroAutorizacion"),
-        numeroFactura: getValue("numeroFactura"),
-        fechaAutorizacion: getValue("fechaAutorizacion"),
-        direccionMatriz: getValue("direccionMatriz"),
-        direccionSucursal: getValue("direccionSucursal"),
-        identificacionAdquiriente: getValue("identificacionAdquiriente"),
-        fechaEmision: getValue("fechaEmision"),
-        rucCi: getValue("rucCi"),
-        guiaRemision: getValue("guiaRemision"),
-        formaPago: getValue("formaPago"),
-        otros: getValue("otros"),
-        detalles: detallesFactura,
-        ...totalesFactura,
+          ...newInvoiceItem, // Usar los datos de newInvoiceItem
+          tipoFactura: tipo,
+          empresaGuardada: newInvoiceItem.empresaGuardada || "",
+          correoEmisorRecibido: newInvoiceItem.correoEmisorRecibido || "",
+          idElemento: newInvoiceItem.idElemento || Date.now().toString(),
+          nombreEmisor: nombreEmisor,
+          correoEmisor: user?.email || correoEmisor || "Sin correo",
+          direccionCliente: newInvoiceItem.direccionCliente || "",
+          telefono: newInvoiceItem.telefono || "",
+          rucEmisor: newInvoiceItem.rucEmisor || "",
+          numeroAutorizacion: newInvoiceItem.numeroAutorizacion || "",
+          numeroFactura: newInvoiceItem.numeroFactura || "",
+          fechaAutorizacion: newInvoiceItem.fechaAutorizacion || "",
+          direccionMatriz: newInvoiceItem.direccionMatriz || "",
+          direccionSucursal: newInvoiceItem.direccionSucursal || "",
+          identificacionAdquiriente: newInvoiceItem.identificacionAdquiriente || "",
+          fechaEmision: newInvoiceItem.fechaEmision || "",
+          rucCi: newInvoiceItem.rucCi || "",
+          guiaRemision: newInvoiceItem.guiaRemision || "",
+          formaPago: newInvoiceItem.formaPago || "",
+          otros: newInvoiceItem.otros || "",
+          detalles: detallesFactura,
+          ...totalesFactura,
       };
-  
+
       // Guardar la factura en Firebase
       const docRef = await addDoc(collection(db, `users/${viewingUID}/facturacion`), newInvoiceData);
-  
+
       const createdInvoice = { ...newInvoiceData, id: docRef.id };
-  
+
       // Actualizar el estado local
       setLastCreatedInvoice(createdInvoice);
-  
+
       // Limpiar el formulario y cerrar el modal
       setNewInvoiceItem({} as InvoiceItem);
       if (tipo == "recibida") {
-        setIsInvoiceReceivedModalOpen(false);
+          setIsInvoiceReceivedModalOpen(false);
       } else {
-        setIsInvoiceModalOpen(false);
+          setIsInvoiceModalOpen(false);
       }
       setDetallesFactura([
-        { idElemento: "", cantidad: "0", detalle: "", precioUnitario: "0", valorTotal: 0, tipoIVA: "" },
+          { idElemento: "", cantidad: "0", detalle: "", precioUnitario: "0", valorTotal: 0, tipoIVA: "" },
       ]);
       setTotales({
-        SubTotal12IVA: 0,
-        SubTotal0IVA: 0,
-        SubTotalExentoIVA: 0,
-        SubTotalNoObjetoIVA: 0,
-        Descuento: 0,
-        SubTotal: 0,
-        ICE: 0,
-        IVA12: 0,
-        Propina: 0,
-        ValorTotalFinal: 0,
+          SubTotal12IVA: 0,
+          SubTotal0IVA: 0,
+          SubTotalExentoIVA: 0,
+          SubTotalNoObjetoIVA: 0,
+          Descuento: 0,
+          SubTotal: 0,
+          ICE: 0,
+          IVA12: 0,
+          Propina: 0,
+          ValorTotalFinal: 0,
       });
-  
+
       toast({
-        title: "Éxito",
-        description: "La factura se ha guardado correctamente.",
+          title: "Éxito",
+          description: "La factura se ha guardado correctamente.",
       });
-  
+
       // Opcional: Mostrar modal de autocompletar
       if (tipo == "recibida") {
-        setShowInvoiceRecibedAutoCompleteModal(true);
+          setShowInvoiceRecibedAutoCompleteModal(true);
       } else {
-        setShowInvoiceEmitedAutoCompleteModal(true);
+          setShowInvoiceEmitedAutoCompleteModal(true);
       }
     } catch (error) {
       console.error("Error al agregar factura:", error);
       toast({
-        title: "Error",
-        description: "Hubo un problema al guardar la factura. Por favor, intenta de nuevo.",
-        variant: "destructive",
+          title: "Error",
+          description: "Hubo un problema al guardar la factura. Por favor, intenta de nuevo.",
+          variant: "destructive",
       });
     }
   };
@@ -3702,15 +3694,17 @@ export default function ContabilidadApp() {
 
               {/* Panel de IA desplegable */}
               <ChatPanel 
-              isIAOpen={isIAOpen} 
-                setIsIAOpen={setIsIAOpen} 
-                setActiveTab={setActiveTab} 
-                setIsCreatingAccountingEntry={setIsCreatingAccountingEntry} 
-                setIsInventoryModalOpen={setIsInventoryModalOpen} 
-                setIsInvoiceModalOpen={setIsInvoiceModalOpen}
-                setIsInvoiceReceivedModalOpen={setIsInvoiceReceivedModalOpen}
-                setNewRow={setNewRow}
-                setNewInventoryItem={setNewInventoryItem}
+                  isIAOpen={isIAOpen} 
+                  setIsIAOpen={setIsIAOpen} 
+                  setActiveTab={setActiveTab} 
+                  setIsCreatingAccountingEntry={setIsCreatingAccountingEntry} 
+                  setIsInventoryModalOpen={setIsInventoryModalOpen} 
+                  setIsInvoiceModalOpen={setIsInvoiceModalOpen}
+                  setIsInvoiceReceivedModalOpen={setIsInvoiceReceivedModalOpen}
+                  setNewRow={setNewRow}
+                  setNewInventoryItem={setNewInventoryItem}
+                  setNewInvoiceItem={setNewInvoiceItem}
+                  setSearchTermCliente={setSearchTermCliente} // Pasar la función para actualizar el término de búsqueda
               />
 
             {/* MODALES */}
@@ -4543,6 +4537,7 @@ export default function ContabilidadApp() {
                         </div>
                       </div>
 
+                      {/* Seleccion Cliente */}
                       <div className="flex items-center space-x-2">
                         <Button onClick={() => setIsClienteModalOpen(true)}>
                           Agregar Nuevo Cliente
@@ -4603,7 +4598,7 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
-                            <Input id="fechaEmision" type="date" />
+                            <Input id="fechaEmision" type="date" value={newInvoiceItem.fechaEmision} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, fechaEmision: e.target.value })}/>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -4617,11 +4612,12 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
-                            <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="number" />
+                            <Input id="guiaRemision" placeholder="Ingrese la guía de remisión" type="text" value={newInvoiceItem.guiaRemision} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, guiaRemision: e.target.value })} />
                           </div>
                         </div>
                       </div>
 
+                      {/* Seleccion Servicio */}
                       <div>
                         <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
                           Agregar Nuevo Servicio
@@ -4688,7 +4684,7 @@ export default function ContabilidadApp() {
                         <div className="border p-4 rounded-md space-y-2">
                           <div className="space-y-2">
                             <Label htmlFor="formaPago">Forma de Pago:</Label>
-                            <Input id="formaPago" placeholder="Ingrese la forma de pago" />
+                            <Input id="formaPago" placeholder="Ingrese la forma de pago" value={newInvoiceItem.metodoPago} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, metodoPago: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="otros">Otros:</Label>
@@ -4968,9 +4964,13 @@ export default function ContabilidadApp() {
                         </div>
                       </div>
 
-                      <Button onClick={() => setIsInventoryModalOpen(true)}>
-                        Agregar Nuevo Ítem
-                      </Button>
+                      {/* Seleccion Inventario */}
+                      <div>
+                        <Button onClick={() => setIsInventoryModalOpen(true)}>
+                          Agregar Nuevo Ítem
+                        </Button>
+                      </div>
+                      
 
                       {/* Contenido */}
                       <div className="border p-4 rounded-md">
