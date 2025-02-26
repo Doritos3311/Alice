@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Settings, X, Bot, Upload, Mic } from 'lucide-react'; // Asegúrate de importar los íconos correctos
 import styles from '@/components/ChatPanel/ChatPanel.module.css'; // Asegúrate de importar los estilos correctos
 import { useTheme } from "next-themes"
+import { getAuth } from 'firebase/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
 // Definir el tipo Message
 type Message = {
@@ -34,17 +36,17 @@ type Proveedor = {
     rucCi: string
     direccionMatriz: string
     direccionSucursal: string
-  }
-  
-  // Definición de Cliente
-  type Cliente = {
+}
+
+// Definición de Cliente
+type Cliente = {
     id: string
     nombre: string
     correo: string
     telefono: string
     direccion: string
     rucCi: string
-  }
+}
 
 // Props del componente ChatPanel
 interface ChatPanelProps {
@@ -93,18 +95,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setIsClienteModalOpen,
     setIsProveedorModalOpen,
     setNewProveedor,
-    setNewCliente,
-}) => {
+    setNewCliente,}) => {
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
     const [typedMessage, setTypedMessage] = useState(""); // Estado para el mensaje que se está escribiendo
     const typingSpeed = 10;
+    const auth = getAuth();
+    const user = auth.currentUser;
 
     const chatRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
     const [PROMT, setPROMT] = useState("");
+
+    const [panelWidth, setPanelWidth] = useState(64); // Ancho inicial cuando está cerrado
+    const [isResizing, setIsResizing] = useState(false);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const startXRef = useRef<number>(0); // Posición inicial del mouse
+    const startWidthRef = useRef<number>(0); // Ancho inicial del panel
+
 
     // Configuración de la API
     const OPENROUTER_API_KEY = "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";
@@ -126,6 +137,63 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
         loadPrompt();
     }, []);
+
+    // Manejador para iniciar el redimensionamiento
+    const startResizing = (e: React.MouseEvent) => {
+        e.preventDefault();
+        startXRef.current = e.clientX; // Guarda la posición inicial del mouse
+        setIsResizing(true);
+    };
+
+    // Manejador para redimensionar el panel
+    const resizePanel = (e: MouseEvent) => {
+        const panel = panelRef.current; // Variable temporal
+        if (isResizing && panel) { // Verificación de panel
+            requestAnimationFrame(() => {
+                const deltaX = startXRef.current - e.clientX; // Cambio en la posición del mouse
+                const newWidth = panelWidth + deltaX; // Nuevo ancho basado en el cambio
+    
+                // Limita el ancho entre 300px y 900px
+                if (newWidth > 300 && newWidth < 900) {
+                    panel.style.transform = `translateX(${deltaX}px)`; // Mueve el panel
+                }
+            });
+        }
+    };
+
+    // Manejador para detener el redimensionamiento
+    const stopResizing = (e: MouseEvent) => { // Usa el parámetro 'e' en lugar de window.event
+        if (panelRef.current) {
+            const finalWidth = panelWidth - (startXRef.current - e.clientX);
+            setPanelWidth(finalWidth); // Actualiza el estado con el ancho final
+            panelRef.current.style.transform = 'translateX(0)'; // Restablece la transformación
+        }
+        setIsResizing(false);
+    };
+
+    // Agregar listeners para el redimensionamiento
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener('mousemove', resizePanel);
+            window.addEventListener('mouseup', stopResizing);
+        } else {
+            window.removeEventListener('mousemove', resizePanel);
+            window.removeEventListener('mouseup', stopResizing);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', resizePanel);
+            window.removeEventListener('mouseup', stopResizing);
+        };
+    }, [isResizing]);
+
+    useEffect(() => {
+        if (isIAOpen) {
+            setPanelWidth(384); // Ancho cuando está abierto
+        } else {
+            setPanelWidth(64); // Ancho cuando está cerrado
+        }
+    }, [isIAOpen]);
 
     const functions: Record<string, (params?: any) => void> = {
         agregarInventario: (fields) => {
@@ -317,13 +385,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     };
 
     return (
-        <div className={`fixed right-0 top-0 h-full shadow-lg transition-all duration-300 ease-in-out ${isIAOpen ? 'w-96' : 'w-16'} flex flex-col ${theme === "dark" ? 'bg-[rgb(28,28,28)]' : 'bg-[rgb(248,248,248)]'}`}>
+        <div ref={panelRef} style={{ width: `${panelWidth}px` }} className={`${styles.container} ${isIAOpen ? styles.widthOpen : styles.widthClosed} ${theme === "dark" ? styles.darkTheme : styles.lightTheme}`}>
+
             {/* Btn Configuracion */}
             {isIAOpen ? (
                 <Button
                     variant="ghost"
                     size="icon"
-                    className={`${styles.configbutton}`}
+                    className={styles.configbutton}
                 >
                     <Settings className={styles.iconconfig} />
                 </Button>
@@ -343,7 +412,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 variant="ghost"
                 size="icon"
                 className={styles.iaButton}
-                onClick={() => setIsIAOpen(!isIAOpen)}
+                onClick={() => {setIsIAOpen(!isIAOpen); setPanelWidth(2)}}
                 aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
             >
                 {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
@@ -352,34 +421,48 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             {/* Interfaz Panel IA */}
             {isIAOpen && (
                 <>
-                    <div className="flex-grow overflow-auto p-4 pt-16" ref={chatRef}>
+                    <div className={`${styles.flexGrow} overflow-auto p-4 pt-16`} ref={chatRef}>
                         {/* Mensaje */}
                         {messages.map((message, index) => (
-                            <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? (theme === 'dark' ? 'bg-[rgb(15,15,15)] text-gray-300' : 'bg-gray-200 text-gray-900') : (theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900')}`}>
+                            <div key={index} className={`${styles.messageContainer} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
+                                {/* Avatar del usuario o IA */}
+                                {message.role === 'user' ? (
+                                    <Avatar className={styles.userAvatar}>
+                                        <AvatarImage className={styles.userImg} src={user?.photoURL || undefined} alt={user?.displayName || "Usuario"} />
+                                        <AvatarFallback className={styles.avatarFallback}>
+                                            {user?.displayName ? user.displayName[0] : "U"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                ) : (
+                                    <Avatar className={styles.iaAvatar}>
+                                        <AvatarFallback className={styles.avatarFallback}>A</AvatarFallback>
+                                    </Avatar>
+                                )}
+                                {/* Burbuja del mensaje */}
+                                <div className={`${styles.messageBubble} ${message.role === 'user' ? (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble) : (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble)}`}>
                                     <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
                                 </div>
                             </div>
                         ))}
                         {/* Mensaje de carga */}
                         {isProcessing && (
-                            <div className="text-left mb-4">
-                                <div className="inline-block p-2 rounded-lg">
-                                    Procesando...
+                            <div className={styles.assistantMessage}>
+                                <div className={styles.messageBubble}>
+                                    <span className={styles.processingText}>Procesando...</span>
                                 </div>
                             </div>
                         )}
                         {/* Mensaje que se está escribiendo */}
                         {typedMessage && (
-                            <div className="text-left mb-4">
-                                <div className={`inline-block p-2 rounded-lg ${theme === 'dark' ? 'bg-[rgb(25,25,25)] text-gray-300' : 'bg-gray-200 text-gray-900'}`}>
+                            <div className={styles.assistantMessage}>
+                                <div className={`${styles.messageBubble} ${theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble}`}>
                                     <div dangerouslySetInnerHTML={{ __html: typedMessage }} />
                                 </div>
                             </div>
                         )}
                     </div>
-                    <div className="p-4 border-t">
-                        <div className="flex mb-2">
+                    <div className={styles.inputContainer}>
+                        <div className={styles.flexContainer}>
                             {/* Barra de Texto */}
                             <Input
                                 type="text"
@@ -387,10 +470,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                                 value={inputMessage}
                                 onChange={(e) => setInputMessage(e.target.value)}
                                 onKeyDown={handleSendMessage}
-                                className="flex-grow mr-2"
+                                className={styles.flexGrow}
                             />
                         </div>
-                        <div className="flex justify-between">
+                        <div className={styles.buttonContainer}>
                             {/* Btn Subir Archivo */}
                             <Button
                                 variant="outline"

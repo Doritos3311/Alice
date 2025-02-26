@@ -1,48 +1,266 @@
 /* Estilos para el botón cuando está visible */
 .configbutton {
-    display: none;
-    position: absolute;
-    top: 5rem;
-    left: 0.8rem;
+  display: none;
+  position: absolute;
+  top: 5rem;
+  left: 0.8rem;
+}
+
+/* Borde para redimensionar */
+.resizeHandle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
 }
 
 /* Estilos para ocultar el botón */
 .configbutton.hidden {
-    display: flex;
+  display: flex;
 }
 
 .iaButton {
-    position: absolute;
-    top: 1rem;
-    left: 0.8rem;
+  position: absolute;
+  top: 1rem;
+  left: 0.8rem;
 }
 
 /* Estilos para los mensajes */
 .message {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    max-width: 80%;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  max-width: 80%;
+}
+
+.message.user {
+  margin-left: auto;
+}
+
+.message.assistant {
+  margin-right: auto;
+}
+
+/* Estilos para títulos */
+.message strong {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Saltos de línea */
+.message pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ChatPanel.module.css */
+
+/* Clases para el contenedor principal */
+.container {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Clases para el ancho del panel */
+.widthOpen {
+  width: 24rem;
+  /* 384px */
+}
+
+.widthClosed {
+  width: 4rem;
+  /* 64px */
+}
+
+/* Clases para el tema oscuro y claro */
+.darkTheme {
+  background-color: rgb(28, 28, 28);
+}
+
+.lightTheme {
+  background-color: rgb(248, 248, 248);
+}
+
+.hidden {
+  display: none;
+}
+
+/* Clases para los mensajes */
+.messageContainer {
+  margin-bottom: 1rem;
+}
+
+.userMessage {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: row-reverse;
+  text-align: right;
+  margin-left: 0.9rem;
+}
+
+.assistantMessage {
+  display: flex;
+  text-align: left;
+  margin-right: 0.9rem;
+}
+
+.messageBubble {
+  display: inline-block;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.darkMessageBubble {
+  background-color: rgb(15, 15, 15);
+  color: rgb(209, 213, 219);
+}
+
+.lightMessageBubble {
+  background-color: rgb(229, 231, 235);
+  color: rgb(17, 24, 39);
+}
+
+/* Clases para la barra de texto y botones */
+.inputContainer {
+  padding: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.flexContainer {
+  display: flex;
+  margin-bottom: 0.5rem;
+  max-height: 160px;
+}
+
+.flexGrow {
+  flex-grow: 1;
+  margin-right: 0.5rem;
+  overflow-y: auto;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.userImg {
+  border-radius: 1rem;
+}
+
+.userAvatar {
+  margin-left: 0.5rem;
+}
+
+/* Estilos para las bolitas de usuario y IA */
+.userAvatar,
+.iaAvatar {
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userAvatar {
+  background-color: #ffffff;
+  /* Fondo blanco para la foto de perfil */
+}
+
+.iaAvatar {
+  background-color: #ffffff;
+  /* Fondo blanco */
+  font-weight: bold;
+  color: #4a5568;
+  /* Color del texto */
+  margin-right: 0.5rem;
+
+}
+
+/* Estilos para los avatares */
+.userAvatar,
+.iaAvatar {
+  width: 32px;
+  height: 32px;
+}
+
+.avatarFallback {
+  background-color: white;
+  /* Fondo blanco */
+  color: #4a5568;
+  /* Color del texto */
+  font-weight: bold;
+}
+
+.iaAvatar .avatarFallback {
+  background-color: white;
+  /* Fondo blanco para la IA */
+  color: #4a5568;
+  /* Color del texto */
+}
+
+/* Botón de enviar */
+.sendButton {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sendButton:hover {
+  background-color: #2563eb;
+}
+
+/* Botón de interrumpir */
+.interruptButton {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.interruptButton:hover {
+  background-color: #dc2626;
+}
+
+/* Animación de color para "Procesando..." */
+@keyframes colorChange {
+  0% {
+    color: #4a5568;
   }
+
+  /* Color inicial */
+  50% {
+    color: #ffffff;
+  }
+
+  /* Color intermedio */
+  100% {
+    color: #4a5568;
+  }
+
+  /* Color final */
+}
+
+.processingText {
+  animation: colorChange 1.3s infinite;
+}
+
+@media (max-width: 768px) {
   
-  .message.user {
-    margin-left: auto;
-  }
-  
-  .message.assistant {
-    margin-right: auto;
-  }
-  
-  /* Estilos para títulos */
-  .message strong {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Saltos de línea */
-  .message pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-/*"absolute top-4 left-4"*/
+}
