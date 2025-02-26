@@ -195,23 +195,22 @@
   }
   
   .login_link {
+    background-color: white;
+    color: black;
+    border: 1px solid #4b5563;
+    transition: background-color 0.3s;
+    margin-right: 1rem;
+  }
+
+  .register_link {
     background-color: black;
     color: white;
-    border: 1px solid #4b5563;
+    border: 1px solid #ffffff;
     transition: background-color 0.3s;
     margin-right: 20px;
   }
   
   .login_link:hover {
-    background-color: #1f2937;
-  }
-  
-  .login_linkDark {
-    background-color: white;
-    color: black;
-  }
-  
-  .login_linkDark:hover {
     background-color: #e5e7eb;
   }
   

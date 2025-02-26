@@ -11,6 +11,7 @@ type Message = {
     content: string;
 };
 
+// Definicion de Inventario
 type InventoryItem = {
     id: string;
     [key: string]: any; // Permite campos dinámicos
@@ -23,6 +24,27 @@ type InvoiceItem = {
     fechaEmision?: any;
     [key: string]: any
 }
+
+// Definición de Proveedor
+type Proveedor = {
+    id: string
+    nombre: string
+    correo: string
+    telefono: string
+    rucCi: string
+    direccionMatriz: string
+    direccionSucursal: string
+  }
+  
+  // Definición de Cliente
+  type Cliente = {
+    id: string
+    nombre: string
+    correo: string
+    telefono: string
+    direccion: string
+    rucCi: string
+  }
 
 // Props del componente ChatPanel
 interface ChatPanelProps {
@@ -43,6 +65,16 @@ interface ChatPanelProps {
     // Facturación
     setNewInvoiceItem: (row: InvoiceItem) => void;
     setSearchTermCliente: (term: string) => void; // Cambiado a string en lugar de Record<string, string>
+    setSearchTermProveedor: (term: string) => void;
+
+    //Clientes
+    setIsClienteModalOpen: (isOpen: boolean) => void;
+    setNewCliente: (row: Cliente) => void;
+
+    //Proveedores
+    setIsProveedorModalOpen: (isOpen: boolean) => void;
+    setNewProveedor: (row: Proveedor) => void;
+
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -57,6 +89,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setNewInventoryItem,
     setNewInvoiceItem,
     setSearchTermCliente,
+    setSearchTermProveedor,
+    setIsClienteModalOpen,
+    setIsProveedorModalOpen,
+    setNewProveedor,
+    setNewCliente,
 }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -91,17 +128,26 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     }, []);
 
     const functions: Record<string, (params?: any) => void> = {
-        crearAsientoContable: (fields) => {
-            setActiveTab("libro-diario")
-            setIsCreatingAccountingEntry(true);
-            setNewRow(fields);
-            console.log("Se ejecutó crearLibroDiario");
-        },
         agregarInventario: (fields) => {
             setActiveTab("inventario")
             setIsInventoryModalOpen(true);
             setNewInventoryItem(fields);
             console.log("Se ejecutó crearItemInventario");
+            console.log(fields);
+        },
+        agregarProveedor: (fields) => {
+            setActiveTab("proveedores")
+            setIsProveedorModalOpen(true);
+            setNewProveedor(fields);
+            console.log("Se ejecutó crear Proveedor");
+            console.log(fields);
+        },
+        agregarCliente: (fields) => {
+            setActiveTab("clientes")
+            setIsClienteModalOpen(true);
+            setNewCliente(fields);
+            console.log("Se ejecutó crear Cliente");
+            console.log(fields);
         },
         crearFactura: (fields) => {
             setActiveTab("facturacion-emitidas");
@@ -118,10 +164,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         },
         crearFacturaRecibida: (fields) => {
             setActiveTab("facturacion-recibidas")
+
             setIsInvoiceReceivedModalOpen(true);
+
+            // Actualiza el campo de búsqueda del proveedor
+            setSearchTermProveedor(fields.identificacionAdquiriente);
+
+            // Actualiza los campos de guiaRemision y metodoPago
             setNewInvoiceItem(fields);
+
             console.log("Se ejecutó crearItemInventario");
             console.log(fields);
+        },
+        crearAsientoContable: (fields) => {
+            setActiveTab("libro-diario")
+            setIsCreatingAccountingEntry(true);
+            setNewRow(fields);
+            console.log("Se ejecutó crearLibroDiario");
         },
     };
 
@@ -178,6 +237,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
                     if (jsonMatch) {
                         responseData = JSON.parse(jsonMatch[1]);
+                        console.log("Parsed JSON:", responseData); // Verifica que los valores 0 estén presentes
                     } else {
                         responseData = { function: undefined, message: aiResponse };
                     }
@@ -200,6 +260,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
                         if (functionName in functions) {
                             setTimeout(() => {
+                                console.log("Params:", responseData.params); // Verifica que los valores 0 estén presentes
                                 functions[functionName](responseData.params || {});
                             }, 1000);
                         }

@@ -143,7 +143,9 @@ const SignUp = () => {
 
       {/* Contenido del formulario */}
       <header className={styles.header}>
-        <div className={styles.logo}>Alice</div>
+        <Link href="/" passHref>
+          <div className={styles.logo}>Alice</div>
+        </Link>
       </header>
 
       <motion.div

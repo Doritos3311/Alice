@@ -3705,6 +3705,11 @@ export default function ContabilidadApp() {
                   setNewInventoryItem={setNewInventoryItem}
                   setNewInvoiceItem={setNewInvoiceItem}
                   setSearchTermCliente={setSearchTermCliente} // Pasar la función para actualizar el término de búsqueda
+                  setSearchTermProveedor={setSearchTermProveedor}
+                  setIsProveedorModalOpen={setIsProveedorModalOpen}
+                  setIsClienteModalOpen={setIsClienteModalOpen}
+                  setNewCliente={setNewCliente}
+                  setNewProveedor={setNewProveedor}
               />
 
             {/* MODALES */}

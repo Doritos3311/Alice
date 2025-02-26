@@ -245,7 +245,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
             <div className={styles.login_button}>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}>
+                  <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link}`}>
                     Iniciar Sesión
                   </Button>
                 </DialogTrigger>
@@ -272,7 +272,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
                       <Button
                         onClick={handleShowLogIn}
                         variant="link"
-                        className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}
+                        className={`${styles.login_link}`}
                       >
                         Iniciar Sesión
                       </Button>
@@ -295,8 +295,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, setActiveTab }) => {
                 )}
               </Dialog>
               <Link href="/registro" passHref>
-                <Button onClick={handleShowLogIn} variant="link" className={`${styles.login_link} ${theme === "light" ? styles.login_link : styles.login_linkDark}`}>
-                  Iniciar Sesión
+                <Button onClick={handleShowLogIn} variant="link" className={`${styles.register_link}`}>
+                  Registrarse
                 </Button>
               </Link>
             </div>
