@@ -75,13 +75,22 @@ interface ChatPanelProps {
     setSearchTermCliente: (term: string) => void; // Cambiado a string en lugar de Record<string, string>
     setSearchTermProveedor: (term: string) => void;
 
-    //Clientes
+    // Clientes
     setIsClienteModalOpen: (isOpen: boolean) => void;
     setNewCliente: (row: Cliente) => void;
 
-    //Proveedores
+    // Proveedores
     setIsProveedorModalOpen: (isOpen: boolean) => void;
     setNewProveedor: (row: Proveedor) => void;
+
+    // Datos
+    libroDiarioData: Record<string, any>[];
+    inventarioData: Record<string, any>[];
+    facturacionEmitidaData: Record<string, any>[];
+    facturacionRecibidaData: Record<string, any>[];
+    proveedoresData: Record<string, any>[];
+    clientesData: Record<string, any>[];
+    serviciosData: Record<string, any>[];
 
 }
 
@@ -101,7 +110,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setIsClienteModalOpen,
     setIsProveedorModalOpen,
     setNewProveedor,
-    setNewCliente, }) => {
+    setNewCliente,
+    libroDiarioData, // Acceder a los datos del libro diario
+    inventarioData, // Acceder a los datos del inventario
+    facturacionEmitidaData, // Acceder a los datos de facturación 
+    facturacionRecibidaData,
+    proveedoresData,
+    clientesData,
+    serviciosData,
+}) => {
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -126,7 +143,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
 
     // Configuración de la API
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY = "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";
     const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
     const SITE_URL = "https://aliceapp.vercel.app"; // Cambia esto por la URL de tu sitio
     const SITE_NAME = "AliceApp"; // Cambia esto por el nombre de tu sitio
@@ -137,7 +154,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 const response = await fetch("/prompt.txt");
                 const text = await response.text();
                 setPROMT(text);
-                console.log(text)
             } catch (error) {
                 console.error("Error cargando el PROMT:", error);
             }
@@ -317,8 +333,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             const data = await response.json();
             return data.choices[0].message.content;
         } catch (error) {
-            console.error("Error al comunicarse con OpenRouter:", error);
-            return "Lo siento, hubo un error al procesar tu solicitud.";
+            return "El servidor de alice esta en mantenimiento😊 intentelo nuevamente mas tarde.";
         }
     };
 
@@ -362,7 +377,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                         }
                     }
 
-                    // Enviar el mensaje y el contenido del archivo a la IA
+                    // Enviar el mensaje a la IA
                     const aiResponse = await sendMessageToOpenRouter(
                         selectedFile
                             ? `Mensaje: ${inputMessage}\nContenido del archivo: ${fileContent}`
@@ -370,14 +385,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                         messages
                     );
 
-                    // Procesar la respuesta de la IA (igual que antes)
+                    // Procesar la respuesta de la IA
                     let responseData: { function?: string; params?: any; message?: string } = {};
+                    console.log(responseData);
                     const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
 
                     if (jsonMatch) {
                         responseData = JSON.parse(jsonMatch[1]);
+                        await procesarRespuestaIA(responseData); // Procesar la respuesta de la IA
                     } else {
-                        responseData = { function: undefined, message: aiResponse };
+                        // Si no hay un JSON válido, mostrar la respuesta directa
+                        setMessages((prev) => [
+                            ...prev,
+                            { role: "assistant", content: aiResponse || "Lo siento, no entendí la solicitud." },
+                        ]);
                     }
 
                     // Simular escritura letra por letra
@@ -412,6 +433,152 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         } else if (e.key === 'Enter' && e.shiftKey) {
             e.preventDefault();
             setInputMessage((prev) => prev + '\n');
+        }
+    };
+
+    // Funciones par manejar JSON de solicitud de datos
+    const obtenerDatos = async (tipoDatos: string) => {
+        switch (tipoDatos) {
+            case "libroDiario":
+                setActiveTab("libro-diario"); // Cambiar a la pestaña del libro diario
+                return libroDiarioData; // Devolver los datos del libro diario
+
+            case "inventario":
+                setActiveTab("inventario"); // Cambiar a la pestaña de inventario
+                return inventarioData; // Devolver los datos del inventario
+
+            case "facturacionEmitida":
+                setActiveTab("facturacion-emitida"); // Cambiar a la pestaña de facturación emitida
+                return facturacionEmitidaData; // Devolver los datos de facturación emitida
+
+            case "facturacionRecibida":
+                setActiveTab("facturacion-recibida"); // Cambiar a la pestaña de facturación recibida
+                return facturacionRecibidaData; // Devolver los datos de facturación recibida
+
+            case "proveedores":
+                setActiveTab("proveedores"); // Cambiar a la pestaña de proveedores
+                return proveedoresData; // Devolver los datos de proveedores
+
+            case "clientes":
+                setActiveTab("clientes"); // Cambiar a la pestaña de clientes
+                return clientesData; // Devolver los datos de clientes
+
+            case "servicios":
+                setActiveTab("servicios"); // Cambiar a la pestaña de servicios
+                return serviciosData; // Devolver los datos de servicios
+
+            default:
+                console.log("Tipo de datos no válido:", tipoDatos); // Depuración
+                return null; // Devolver null si el tipo de datos no es válido
+        }
+    };
+
+    // Funciones para enviar los datos del software
+    const procesarRespuestaIA = async (responseData: any) => {
+        console.log("Respuesta de la IA recibida:", responseData); // Depuración
+
+        if (responseData.function === "solicitarDatos") {
+            // Paso 1: La IA solicita datos
+            const { tipoDatos, accion } = responseData.params;
+            console.log("Tipo de datos solicitado:", tipoDatos); // Depuración
+            console.log("Acción solicitada:", accion); // Depuración
+
+            // Obtener los datos solicitados
+            const datos = await obtenerDatos(tipoDatos);
+            console.log("Datos obtenidos:", datos); // Depuración
+
+            if (datos) {
+                // Enviar los datos a la IA
+                console.log("Enviando datos a la IA:", datos); // Depuración
+                const aiResponse = await sendMessageToOpenRouter(
+                    JSON.stringify({ tipoDatos, datos, accion }),
+                    messages
+                );
+                console.log("Respuesta de la IA con datos:", aiResponse); // Depuración
+
+                // Extraer el JSON del bloque de Markdown (```json ... ```)
+                const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
+                if (jsonMatch) {
+                    try {
+                        const parsedResponse = JSON.parse(jsonMatch[1]);
+                        if (parsedResponse.message) {
+                            // Mostrar el mensaje de la IA en el chat
+                            setTypedMessage("");
+                            typeMessage(parsedResponse.message, () => {
+                                const assistantMessage: Message = {
+                                    role: "assistant",
+                                    content: parsedResponse.message,
+                                };
+                                setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                                setTypedMessage("");
+                            });
+                        } else {
+                            // Si no hay un campo "message", mostrar la respuesta completa
+                            setTypedMessage("");
+                            typeMessage(aiResponse, () => {
+                                const assistantMessage: Message = {
+                                    role: "assistant",
+                                    content: aiResponse,
+                                };
+                                setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                                setTypedMessage("");
+                            });
+                        }
+                    } catch (error) {
+                        // Si no es un JSON válido, mostrar la respuesta como texto plano
+                        console.log("Error al parsear el JSON:", error); // Depuración
+                        setTypedMessage("");
+                        typeMessage(aiResponse, () => {
+                            const assistantMessage: Message = {
+                                role: "assistant",
+                                content: aiResponse,
+                            };
+                            setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                            setTypedMessage("");
+                        });
+                    }
+                } else {
+                    // Si no hay un bloque de Markdown, mostrar la respuesta como texto plano
+                    console.log("No se encontró un bloque de Markdown en la respuesta."); // Depuración
+                    setTypedMessage("");
+                    typeMessage(aiResponse, () => {
+                        const assistantMessage: Message = {
+                            role: "assistant",
+                            content: aiResponse,
+                        };
+                        setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                        setTypedMessage("");
+                    });
+                }
+            } else {
+                console.log("No se pudieron obtener los datos solicitados."); // Depuración
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "assistant", content: "No se pudieron obtener los datos solicitados." },
+                ]);
+            }
+        } else if (responseData.message) {
+            // Paso 2: La IA devuelve un mensaje con el análisis o cálculo
+            setTypedMessage("");
+            typeMessage(responseData.message, () => {
+                const assistantMessage: Message = {
+                    role: "assistant",
+                    content: responseData.message,
+                };
+                setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                setTypedMessage("");
+            });
+        } else {
+            // Si la respuesta no es un JSON válido, mostrarla como texto plano
+            setTypedMessage("");
+            typeMessage(responseData, () => {
+                const assistantMessage: Message = {
+                    role: "assistant",
+                    content: responseData,
+                };
+                setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
+                setTypedMessage("");
+            });
         }
     };
 

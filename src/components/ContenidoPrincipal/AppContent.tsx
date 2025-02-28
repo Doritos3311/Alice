@@ -1043,70 +1043,6 @@ export default function ContabilidadApp() {
     ]
   }, [totals])
 
-
-  {/* IA */}
-
-  // Función para enviar mensajes a OpenRouter
-  const sendMessageToOpenRouter = async (message: string, context: Message[] = []) => {
-    try {
-      const response = await fetch(OPENROUTER_API_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "HTTP-Referer": SITE_URL,
-          "X-Title": SITE_NAME,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-r1:free", // Modelo de DeepSeek
-          messages: [
-            ...context,
-            { role: "user", content: message },
-          ],
-        }),
-      });
-
-      const data = await response.json();
-      return data.choices[0].message.content;
-    } catch (error) {
-      console.error("Error al comunicarse con OpenRouter:", error);
-      return "Lo siento, hubo un error al procesar tu solicitud.";
-    }
-  };
-
-  // Función para manejar el envío de mensajes
-  const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-
-      if (inputMessage.trim()) {
-        const userMessage: Message = { role: "user", content: inputMessage };
-        setMessages((prev) => [...prev, userMessage]);
-        setInputMessage("");
-
-        try {
-          const assistantResponse = await sendMessageToOpenRouter(inputMessage, messages);
-          const assistantMessage: Message = { role: "assistant", content: assistantResponse };
-          setMessages((prev) => [...prev, assistantMessage]);
-        } catch (error) {
-          console.error("Error:", error);
-          const errorMessage: Message = { role: "assistant", content: "Lo siento, hubo un error al procesar tu solicitud." };
-          setMessages((prev) => [...prev, errorMessage]);
-        }
-      }
-    } else if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      setInputMessage((prev) => prev + '\n');
-    }
-  };
-
-  // Función para manejar la entrada de voz
-  const handleVoiceInput = () => {
-    // Aquí iría la lógica para manejar la entrada de voz
-    console.log("Iniciando entrada de voz...")
-  }
-
-
   {/* Inventario */}
 
   // Función para agregar un nuevo ítem al inventario
@@ -3702,14 +3638,27 @@ export default function ContabilidadApp() {
                   setIsInvoiceModalOpen={setIsInvoiceModalOpen}
                   setIsInvoiceReceivedModalOpen={setIsInvoiceReceivedModalOpen}
                   setNewRow={setNewRow}
+
+                  // Inventario
                   setNewInventoryItem={setNewInventoryItem}
                   setNewInvoiceItem={setNewInvoiceItem}
+
+                  // Terceros
                   setSearchTermCliente={setSearchTermCliente} // Pasar la función para actualizar el término de búsqueda
                   setSearchTermProveedor={setSearchTermProveedor}
                   setIsProveedorModalOpen={setIsProveedorModalOpen}
                   setIsClienteModalOpen={setIsClienteModalOpen}
                   setNewCliente={setNewCliente}
                   setNewProveedor={setNewProveedor}
+
+                  // Procesado de Data
+                  libroDiarioData={filteredData} // Pasar los datos del libro diario
+                  inventarioData={inventoryItems}
+                  facturacionEmitidaData={filteredInvoiceItems}
+                  facturacionRecibidaData={filteredInvoiceItems}
+                  proveedoresData={filteredProveedores}
+                  clientesData={filteredClientes}
+                  serviciosData={servicios}
               />
 
             {/* MODALES */}
