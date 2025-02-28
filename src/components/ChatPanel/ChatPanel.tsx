@@ -7,10 +7,16 @@ import { useTheme } from "next-themes"
 import { getAuth } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
+// OCR
+import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
 // Definir el tipo Message
 type Message = {
     role: "user" | "assistant";
     content: string;
+    file?: { name: string; type: string; url: string };
 };
 
 // Definicion de Inventario
@@ -95,7 +101,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setIsClienteModalOpen,
     setIsProveedorModalOpen,
     setNewProveedor,
-    setNewCliente,}) => {
+    setNewCliente, }) => {
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -109,6 +115,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
     const [PROMT, setPROMT] = useState("");
+
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [panelWidth, setPanelWidth] = useState(64); // Ancho inicial cuando está cerrado
     const [isResizing, setIsResizing] = useState(false);
@@ -141,33 +149,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     // Manejador para iniciar el redimensionamiento
     const startResizing = (e: React.MouseEvent) => {
         e.preventDefault();
-        startXRef.current = e.clientX; // Guarda la posición inicial del mouse
+        startXRef.current = e.clientX;
+        startWidthRef.current = panelWidth;
         setIsResizing(true);
     };
 
     // Manejador para redimensionar el panel
     const resizePanel = (e: MouseEvent) => {
-        const panel = panelRef.current; // Variable temporal
-        if (isResizing && panel) { // Verificación de panel
-            requestAnimationFrame(() => {
-                const deltaX = startXRef.current - e.clientX; // Cambio en la posición del mouse
-                const newWidth = panelWidth + deltaX; // Nuevo ancho basado en el cambio
-    
-                // Limita el ancho entre 300px y 900px
-                if (newWidth > 300 && newWidth < 900) {
-                    panel.style.transform = `translateX(${deltaX}px)`; // Mueve el panel
-                }
-            });
-        }
+        if (!isResizing || !panelRef.current) return;
+        const newWidth = Math.min(Math.max(startWidthRef.current - (startXRef.current - e.clientX), 300), 900);
+        setPanelWidth(newWidth);
     };
 
     // Manejador para detener el redimensionamiento
-    const stopResizing = (e: MouseEvent) => { // Usa el parámetro 'e' en lugar de window.event
-        if (panelRef.current) {
-            const finalWidth = panelWidth - (startXRef.current - e.clientX);
-            setPanelWidth(finalWidth); // Actualiza el estado con el ancho final
-            panelRef.current.style.transform = 'translateX(0)'; // Restablece la transformación
-        }
+    const stopResizing = () => {
         setIsResizing(false);
     };
 
@@ -176,11 +171,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         if (isResizing) {
             window.addEventListener('mousemove', resizePanel);
             window.addEventListener('mouseup', stopResizing);
-        } else {
-            window.removeEventListener('mousemove', resizePanel);
-            window.removeEventListener('mouseup', stopResizing);
         }
-
         return () => {
             window.removeEventListener('mousemove', resizePanel);
             window.removeEventListener('mouseup', stopResizing);
@@ -195,6 +186,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         }
     }, [isIAOpen]);
 
+    // Funciones JSON
     const functions: Record<string, (params?: any) => void> = {
         agregarInventario: (fields) => {
             setActiveTab("inventario")
@@ -252,6 +244,50 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         },
     };
 
+    {/* Analicis de archivos */ }
+
+    // Imagenes
+    const extractTextFromImage = async (imageFile: File) => {
+        const result = await Tesseract.recognize(imageFile, 'spa'); // 'spa' para español
+        return result.data.text;
+    };
+
+    // PDF
+    const extractTextFromPDF = async (pdfFile: File) => {
+        const pdf = await pdfjsLib.getDocument({ data: await pdfFile.arrayBuffer() }).promise;
+        let text = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map((item: any) => item.str).join(" ");
+        }
+        return text;
+    };
+
+    // Word
+    const extractTextFromWord = async (wordFile: File) => {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ arrayBuffer: await wordFile.arrayBuffer() });
+        return result.value; // Texto extraído del archivo Word
+    };
+
+    // Exel
+    const extractTextFromExcel = async (excelFile: File) => {
+        const XLSX = await import('xlsx');
+        const arrayBuffer = await excelFile.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        let text = "";
+
+        workbook.SheetNames.forEach((sheetName) => {
+            const sheet = workbook.Sheets[sheetName];
+            text += XLSX.utils.sheet_to_csv(sheet); // Convierte la hoja a texto
+        });
+
+        return text;
+    };
+
+    {/* Envio y Manejo de Mensajes */ }
+
     // Función para enviar mensajes a OpenRouter
     const sendMessageToOpenRouter = async (message: string, context: Message[] = []) => {
         try {
@@ -291,44 +327,76 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
 
-            if (inputMessage.trim()) {
-                const userMessage: Message = { role: "user", content: inputMessage };
-                setMessages((prev) => [...prev, userMessage]);
-                setInputMessage("");
-                setIsProcessing(true);
+            if (inputMessage.trim() || selectedFile) {
+                // Crear un mensaje con el archivo adjunto (si existe)
+                const userMessage: Message = {
+                    role: "user",
+                    content: inputMessage,
+                    file: selectedFile
+                        ? {
+                            name: selectedFile.name,
+                            type: selectedFile.type,
+                            url: URL.createObjectURL(selectedFile), // Crear URL temporal
+                        }
+                        : undefined,
+                };
+
+                setMessages((prev) => [...prev, userMessage]); // Agregar el mensaje al chat
+                setInputMessage(""); // Limpiar el input
+                setIsProcessing(true); // Mostrar "Procesando..."
 
                 try {
-                    const aiResponse = await sendMessageToOpenRouter(inputMessage, messages);
+                    let fileContent = "";
+                    if (selectedFile) {
+                        // Extraer el contenido del archivo (si es necesario)
+                        if (selectedFile.type.startsWith('image/')) {
+                            fileContent = await extractTextFromImage(selectedFile);
+                        } else if (selectedFile.type === 'application/pdf') {
+                            fileContent = await extractTextFromPDF(selectedFile);
+                        } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                            fileContent = await extractTextFromWord(selectedFile);
+                        } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+                            fileContent = await extractTextFromExcel(selectedFile);
+                        } else {
+                            fileContent = "Tipo de archivo no soportado.";
+                        }
+                    }
 
+                    // Enviar el mensaje y el contenido del archivo a la IA
+                    const aiResponse = await sendMessageToOpenRouter(
+                        selectedFile
+                            ? `Mensaje: ${inputMessage}\nContenido del archivo: ${fileContent}`
+                            : inputMessage,
+                        messages
+                    );
+
+                    // Procesar la respuesta de la IA (igual que antes)
                     let responseData: { function?: string; params?: any; message?: string } = {};
                     const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
 
                     if (jsonMatch) {
                         responseData = JSON.parse(jsonMatch[1]);
-                        console.log("Parsed JSON:", responseData); // Verifica que los valores 0 estén presentes
                     } else {
                         responseData = { function: undefined, message: aiResponse };
                     }
 
                     // Simular escritura letra por letra
                     if (responseData.message) {
-                        setTypedMessage(""); // Reinicia el mensaje antes de empezar
+                        setTypedMessage("");
                         typeMessage(responseData.message, () => {
                             const assistantMessage: Message = {
                                 role: "assistant",
                                 content: responseData.message || "Lo siento, no entendí la solicitud.",
                             };
                             setMessages((prev) => [...prev, assistantMessage]);
-                            setTypedMessage(""); // Limpia el mensaje escrito después de completar
+                            setTypedMessage("");
                         });
                     }
 
                     if (responseData.function) {
                         const functionName = responseData.function.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-
                         if (functionName in functions) {
                             setTimeout(() => {
-                                console.log("Params:", responseData.params); // Verifica que los valores 0 estén presentes
                                 functions[functionName](responseData.params || {});
                             }, 1000);
                         }
@@ -338,6 +406,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                     setMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, hubo un error." }]);
                 } finally {
                     setIsProcessing(false);
+                    setSelectedFile(null); // Limpiar el archivo seleccionado después de enviarlo
                 }
             }
         } else if (e.key === 'Enter' && e.shiftKey) {
@@ -347,13 +416,25 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     };
 
     // Función para manejar la subida de archivos
-    const handleFileUpload = () => {
-        fileInputRef.current?.click();
+    const handleFileUploadClick = () => {
+        fileInputRef.current?.click(); // Simula el clic en el input de archivo
+    };
+
+    // Funcion para manejar archivos
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setSelectedFile(file); // Solo guarda el archivo, no lo envía al chat
     };
 
     // Función para manejar la entrada de voz
     const handleVoiceInput = () => {
-        console.log("Iniciando entrada de voz...");
+        const recognition = new (window as any).webkitSpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInputMessage(transcript);
+        };
+        recognition.start();
     };
 
     // Función para simular la escritura letra por letra
@@ -374,6 +455,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         }, typingSpeed); // Velocidad de escritura (en milisegundos)
     };
 
+    // Funcion para extraer los JSON
     const formatMessage = (message: string) => {
         // Convertir **TEXTO** a <strong>TEXTO</strong>
         message = message.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
@@ -412,7 +494,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 variant="ghost"
                 size="icon"
                 className={styles.iaButton}
-                onClick={() => {setIsIAOpen(!isIAOpen); setPanelWidth(2)}}
+                onClick={() => { setIsIAOpen(!isIAOpen); setPanelWidth(2) }}
                 aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
             >
                 {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
@@ -421,27 +503,48 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             {/* Interfaz Panel IA */}
             {isIAOpen && (
                 <>
-                    <div className={`${styles.flexGrow} overflow-auto p-4 pt-16`} ref={chatRef}>
+                    <div className={styles.nav}>
+                        <h1 className={styles.title}>Alice</h1>
+                    </div>
+                    <div className={`${styles.flexGrow} overflow-auto p-4`} ref={chatRef}>
                         {/* Mensaje */}
                         {messages.map((message, index) => (
                             <div key={index} className={`${styles.messageContainer} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
-                                {/* Avatar del usuario o IA */}
-                                {message.role === 'user' ? (
-                                    <Avatar className={styles.userAvatar}>
-                                        <AvatarImage className={styles.userImg} src={user?.photoURL || undefined} alt={user?.displayName || "Usuario"} />
-                                        <AvatarFallback className={styles.avatarFallback}>
-                                            {user?.displayName ? user.displayName[0] : "U"}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                ) : (
-                                    <Avatar className={styles.iaAvatar}>
-                                        <AvatarFallback className={styles.avatarFallback}>A</AvatarFallback>
-                                    </Avatar>
-                                )}
-                                {/* Burbuja del mensaje */}
-                                <div className={`${styles.messageBubble} ${message.role === 'user' ? (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble) : (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble)}`}>
-                                    <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
+                                <div className={`${message.role === 'user' ? styles.messageConenedor : styles.assistantMessageContenedor}`}>
+                                    {/* Avatar del usuario o IA */}
+                                    {message.role === 'user' ? (
+                                        <Avatar className={styles.userAvatar}>
+                                            <AvatarImage className={styles.userImg} src={user?.photoURL || undefined} alt={user?.displayName || "Usuario"} />
+                                            <AvatarFallback className={styles.avatarFallback}>
+                                                {user?.displayName ? user.displayName[0] : "U"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    ) : (
+                                        <Avatar className={styles.iaAvatar}>
+                                            <AvatarFallback className={styles.avatarFallback}>A</AvatarFallback>
+                                        </Avatar>
+                                    )}
+
+                                    {/* Contenido del mensaje */}
+                                    <div className={`${styles.messageBubble} ${message.role === 'user' ? (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble) : (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble)}`}>
+                                        <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
+                                    </div>
                                 </div>
+
+
+                                {/* Mostrar el archivo adjunto */}
+                                {message.file && (
+                                    <div className={` ${styles.filePreview} ${theme === 'dark' ? styles.darkfilePreview : styles.lightfilePreview}`}>
+                                        {message.file.type.startsWith("image/") ? (
+                                            <img src={message.file.url} alt={message.file.name} className={` ${styles.previewImage} ${theme === 'dark' ? styles.darkPreviewImage : styles.lightPreviewImage}`} />
+                                        ) : (
+                                            <a href={message.file.url} target="_blank" rel="noopener noreferrer" className={` ${styles.previewFile} ${theme === 'dark' ? styles.darkpreviewFile : styles.lightpreviewFile}`}>
+                                                {message.file.name}
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+
                             </div>
                         ))}
                         {/* Mensaje de carga */}
@@ -462,6 +565,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                         )}
                     </div>
                     <div className={styles.inputContainer}>
+                        {selectedFile && (
+                            <div className={styles.fileIndicator}>
+                                <span>{selectedFile.name}</span>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSelectedFile(null)} // Elimina el archivo seleccionado
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                         <div className={styles.flexContainer}>
                             {/* Barra de Texto */}
                             <Input
@@ -478,7 +593,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                             <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={handleFileUpload}
+                                onClick={handleFileUploadClick}
                             >
                                 <Upload className="h-4 w-4" />
                                 <span className="sr-only">Subir archivo</span>
@@ -489,6 +604,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                                 type="file"
                                 id="file-upload"
                                 className="hidden"
+                                onChange={handleFileChange} // Aquí manejamos el cambio de archivo
                             />
 
                             {/* Btn Hablar Para Escuchar */}

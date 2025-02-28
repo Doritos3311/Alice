@@ -81,6 +81,19 @@
   /* 64px */
 }
 
+.nav {
+  height: 70px;
+  box-shadow: 0 4px 6px -1px rgba(28, 28, 28, 0.1), 0 2px 4px -1px rgba(28, 28, 28, 0.06);
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  margin-top: 1.4rem;
+  font-weight: bold; /* Aplicas negrita al texto */
+  font-size: 1.2rem; /* Tamaño de fuente más pequeño */
+}
+
 /* Clases para el tema oscuro y claro */
 .darkTheme {
   background-color: rgb(28, 28, 28);
@@ -103,14 +116,24 @@
   display: flex;
   justify-content: flex-start;
   flex-direction: row-reverse;
-  text-align: right;
+  flex-wrap: wrap;
+  text-align: left;
   margin-left: 0.9rem;
+}
+
+.messageConenedor {
+ display: flex;
+ flex-direction: row-reverse;
 }
 
 .assistantMessage {
   display: flex;
   text-align: left;
   margin-right: 0.9rem;
+}
+
+.assistantMessageContenedor {
+  display: flex;
 }
 
 .messageBubble {
@@ -143,7 +166,6 @@
 
 .flexGrow {
   flex-grow: 1;
-  margin-right: 0.5rem;
   overflow-y: auto;
 }
 
@@ -259,6 +281,45 @@
 
 .processingText {
   animation: colorChange 1.3s infinite;
+}
+
+.fileIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.filePreview {
+  margin-top: 8px;
+  margin-right: 40px;
+  padding: 8px;
+  border-radius: 0.5rem;
+}
+
+.darkfilePreview {
+  background-color: rgb(15, 15, 15);
+}
+
+.lightfilePreview {
+  background-color: rgb(229, 231, 235);
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+}
+
+.previewFile {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.previewFile:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
