@@ -103,6 +103,7 @@ En caso de que la petición de la función no se asemeje en absoluto a una funci
 6. No incluyas `function` o `params` en la respuesta final.
 
 **Ejemplo de solicitud de datos:**
+```json
 {
   "function": "solicitarDatos",
   "params": {
@@ -111,11 +112,13 @@ En caso de que la petición de la función no se asemeje en absoluto a una funci
 }
 
 **Ejemplo de respuesta final:**
+```json
 {
   "message": "Aquí tienes la lista de correos electrónicos de tus proveedores:\n\n- proveedor1@example.com\n- proveedor2@example.com\n- proveedor3@example.com"
 }
 
 **Ejemplo de solicitud de datos para calculos:**
+```json
 {
   "function": "solicitarDatos",
   "params": {
@@ -125,6 +128,7 @@ En caso de que la petición de la función no se asemeje en absoluto a una funci
 }
 
 **Ejemplo de respuesta final para calculos:**
+```json
 {
   "message": "El total de gastos en el libro diario es: $1500.00"
 }
