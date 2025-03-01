@@ -1,0 +1,174 @@
+.titleContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.title {
+    font-size: 1.875rem;
+    /* 30px */
+    font-weight: bold;
+    min-width: max-content;
+}
+
+/* Estilos para la línea divisoria */
+.divider {
+    border-top: 1px solid #9CA3AF;
+    /* gray-400 */
+    margin: 1rem 0;
+}
+
+/* Estilos para el contenedor de botones y selección de fecha */
+.buttonContainer {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    /* space-x-4 */
+}
+
+
+/* Estilos para el Select */
+.selectTrigger {
+    width: 180px;
+    margin-left: 1rem;
+}
+
+/* Estilos para el Popover */
+.popoverButton {
+    width: 280px;
+    justify-content: start;
+    text-align: left;
+    font-weight: normal;
+}
+
+/* Estilos para el Input */
+.input {
+    width: 180px;
+}
+
+/* Estilos de la tabla */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableHeader {
+    background-color: #f4f4f4;
+}
+
+.tableHead {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+}
+
+.tableRow:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.tableCell {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Estilos de los botones */
+.actionButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.saveButton,
+.editButton,
+.deleteButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.saveButton {
+    color: green;
+}
+
+.editButton {
+    color: blue;
+}
+
+.deleteButton {
+    color: red;
+}
+
+/* Estilos del resumen financiero */
+.summaryContainer {
+    margin-top: 20px;
+}
+
+.card {
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.cardTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.cardContent {
+    display: flex;
+    justify-content: space-around;
+}
+
+.summaryItem {
+    text-align: center;
+}
+
+.summaryLabel {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.summaryValuePositive {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: green;
+}
+
+.summaryValueNegative {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: red;
+}
+
+.summaryValue {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Estilos para cuando no hay elementos */
+.noItemsContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 65vh;
+    min-width: max-content;
+}
+
+.scrollArea {
+    max-height: 70vh;
+}
+
+.container {
+    padding: 1rem;
+}
+
+.fieldContainer {
+    margin-bottom: 1rem;
+}

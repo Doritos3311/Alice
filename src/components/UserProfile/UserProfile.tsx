@@ -35,10 +35,13 @@ interface UserData {
   displayName: string;
   type: 'personal' | 'empresa';
   companyName?: string;
+  telefono?: string;
   rucCI?: string;
+  direccionMatriz?: string;
+  direccionSucursal?: string;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLandingPage }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
 
   {/* Declaracion de Estados */}
 
@@ -153,6 +156,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLa
 
           <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>
 
+          {/* Visualizador de ID */}
           <div>
             <h2 className={styles.nameTitle}>
               {userData.type === 'personal' ? 'ID de Usuario' : 'ID de Empresa'}
@@ -162,10 +166,41 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLa
 
           <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>
 
-          <div className={styles.contenidoPrincipal}>
+          {/* Visualizador del RUC */}
+          <div>
             <div>
               <h2 className={styles.nameTitle}>R.U.C/C.I</h2>
               <p className={styles.subtitle}>{userData.rucCI || ''}</p>
+            </div>
+          </div>
+
+          <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>
+
+          {/* Visualizador del Direccion */}
+          <div>
+            <div>
+              <h2 className={styles.nameTitle}>Teléfono</h2>
+              <p className={styles.subtitle}>{userData.telefono || ''}</p>
+            </div>
+          </div>
+
+          <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>
+
+          {/* Visualizador del Direccion */}
+          <div>
+            <div>
+              <h2 className={styles.nameTitle}>Direccion Matriz</h2>
+              <p className={styles.subtitle}>{userData.direccionMatriz || ''}</p>
+            </div>
+          </div>
+
+          <div className={`${styles.separacion} ${theme === "light" ? styles.separacionLight : styles.separacionDark}`}></div>
+
+          {/* Visualizador del Direccion Matriz */}
+          <div className={styles.contenidoPrincipal}>
+            <div>
+              <h2 className={styles.nameTitle}>Direccion Sucursal</h2>
+              <p className={styles.subtitle}>{userData.direccionSucursal || ''}</p>
             </div>
           </div>
 
@@ -233,6 +268,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, setActiveTab, setShowLa
                 id="rucCI"
                 value={userData.rucCI || ''}
                 onChange={(e) => setUserData({ ...userData, rucCI: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="telefono">Teléfono:</Label>
+              <Input
+                id="telefono"
+                value={userData.telefono || ''}
+                onChange={(e) => setUserData({ ...userData, telefono: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="direccionMatriz">Direccion Matriz:</Label>
+              <Input
+                id="direccionMatriz"
+                value={userData.direccionMatriz || ''}
+                onChange={(e) => setUserData({ ...userData, direccionMatriz: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="direccionSucursal">Direccion Sucursal:</Label>
+              <Input
+                id="direccionSucursal"
+                value={userData.direccionSucursal || ''}
+                onChange={(e) => setUserData({ ...userData, direccionSucursal: e.target.value })}
               />
             </div>
           </div>

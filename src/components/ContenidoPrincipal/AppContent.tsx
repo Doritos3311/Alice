@@ -23,12 +23,12 @@ import { useState, useMemo, useRef, useEffect } from "react"
 import Link from 'next/link';
 
 //Estilos
-import stylesContent from "@/components/estilos/contenido.module.css"
-import stylesMenu from "@/components/estilos/menu.module.css"
-import stylesService from "@/components/estilos/servicio.module.css"
-import stylesLDiario from "@/components/estilos/libroDiario.module.css"
-import stylesGruposdeTrabajointerfaz from "@/components/estilos/gruposTrabajo.module.css"
-import stylesEstFacturacionRec from "@/components/estilos/esFacRec.module.css" 
+import stylesContent from "@/components/styles/contenido.module.css"
+import stylesMenu from "@/components/styles/menu.module.css"
+import stylesService from "@/components/styles/servicio.module.css"
+import stylesLDiario from "@/components/styles/libroDiario.module.css"
+import stylesGruposdeTrabajointerfaz from "@/components/styles/gruposTrabajo.module.css"
+import stylesEstFacturacionRec from "@/components/styles/esFacRec.module.css" 
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage"
@@ -39,10 +39,6 @@ import SolicitudPendiente from '@/components/SolicitudPendiente/SolicitudPendien
 import AccesoRestringido from '@/components/AccesoRestringido/AccesoRestringido'
 import MensajeNoItems from "@/components/MensajeNoItems/MensajeNoItems"
 import ChatPanel from "@/components/ChatPanel/ChatPanel";
-
-//Enrutamiento
-
-//Importaciones de Tipos
 
 //Componentes Shadcn
 import { Button } from "@/components/ui/button"
@@ -126,7 +122,10 @@ interface UserData {
   displayName: string;
   type: 'personal' | 'empresa';
   companyName?: string; // Ahora es una propiedad opcional
+  telefono?: string;
   rucCI?: string;
+  direccionMatriz?: string;
+  direccionSucursal?: string;
 }
 
 {/* Declaracion de Tipados */}
@@ -248,12 +247,6 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-// Configuración de la API
-const OPENROUTER_API_KEY = "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";
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const SITE_URL = "https://tusitio.com"; // Cambia esto por la URL de tu sitio
-const SITE_NAME = "Mi Sitio"; // Cambia esto por el nombre de tu sitio
-
 export default function ContabilidadApp() {
 
   {/* Declaracion de Estados */}
@@ -263,10 +256,16 @@ export default function ContabilidadApp() {
 
   // Estado de Inicio de Aplicacion
   const [activeTab, setActiveTab] = useState("configuracion")
-  const [identificacionAdquiriente, setIdentificacionAdquiriente] = useState("v0")
+  const [identificacionAdquiriente, setIdentificacionAdquiriente] = useState("")
   const [isMenuExpanded, setIsMenuExpanded] = useState(true); // Estado para controlar si el menú está expandido
 
   {/* Estado de tipo de Data */}
+
+  // Tipo de Data para Usuarios
+  const [direccionMatriz, setDireccionMatriz] = useState("")
+  const [direccionSucursal, setDireccionSucursal] = useState("")
+  const [telefono, setTelefono] = useState("")
+
 
   //Tipo de Data Libro Diario
   const [data, setData] = useState<RowData[]>([])
@@ -776,6 +775,10 @@ export default function ContabilidadApp() {
           const data = userDoc.data() as UserData;
           setUserData(data);
           setNombreEmisor(data.type === 'empresa' ? data.companyName || '' : data.displayName || '');
+          setCorreoEmisor(data.type === 'empresa' ? user?.email || '' : user?.email || '');
+          setTelefono(data.type === 'empresa' ? data.telefono || '' : data.telefono || '');
+          setDireccionSucursal(data.type === 'empresa' ? data.direccionSucursal || '' : data.direccionSucursal || '');
+          setDireccionMatriz(data.type === 'empresa' ? data.direccionMatriz || '' : data.direccionMatriz || '');
         }
       }
     };
@@ -1343,8 +1346,8 @@ export default function ContabilidadApp() {
           numeroAutorizacion: newInvoiceItem.numeroAutorizacion || "",
           numeroFactura: newInvoiceItem.numeroFactura || "",
           fechaAutorizacion: newInvoiceItem.fechaAutorizacion || "",
-          direccionMatriz: newInvoiceItem.direccionMatriz || "",
-          direccionSucursal: newInvoiceItem.direccionSucursal || "",
+          direccionMatriz: direccionMatriz || "",
+          direccionSucursal: direccionSucursal || "",
           identificacionAdquiriente: newInvoiceItem.identificacionAdquiriente || "",
           fechaEmision: newInvoiceItem.fechaEmision || "",
           rucCi: newInvoiceItem.rucCi || "",
@@ -2343,10 +2346,10 @@ export default function ContabilidadApp() {
     ) : (
 
       // Muestra el contenido principal de la aplicación
-      <div>
+      <div className={stylesContent.content}>
            
            {/* Visualizador Principal */}
-          <div className={`flex h-screen ${theme === 'dark' ? 'bg-black text-gray-200' : 'bg-gray-100 text-gray-900'}`}>
+          <div className={`flex h-screen ${stylesContent.content} ${theme === 'dark' ? 'bg-black text-gray-200' : 'bg-gray-100 text-gray-900'}`}>
 
             {/* Visualizador */}
             
@@ -2572,7 +2575,7 @@ export default function ContabilidadApp() {
               </div>
 
               {/* Contenido principal */}
-              <div className={`flex-1 p-8 overflow-auto mr-12 ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : " bg-[rgb(85, 85, 85)] text-gray-900"}`}>
+              <div className={`flex-1 p-8 overflow-auto mr-12 ${stylesContent.content} ${theme === "dark" ? "bg-[rgb(15,15,15)] text-gray-300" : " bg-[rgb(85, 85, 85)] text-gray-900"}`}>
 
                 {/* Configuracion Interfaz Estilo */}
                 {activeTab === "configuracion" && (
@@ -4461,11 +4464,11 @@ export default function ContabilidadApp() {
                           <div className="mt-4 pt-4 border-t">
                             <div className="space-y-2">
                               <Label htmlFor="direccionMatriz">Dirección Matriz:</Label>
-                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" />
+                              <Input id="direccionMatriz" placeholder="Ingrese la dirección matriz" value={direccionMatriz || "Direccion Matriz"}/>
                             </div>
                             <div className="space-y-2 mt-2">
                               <Label htmlFor="direccionSucursal">Dirección Sucursal (si es necesario):</Label>
-                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" />
+                              <Input id="direccionSucursal" placeholder="Ingrese la dirección de la sucursal" value={direccionSucursal || direccionMatriz || "Dirección Sucursal"}/>
                             </div>
                           </div>
                         </div>
@@ -4891,7 +4894,7 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="telefono">Teléfono Adquiriente:</Label>
-                            <Input id="telefono" placeholder="Teléfono del adquiriente" />
+                            <Input id="telefono" placeholder="Teléfono del adquiriente" value={telefono || "Teléfono"}/>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
@@ -4909,7 +4912,7 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="direccionCliente">Dirección Adquiriente:</Label>
-                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" />
+                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" value={direccionMatriz || "Direccion Matriz"} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="guiaRemision">Guía de Remisión:</Label>

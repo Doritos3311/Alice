@@ -1,3 +1,11 @@
+.content ::-webkit-scrollbar {
+    width: 6px; /* Hace el scrollbar más delgado */
+}
+
+.content {
+    scrollbar-width: none; /* Para Firefox */
+}
+
 .contentNoItems {
     display: flex;
     justify-content: center;

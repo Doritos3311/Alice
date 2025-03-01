@@ -436,6 +436,20 @@
   color: #1f2937;
 }
 
+.menucontent::-webkit-scrollbar {
+  width: 6px; /* Hace el scrollbar más delgado */
+}
+
+.menucontent::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.3); /* Color más tenue */
+  border-radius: 4px; /* Bordes redondeados */
+}
+
+.menucontent::-webkit-scrollbar-track {
+  background: transparent; /* Oculta el track */
+}
+
+
 @media (max-width: 768px) {
   .menudesplegable {
     display: flex;
