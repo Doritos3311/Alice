@@ -8,12 +8,15 @@
 
 /* Borde para redimensionar */
 .resizeHandle {
+  width: 5px;
+  height: 100%;
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
   width: 8px;
   cursor: ew-resize;
+  border-radius: 50%;
 }
 
 /* Estilos para ocultar el botón */
@@ -90,8 +93,10 @@
 
 .title {
   margin-top: 1.4rem;
-  font-weight: bold; /* Aplicas negrita al texto */
-  font-size: 1.2rem; /* Tamaño de fuente más pequeño */
+  font-weight: bold;
+  /* Aplicas negrita al texto */
+  font-size: 1.2rem;
+  /* Tamaño de fuente más pequeño */
 }
 
 /* Clases para el tema oscuro y claro */
@@ -122,8 +127,8 @@
 }
 
 .messageConenedor {
- display: flex;
- flex-direction: row-reverse;
+  display: flex;
+  flex-direction: row-reverse;
 }
 
 .assistantMessage {
@@ -154,9 +159,33 @@
 
 /* Clases para la barra de texto y botones */
 .inputContainer {
+  display: flex;
+  justify-content: center;
   padding: 1rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
+
+.inputContenido {
+  display: flex;
+  flex-direction: column;
+  max-width: 700px;
+  width: 100%;
+  background-color: #303030;
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+}
+
+.lightinputContenido {
+  display: flex;
+  flex-direction: column;
+  max-width: 700px;
+  width: 100%;
+  background: none;
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+  border-width: 1px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra suave en modo claro */
+}
+
 
 .flexContainer {
   display: flex;
@@ -165,8 +194,41 @@
 }
 
 .flexGrow {
+  display: flex;
+  justify-content: center;
   flex-grow: 1;
   overflow-y: auto;
+  border: none;
+}
+
+.flexGrowConent {
+  max-width: 700px;
+}
+
+.inputMessage {
+  flex-grow: 1;
+  overflow-y: auto;
+  font-size: 1.1rem;
+  border: none;
+  background: none;
+}
+
+.inputMessage:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
+}
+
+.btnSub {
+  border-radius: 2rem;
+  background: none;
+  border-color: #747474;
+}
+
+.btnSubLigth {
+  border-radius: 2rem;
+  background: none;
+  border-width: 1px;
 }
 
 .buttonContainer {
@@ -322,6 +384,4 @@
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
-  
-}
+@media (max-width: 768px) {}

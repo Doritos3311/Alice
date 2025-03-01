@@ -136,6 +136,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [panelWidth, setPanelWidth] = useState(64); // Ancho inicial cuando está cerrado
+    const [memoryPanelWidth, setMemoryPanelWidth] = useState(420); // Ancho inicial cuando está cerrado
     const [isResizing, setIsResizing] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
     const startXRef = useRef<number>(0); // Posición inicial del mouse
@@ -168,35 +169,44 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         startXRef.current = e.clientX;
         startWidthRef.current = panelWidth;
         setIsResizing(true);
+        document.body.style.cursor = "ew-resize";
     };
 
-    // Manejador para redimensionar el panel
     const resizePanel = (e: MouseEvent) => {
-        if (!isResizing || !panelRef.current) return;
-        const newWidth = Math.min(Math.max(startWidthRef.current - (startXRef.current - e.clientX), 300), 900);
-        setPanelWidth(newWidth);
-    };
+        if (!isResizing) return;
+    
+        const deltaX = startXRef.current - e.clientX; // Mantiene la dirección correcta
+        const newWidth = Math.max(550, Math.min(950, startWidthRef.current + deltaX)); // Asegura que no supere 900px
+    
+        setPanelWidth(newWidth); // Se actualiza instantáneamente
+    };    
 
     // Manejador para detener el redimensionamiento
     const stopResizing = () => {
         setIsResizing(false);
+        document.body.style.cursor = "default";
     };
 
     // Agregar listeners para el redimensionamiento
     useEffect(() => {
         if (isResizing) {
-            window.addEventListener('mousemove', resizePanel);
-            window.addEventListener('mouseup', stopResizing);
+            window.addEventListener("mousemove", resizePanel);
+            window.addEventListener("mouseup", stopResizing);
         }
+
         return () => {
-            window.removeEventListener('mousemove', resizePanel);
-            window.removeEventListener('mouseup', stopResizing);
+            window.removeEventListener("mousemove", resizePanel);
+            window.removeEventListener("mouseup", stopResizing);
         };
     }, [isResizing]);
 
     useEffect(() => {
         if (isIAOpen) {
-            setPanelWidth(384); // Ancho cuando está abierto
+            if (memoryPanelWidth >= 550) {
+                setPanelWidth(memoryPanelWidth);
+            } else {
+                setPanelWidth(550); // Ancho cuando está abierto
+            }
         } else {
             setPanelWidth(64); // Ancho cuando está cerrado
         }
@@ -634,7 +644,17 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     };
 
     return (
-        <div ref={panelRef} style={{ width: `${panelWidth}px` }} className={`${styles.container} ${isIAOpen ? styles.widthOpen : styles.widthClosed} ${theme === "dark" ? styles.darkTheme : styles.lightTheme}`}>
+        <div
+            ref={panelRef}
+            style={{ width: `${panelWidth}px` }}
+            className={`${styles.container} ${isIAOpen ? styles.widthOpen : styles.widthClosed} ${theme === "dark" ? styles.darkTheme : styles.lightTheme}`}
+        >
+            {/* Borde para ajustar tamaño */}
+            <div
+                onMouseDown={startResizing}
+                className={isIAOpen ? styles.resizeHandle : ""}
+            >
+            </div>
 
             {/* Btn Configuracion */}
             {isIAOpen ? (
@@ -661,7 +681,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 variant="ghost"
                 size="icon"
                 className={styles.iaButton}
-                onClick={() => { setIsIAOpen(!isIAOpen); setPanelWidth(2) }}
+                onClick={() => { { isIAOpen ? setMemoryPanelWidth(panelWidth) : "" } setIsIAOpen(!isIAOpen); }}
                 aria-label={isIAOpen ? "Cerrar asistente IA" : "Abrir asistente IA"}
             >
                 {isIAOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
@@ -674,112 +694,123 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                         <h1 className={styles.title}>Alice</h1>
                     </div>
                     <div className={`${styles.flexGrow} overflow-auto p-4`} ref={chatRef}>
-                        {/* Mensaje */}
-                        {messages.map((message, index) => (
-                            <div key={index} className={`${styles.messageContainer} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
-                                <div className={`${message.role === 'user' ? styles.messageConenedor : styles.assistantMessageContenedor}`}>
-                                    {/* Avatar del usuario o IA */}
-                                    {message.role === 'user' ? (
-                                        <Avatar className={styles.userAvatar}>
-                                            <AvatarImage className={styles.userImg} src={user?.photoURL || undefined} alt={user?.displayName || "Usuario"} />
-                                            <AvatarFallback className={styles.avatarFallback}>
-                                                {user?.displayName ? user.displayName[0] : "U"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    ) : (
-                                        <Avatar className={styles.iaAvatar}>
-                                            <AvatarFallback className={styles.avatarFallback}>A</AvatarFallback>
-                                        </Avatar>
+                        <div className={styles.flexGrowConent}>
+                            {/* Mensaje */}
+                            {messages.map((message, index) => (
+                                <div key={index} className={`${styles.messageContainer} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
+                                    <div className={`${message.role === 'user' ? styles.messageConenedor : styles.assistantMessageContenedor}`}>
+                                        {/* Avatar del usuario o IA */}
+                                        {message.role === 'user' ? (
+                                            <Avatar className={styles.userAvatar}>
+                                                <AvatarImage className={styles.userImg} src={user?.photoURL || undefined} alt={user?.displayName || "Usuario"} />
+                                                <AvatarFallback className={styles.avatarFallback}>
+                                                    {user?.displayName ? user.displayName[0] : "U"}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        ) : (
+                                            <Avatar className={styles.iaAvatar}>
+                                                <AvatarFallback className={styles.avatarFallback}>A</AvatarFallback>
+                                            </Avatar>
+                                        )}
+
+                                        {/* Contenido del mensaje */}
+                                        <div className={`${styles.messageBubble} ${message.role === 'user' ? (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble) : (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble)}`}>
+                                            <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
+                                        </div>
+                                    </div>
+
+
+                                    {/* Mostrar el archivo adjunto */}
+                                    {message.file && (
+                                        <div className={` ${styles.filePreview} ${theme === 'dark' ? styles.darkfilePreview : styles.lightfilePreview}`}>
+                                            {message.file.type.startsWith("image/") ? (
+                                                <img src={message.file.url} alt={message.file.name} className={` ${styles.previewImage} ${theme === 'dark' ? styles.darkPreviewImage : styles.lightPreviewImage}`} />
+                                            ) : (
+                                                <a href={message.file.url} target="_blank" rel="noopener noreferrer" className={` ${styles.previewFile} ${theme === 'dark' ? styles.darkpreviewFile : styles.lightpreviewFile}`}>
+                                                    {message.file.name}
+                                                </a>
+                                            )}
+                                        </div>
                                     )}
 
-                                    {/* Contenido del mensaje */}
-                                    <div className={`${styles.messageBubble} ${message.role === 'user' ? (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble) : (theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble)}`}>
-                                        <div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />
+                                </div>
+                            ))}
+                            {/* Mensaje de carga */}
+                            {isProcessing && (
+                                <div className={styles.assistantMessage}>
+                                    <div className={styles.messageBubble}>
+                                        <span className={styles.processingText}>Procesando...</span>
                                     </div>
                                 </div>
-
-
-                                {/* Mostrar el archivo adjunto */}
-                                {message.file && (
-                                    <div className={` ${styles.filePreview} ${theme === 'dark' ? styles.darkfilePreview : styles.lightfilePreview}`}>
-                                        {message.file.type.startsWith("image/") ? (
-                                            <img src={message.file.url} alt={message.file.name} className={` ${styles.previewImage} ${theme === 'dark' ? styles.darkPreviewImage : styles.lightPreviewImage}`} />
-                                        ) : (
-                                            <a href={message.file.url} target="_blank" rel="noopener noreferrer" className={` ${styles.previewFile} ${theme === 'dark' ? styles.darkpreviewFile : styles.lightpreviewFile}`}>
-                                                {message.file.name}
-                                            </a>
-                                        )}
+                            )}
+                            {/* Mensaje que se está escribiendo */}
+                            {typedMessage && (
+                                <div className={styles.assistantMessage}>
+                                    <div className={`${styles.messageBubble} ${theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble}`}>
+                                        <div dangerouslySetInnerHTML={{ __html: typedMessage }} />
                                     </div>
-                                )}
-
-                            </div>
-                        ))}
-                        {/* Mensaje de carga */}
-                        {isProcessing && (
-                            <div className={styles.assistantMessage}>
-                                <div className={styles.messageBubble}>
-                                    <span className={styles.processingText}>Procesando...</span>
                                 </div>
-                            </div>
-                        )}
-                        {/* Mensaje que se está escribiendo */}
-                        {typedMessage && (
-                            <div className={styles.assistantMessage}>
-                                <div className={`${styles.messageBubble} ${theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble}`}>
-                                    <div dangerouslySetInnerHTML={{ __html: typedMessage }} />
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                     <div className={styles.inputContainer}>
-                        {selectedFile && (
-                            <div className={styles.fileIndicator}>
-                                <span>{selectedFile.name}</span>
+                        <div className={theme === "dark" ? styles.inputContenido : styles.lightinputContenido}>
+                            {selectedFile && (
+                                <div className={styles.fileIndicator}>
+                                    <span>{selectedFile.name}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setSelectedFile(null)} // Elimina el archivo seleccionado
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            <div className={styles.flexContainer}>
+                                {/* Barra de Texto */}
+                                <Input
+                                    type="text"
+                                    placeholder="Escribe tu mensaje..."
+                                    value={inputMessage}
+                                    onChange={(e) => setInputMessage(e.target.value)}
+                                    onKeyDown={handleSendMessage}
+                                    className={styles.inputMessage}
+                                />
+                            </div>
+                            <div className={styles.buttonContainer}>
+                                {/* Btn Subir Archivo */}
                                 <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="icon"
-                                    onClick={() => setSelectedFile(null)} // Elimina el archivo seleccionado
+                                    onClick={handleFileUploadClick}
+                                    className={`${theme === 'dark' ? styles.btnSub : styles.btnSubLigth}`}
                                 >
-                                    <X className="h-4 w-4" />
+                                    <Upload className="h-4 w-4" />
+                                    <span className="sr-only">Subir archivo</span>
+                                </Button>
+
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    id="file-upload"
+                                    className="hidden"
+                                    onChange={handleFileChange} // Aquí manejamos el cambio de archivo
+                                />
+
+                                {/* Btn Hablar Para Escuchar */}
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={handleVoiceInput}
+                                    className={`${theme === 'dark' ? styles.btnSub : styles.btnSubLigth}`}
+                                >
+                                    <Mic className="h-4 w-4" />
+                                    <span className="sr-only">Entrada de voz</span>
                                 </Button>
                             </div>
-                        )}
-                        <div className={styles.flexContainer}>
-                            {/* Barra de Texto */}
-                            <Input
-                                type="text"
-                                placeholder="Escribe tu mensaje..."
-                                value={inputMessage}
-                                onChange={(e) => setInputMessage(e.target.value)}
-                                onKeyDown={handleSendMessage}
-                                className={styles.flexGrow}
-                            />
                         </div>
-                        <div className={styles.buttonContainer}>
-                            {/* Btn Subir Archivo */}
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={handleFileUploadClick}
-                            >
-                                <Upload className="h-4 w-4" />
-                                <span className="sr-only">Subir archivo</span>
-                            </Button>
 
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                id="file-upload"
-                                className="hidden"
-                                onChange={handleFileChange} // Aquí manejamos el cambio de archivo
-                            />
-
-                            {/* Btn Hablar Para Escuchar */}
-                            <Button variant="outline" size="icon" onClick={handleVoiceInput}>
-                                <Mic className="h-4 w-4" />
-                                <span className="sr-only">Entrada de voz</span>
-                            </Button>
-                        </div>
                     </div>
                 </>
             )}
