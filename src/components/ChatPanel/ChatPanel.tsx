@@ -124,6 +124,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
     const [typedMessage, setTypedMessage] = useState(""); // Estado para el mensaje que se está escribiendo
+    const inputRef = useRef<HTMLInputElement>(null); // Definir tipo explícito de la referencia
     const typingSpeed = 10;
     const auth = getAuth();
     const user = auth.currentUser;
@@ -174,12 +175,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
     const resizePanel = (e: MouseEvent) => {
         if (!isResizing) return;
-    
+
         const deltaX = startXRef.current - e.clientX; // Mantiene la dirección correcta
         const newWidth = Math.max(550, Math.min(950, startWidthRef.current + deltaX)); // Asegura que no supere 900px
-    
+
         setPanelWidth(newWidth); // Se actualiza instantáneamente
-    };    
+    };
 
     // Manejador para detener el redimensionamiento
     const stopResizing = () => {
@@ -201,6 +202,21 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     }, [isResizing]);
 
     useEffect(() => {
+
+        const handleKeyPress = (e: { ctrlKey: any; key: string; }) => {
+            // Verifica si se presionan las teclas 'Ctrl' y 'I' al mismo tiempo
+            if (e.ctrlKey && e.key === 'i') {
+                if (isIAOpen == false) {
+                    setIsIAOpen(true);
+                } else {
+                    setIsIAOpen(false);
+                }
+            }
+        };
+
+        // Añade el event listener
+        window.addEventListener('keydown', handleKeyPress);
+
         if (isIAOpen) {
             if (memoryPanelWidth >= 550) {
                 setPanelWidth(memoryPanelWidth);
@@ -210,6 +226,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         } else {
             setPanelWidth(64); // Ancho cuando está cerrado
         }
+
+        if (isIAOpen && inputRef.current) {
+            inputRef.current.focus();
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyPress);
+        };
     }, [isIAOpen]);
 
     // Funciones JSON
@@ -770,6 +794,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                             <div className={styles.flexContainer}>
                                 {/* Barra de Texto */}
                                 <Input
+                                    ref={inputRef}
                                     type="text"
                                     placeholder="Escribe tu mensaje..."
                                     value={inputMessage}

@@ -95,7 +95,7 @@
   margin-top: 1.4rem;
   font-weight: bold;
   /* Aplicas negrita al texto */
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   /* Tamaño de fuente más pequeño */
 }
 
@@ -203,6 +203,7 @@
 
 .flexGrowConent {
   max-width: 700px;
+  width: 100%;
 }
 
 .inputMessage {
