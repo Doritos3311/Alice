@@ -421,7 +421,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
                     // Procesar la respuesta de la IA
                     let responseData: { function?: string; params?: any; message?: string } = {};
-                    console.log(responseData);
                     const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
 
                     if (jsonMatch) {
@@ -456,6 +455,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                             }, 1000);
                         }
                     }
+                    
                 } catch (error) {
                     console.error("Error:", error);
                     setMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, hubo un error." }]);
@@ -509,26 +509,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
     // Funciones para enviar los datos del software
     const procesarRespuestaIA = async (responseData: any) => {
-        console.log("Respuesta de la IA recibida:", responseData); // Depuración
 
         if (responseData.function === "solicitarDatos") {
             // Paso 1: La IA solicita datos
             const { tipoDatos, accion } = responseData.params;
-            console.log("Tipo de datos solicitado:", tipoDatos); // Depuración
-            console.log("Acción solicitada:", accion); // Depuración
 
             // Obtener los datos solicitados
             const datos = await obtenerDatos(tipoDatos);
-            console.log("Datos obtenidos:", datos); // Depuración
 
             if (datos) {
                 // Enviar los datos a la IA
-                console.log("Enviando datos a la IA:", datos); // Depuración
                 const aiResponse = await sendMessageToOpenRouter(
                     JSON.stringify({ tipoDatos, datos, accion }),
                     messages
                 );
-                console.log("Respuesta de la IA con datos:", aiResponse); // Depuración
 
                 // Extraer el JSON del bloque de Markdown (```json ... ```)
                 const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
@@ -560,7 +554,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                         }
                     } catch (error) {
                         // Si no es un JSON válido, mostrar la respuesta como texto plano
-                        console.log("Error al parsear el JSON:", error); // Depuración
                         setTypedMessage("");
                         typeMessage(aiResponse, () => {
                             const assistantMessage: Message = {
@@ -573,7 +566,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                     }
                 } else {
                     // Si no hay un bloque de Markdown, mostrar la respuesta como texto plano
-                    console.log("No se encontró un bloque de Markdown en la respuesta."); // Depuración
                     setTypedMessage("");
                     typeMessage(aiResponse, () => {
                         const assistantMessage: Message = {
@@ -585,7 +577,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                     });
                 }
             } else {
-                console.log("No se pudieron obtener los datos solicitados."); // Depuración
                 setMessages((prev) => [
                     ...prev,
                     { role: "assistant", content: "No se pudieron obtener los datos solicitados." },
@@ -594,14 +585,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         } else if (responseData.message) {
             // Paso 2: La IA devuelve un mensaje con el análisis o cálculo
             setTypedMessage("");
-            typeMessage(responseData.message, () => {
-                const assistantMessage: Message = {
-                    role: "assistant",
-                    content: responseData.message,
-                };
-                setMessages((prev) => [...prev, assistantMessage]); // Actualizar el estado
-                setTypedMessage("");
-            });
+
         } else {
             // Si la respuesta no es un JSON válido, mostrarla como texto plano
             setTypedMessage("");

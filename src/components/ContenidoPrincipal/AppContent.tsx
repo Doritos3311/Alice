@@ -3550,9 +3550,18 @@ export default function ContabilidadApp() {
                               <TableCell>{proveedor.direccionMatriz}</TableCell>
                               <TableCell>{proveedor.direccionSucursal}</TableCell>
                               <TableCell>
-                                <Button onClick={() => setEditingProveedor(proveedor)}>Editar</Button>
-                                <Button variant="destructive" onClick={() => handleDeleteProveedor(proveedor.id)}>
-                                  Eliminar
+                                <Button 
+                                  className="m-1"
+                                  onClick={() => setEditingProveedor(proveedor)}
+                                >
+                                  <RiEditLine size={20} />
+                                </Button>
+                                <Button 
+                                  className="m-1"
+                                  variant="destructive" 
+                                  onClick={() => handleDeleteProveedor(proveedor.id)}
+                                >
+                                  <IoTrashBinSharp size={20} />
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -3608,9 +3617,18 @@ export default function ContabilidadApp() {
                             <TableCell>{cliente.direccion}</TableCell>
                             <TableCell>{cliente.rucCi}</TableCell>
                             <TableCell>
-                              <Button onClick={() => setEditingCliente(cliente)}>Editar</Button>
-                              <Button variant="destructive" onClick={() => handleDeleteCliente(cliente.id)}>
-                                Eliminar
+                              <Button 
+                                className="m-1"
+                                onClick={() => setEditingCliente(cliente)}
+                              >
+                                <RiEditLine size={20} />
+                              </Button>
+                              <Button 
+                                className="m-1"
+                                variant="destructive" 
+                                onClick={() => handleDeleteCliente(cliente.id)}
+                              >
+                                <IoTrashBinSharp size={20} />
                               </Button>
                             </TableCell>
                           </TableRow>

@@ -23,6 +23,14 @@ Si el usuario solicita una acción (crear un asiento contable, agregar un ítem 
 
 En caso de que la petición de la función no se asemeje en absoluto a una función preguntar de manera amigable el tipo de función que más se asemeja.
 
+**Funciones disponibles para ejecucion de acciones**
+agregar_inventario
+agregar_proveedor
+agregar_cliente
+crear_factura
+crear_factura_recibida
+crear_asiento_contable
+
 **Campos disponibles:**
 
 1. **Libro Diario:**
