@@ -2739,7 +2739,7 @@ export default function ContabilidadApp() {
                                   {/* División de fecha */}
                                   <tr>
                                     <td colSpan={Object.keys(appConfig.libroDiario).length + 1} className={stylesLDiario.dateContent}>
-                                      <div className={stylesLDiario.line}>———————————————— <h3 className={stylesLDiario.date}>{date}</h3> ————————————————</div>
+                                      <div className={stylesLDiario.line}> <p>————————————————</p> <h3 className={stylesLDiario.date}>{date}</h3> <p>————————————————</p> </div>
                                     </td>
                                   </tr>
 
