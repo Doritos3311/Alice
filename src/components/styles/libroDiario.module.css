@@ -28,6 +28,27 @@
     /* space-x-4 */
 }
 
+.dateContent {
+    width: 100%;
+}
+
+.line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.date {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    display: flex;
+    font-weight: bold;
+    font-size: 1.2em; /* Ajusta el tamaño de la fuente según sea necesario */
+    text-transform: uppercase; /* Opcional: convierte el texto en mayúsculas */
+    min-width: max-content;
+}
 
 /* Estilos para el Select */
 .selectTrigger {

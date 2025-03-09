@@ -86,6 +86,7 @@ import GenerarRegistros from '@/components/GenerarRegistros/GenerarRegistros';
 import { Toaster } from "@/components/ui/toaster";
 import JoyrideWrapper from "@/components/Joyride/JoyrideWrapper";
 import { Step } from '../Joyride/CustomJoyride';
+import React from "react";
 
 
 // Configuración de Firebase
@@ -991,6 +992,17 @@ export default function ContabilidadApp() {
     const categoriasAdicionales = categorias.filter((cat) => !ordenDeseadoLd.includes(cat))
     return [...categoriasOrdenadas, ...categoriasAdicionales]
   }
+
+  const groupByDate = (data: RowData[]): { [key: string]: RowData[] } => {
+    return data.reduce((acc, row) => {
+      const date = row.fecha; // Asume que 'fecha' es el campo que contiene la fecha del registro
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(row);
+      return acc;
+    }, {} as { [key: string]: RowData[] });
+  };
 
   {/* Filtros */}
 
@@ -2629,7 +2641,7 @@ export default function ContabilidadApp() {
                         <h2 className="text-3xl font-bold">Libro Diario</h2>
                       </div>
 
-                      <div className="border-t border-gray-400 my-4"></div>
+                      <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
 
                       <div className="mb-4 flex items-center space-x-4">
 
@@ -2708,49 +2720,67 @@ export default function ContabilidadApp() {
                       {/* Tablas de Libro Diario */}
                       {hayItems(filteredData) ? (
                       <>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
-                                <TableHead key={categoria}>{appConfig.libroDiario[categoria]?.name || categoria}</TableHead>
+
+                          {/* Tablas */}
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
+                                  <TableHead key={categoria}>{appConfig.libroDiario[categoria]?.name || categoria}</TableHead>
+                                ))}
+                                <TableHead>Acciones</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            
+                            <TableBody>
+                              {/* Iterar sobre las fechas y los registros */}
+                              {Object.entries(groupByDate(filteredData)).map(([date, rows]: [string, RowData[]]) => (
+                                <React.Fragment key={date}>
+                                  {/* División de fecha */}
+                                  <tr>
+                                    <td colSpan={Object.keys(appConfig.libroDiario).length + 1} className={stylesLDiario.dateContent}>
+                                      <div className={stylesLDiario.line}>———————————————— <h3 className={stylesLDiario.date}>{date}</h3> ————————————————</div>
+                                    </td>
+                                  </tr>
+
+                                  {/* Registros para esta fecha */}
+                                  {rows.map((row) => (
+                                    <TableRow key={row.id}>
+                                      {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
+                                        <TableCell key={categoria}>
+                                          {editingId === row.id ? (
+                                            <Input
+                                              type={appConfig.libroDiario[categoria]?.type || "text"}
+                                              value={row[categoria] || ""}
+                                              onChange={(e) => handleInputChange(row.id, categoria, e.target.value)}
+                                            />
+                                          ) : (
+                                            row[categoria]
+                                          )}
+                                        </TableCell>
+                                      ))}
+                                      <TableCell>
+                                        {editingId === row.id ? (
+                                          <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
+                                            <IoIosSave size={20} />
+                                          </Button>
+                                        ) : (
+                                          <Button onClick={() => handleEditRow(row.id)} className="mr-4">
+                                            <RiEditLine size={20} />
+                                          </Button>
+                                        )}
+                                        <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
+                                          <IoTrashBinSharp size={20} />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </React.Fragment>
                               ))}
-                              <TableHead>Acciones</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                          {filteredData.map((row) => (
-                            <TableRow key={row.id}>
-                              {ordenarCategoriasLd(Object.keys(appConfig.libroDiario)).map((categoria) => (
-                                <TableCell key={categoria}>
-                                  {editingId === row.id ? (
-                                    <Input
-                                      type={appConfig.libroDiario[categoria]?.type || "text"}
-                                      value={row[categoria] || ""}
-                                      onChange={(e) => handleInputChange(row.id, categoria, e.target.value)}
-                                    />
-                                  ) : (
-                                    row[categoria]
-                                  )}
-                                </TableCell>
-                              ))}
-                              <TableCell>
-                                {editingId === row.id ? (
-                                  <Button onClick={() => handleSaveRow(row.id)} className="mr-4">
-                                    <IoIosSave size={20} />
-                                  </Button>
-                                ) : (
-                                  <Button onClick={() => handleEditRow(row.id)} className="mr-4">
-                                    <RiEditLine size={20} />
-                                  </Button>
-                                )}
-                                <Button variant="destructive" onClick={() => handleDeleteRow(row.id)}>
-                                  <IoTrashBinSharp size={20} />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableBody>
+                          </Table>
+
+                        {/* Resumen Financiero */}
                         <div className="mt-4">
                           <Card className="col-span-2">
 
