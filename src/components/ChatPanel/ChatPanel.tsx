@@ -1,7 +1,7 @@
 import React, { useState, useRef, KeyboardEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button'; // Asegúrate de importar los componentes correctos
 import { Input } from "@/components/ui/input"
-import { Settings, X, Bot, Upload, Mic } from 'lucide-react'; // Asegúrate de importar los íconos correctos
+import { Settings, X, Bot, Upload, Mic, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'; // Asegúrate de importar los íconos correctos
 import styles from '@/components/ChatPanel/ChatPanel.module.css'; // Asegúrate de importar los estilos correctos
 import { useTheme } from "next-themes"
 import { getAuth } from 'firebase/auth';
@@ -14,9 +14,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 // Definir el tipo Message
 type Message = {
-    role: "user" | "assistant";
+    role: "user" | "assistant"; // Solo roles de usuario y asistente
     content: string;
     file?: { name: string; type: string; url: string };
+};
+
+type Action = {
+    name: string; // Nombre de la acción (ej: "agregarInventario")
+    data: any; // Datos asociados a la acción
+    isExpanded: boolean; // Para controlar si se muestra o no la lista de datos
 };
 
 // Definicion de Inventario
@@ -119,13 +125,16 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     clientesData,
     serviciosData,
 }) => {
-
+    {/* Mensajes */ }
     const [messages, setMessages] = useState<Message[]>([]);
+    const [actions, setActions] = useState<Action[]>([]); // Estado para las acciones
     const [inputMessage, setInputMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false); // Estado para el mensaje de carga
     const [typedMessage, setTypedMessage] = useState(""); // Estado para el mensaje que se está escribiendo
     const inputRef = useRef<HTMLInputElement>(null); // Definir tipo explícito de la referencia
     const typingSpeed = 10;
+
+    {/* Firebase */ }
     const auth = getAuth();
     const user = auth.currentUser;
 
@@ -236,7 +245,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         };
     }, [isIAOpen]);
 
-    // Funciones JSON
+    {/* Funciones JSON ejecutables */ }
     const functions: Record<string, (params?: any) => void> = {
         agregarInventario: (fields) => {
             setActiveTab("inventario")
@@ -244,21 +253,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             setNewInventoryItem(fields);
             console.log("Se ejecutó crearItemInventario");
             console.log(fields);
+            addActionMessage("Item Agregado", fields); // Registrar la acción
         },
+
         agregarProveedor: (fields) => {
             setActiveTab("proveedores")
             setIsProveedorModalOpen(true);
             setNewProveedor(fields);
             console.log("Se ejecutó crear Proveedor");
             console.log(fields);
+            addActionMessage("Proveedor Agregado", fields); // Registrar la acción
         },
+
         agregarCliente: (fields) => {
             setActiveTab("clientes")
             setIsClienteModalOpen(true);
             setNewCliente(fields);
             console.log("Se ejecutó crear Cliente");
             console.log(fields);
+            addActionMessage("Cliente Agregado", fields); // Registrar la acción
         },
+
         crearFactura: (fields) => {
             setActiveTab("facturacion-emitidas");
             setIsInvoiceModalOpen(true);
@@ -271,7 +286,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
             console.log("Se ejecutó crearFactura");
             console.log(fields);
+            addActionMessage("Factura Agregada", fields); // Registrar la acción
         },
+
         crearFacturaRecibida: (fields) => {
             setActiveTab("facturacion-recibidas")
 
@@ -285,12 +302,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
             console.log("Se ejecutó crearItemInventario");
             console.log(fields);
+            addActionMessage("Factura Agregada", fields); // Registrar la acción
         },
+
         crearAsientoContable: (fields) => {
             setActiveTab("libro-diario")
             setIsCreatingAccountingEntry(true);
             setNewRow(fields);
             console.log("Se ejecutó crearLibroDiario");
+            addActionMessage("Asiento Contable Agregado", fields); // Registrar la acción
         },
     };
 
@@ -361,6 +381,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error("Error en la solicitud:", errorText); // Depuración
                 throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}. Detalles: ${errorText}`);
             }
 
@@ -455,9 +476,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                             }, 1000);
                         }
                     }
-                    
+
                 } catch (error) {
-                    console.error("Error:", error);
+                    console.error("Error en handleSendMessage:", error); // Depuración
                     setMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, hubo un error." }]);
                 } finally {
                     setIsProcessing(false);
@@ -651,6 +672,28 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         return message;
     };
 
+    const addActionMessage = (actionName: string, actionData: any) => {
+        const newAction: Action = {
+            name: actionName,
+            data: actionData,
+            isExpanded: false, // Inicialmente colapsado
+        };
+        setActions((prev) => [...prev, newAction]); // Agregar al estado de acciones
+        console.log("se ejecuto una accion");
+    };
+
+    const formatFields = (fields: Record<string, any>) => {
+        return (
+            <ul className={styles.fieldsList}>
+                {Object.entries(fields).map(([key, value]) => (
+                    <li key={key}>
+                        <strong>{key}:</strong> {value}
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+
     return (
         <div
             ref={panelRef}
@@ -698,15 +741,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             {/* Interfaz Panel IA */}
             {isIAOpen && (
                 <>
+                    {/* Cabecera */}
                     <div className={styles.nav}>
                         <h1 className={styles.title}>Alice</h1>
                     </div>
+
+                    {/* Contenido */}
                     <div className={`${styles.flexGrow} overflow-auto p-4`} ref={chatRef}>
                         <div className={styles.flexGrowConent}>
+
+                            {/* Mostrar el texto "¿Con qué puedo ayudarte?" cuando no haya mensajes */}
+                            {messages.length === 0 && (
+                                <div className={styles.centerText}>
+                                    ¿Con qué puedo ayudarte?
+                                </div>
+                            )}
+
                             {/* Mensaje */}
                             {messages.map((message, index) => (
                                 <div key={index} className={`${styles.messageContainer} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}>
                                     <div className={`${message.role === 'user' ? styles.messageConenedor : styles.assistantMessageContenedor}`}>
+
                                         {/* Avatar del usuario o IA */}
                                         {message.role === 'user' ? (
                                             <Avatar className={styles.userAvatar}>
@@ -743,6 +798,46 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
                                 </div>
                             ))}
+
+                            {/* Acciones */}
+                            {actions.map((action, index) => (
+                                <div key={index} className={` ${styles.actionContainer} ${theme === 'dark' ? styles.darkMessageBubble : styles.lightMessageBubble}`}>
+                                    <div className={styles.actionHeader}>
+                                        <span>{action.name}</span>
+                                        <button
+                                            onClick={() => {
+                                                const updatedActions = [...actions];
+                                                updatedActions[index].isExpanded = !updatedActions[index].isExpanded;
+                                                setActions(updatedActions);
+                                            }}
+                                        >
+                                            {action.isExpanded ? <ChevronUp /> : <ChevronDown />}
+                                        </button>
+                                    </div>
+
+                                    {action.isExpanded && (
+                                        <div className={styles.actionData}>
+                                            <div className={styles.tableConainer}>
+                                                {formatFields(action.data)}
+                                            </div>
+
+                                            <Button
+                                                className={styles.refresh}
+                                                onClick={() => {
+                                                    // Re-ejecutar la acción
+                                                    const functionName = action.name.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+                                                    if (functionName in functions) {
+                                                        functions[functionName](action.data);
+                                                    }
+                                                }}
+                                            >
+                                                <RefreshCw />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
                             {/* Mensaje de carga */}
                             {isProcessing && (
                                 <div className={styles.assistantMessage}>
@@ -751,6 +846,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                                     </div>
                                 </div>
                             )}
+
                             {/* Mensaje que se está escribiendo */}
                             {typedMessage && (
                                 <div className={styles.assistantMessage}>
@@ -759,8 +855,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                                     </div>
                                 </div>
                             )}
+
                         </div>
                     </div>
+
+                    {/* Panel de Texto */}
                     <div className={styles.inputContainer}>
                         <div className={theme === "dark" ? styles.inputContenido : styles.lightinputContenido}>
                             {selectedFile && (
