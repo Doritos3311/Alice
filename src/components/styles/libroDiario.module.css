@@ -45,8 +45,10 @@
     margin-right: 0.5rem;
     display: flex;
     font-weight: bold;
-    font-size: 1.2em; /* Ajusta el tamaño de la fuente según sea necesario */
-    text-transform: uppercase; /* Opcional: convierte el texto en mayúsculas */
+    font-size: 1.2em;
+    /* Ajusta el tamaño de la fuente según sea necesario */
+    text-transform: uppercase;
+    /* Opcional: convierte el texto en mayúsculas */
     min-width: max-content;
 }
 
@@ -183,7 +185,12 @@
 }
 
 .scrollArea {
-    max-height: 70vh;
+    max-height: 45vh;
+}
+
+.content {
+    display: flex;
+    align-items: flex-end;
 }
 
 .container {
@@ -192,4 +199,18 @@
 
 .fieldContainer {
     margin-bottom: 1rem;
+}
+
+.modalContent {
+    min-width: max-content;
+    padding: 16px;
+    /* Reduce el padding */
+}
+
+.inputContainer {
+    gap: 0;
+}
+
+.inputs {
+    width: 135px;
 }

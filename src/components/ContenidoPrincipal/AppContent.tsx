@@ -46,7 +46,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info, Check, Building2, CircleUser } from "lucide-react"
 import { toast } from "@/components/hooks/use-toast"
@@ -136,6 +136,12 @@ type RowData = {
   id: string
   [key: string]: any
 }
+
+const cuentasContables = [
+  { categoria: 'Activo', cuentas: ['Caja', 'Bancos', 'Inventario'] },
+  { categoria: 'Pasivo', cuentas: ['Proveedores', 'Impuestos por pagar'] },
+  { categoria: 'Patrimonio', cuentas: ['Capital social', 'Utilidades retenidas'] },
+];
 
 // Definicion Inventario
 type InventoryItem = {
@@ -272,6 +278,8 @@ export default function ContabilidadApp() {
   const [data, setData] = useState<RowData[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [newRow, setNewRow] = useState<Omit<RowData, 'id'>>({})
+  const [rows, setRows] = useState<Array<{ [key: string]: string }>>([]);
+  const scrollRef = useRef<HTMLDivElement>(null); // Referencia al área de scroll
 
   // Estados Inventario
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
@@ -910,24 +918,51 @@ export default function ContabilidadApp() {
 
   {/* Libro Diario */}
 
-  // Función para agregar una nueva fila al libro diario
+  // Función para agregar un nuevo registro al libro diario
   const handleAddRow = async () => {
-    if (!user || !viewingUID) return;//Si usuario existe entonces
-
-    try {//Intetar
-      const newRowWithIdElemento = { ...newRow, idElemento: newRow.idElemento || `AC-${Date.now().toString()}`,}// Extrae los datos ingresados de la app
-      const docRef = await addDoc(collection(db, `users/${viewingUID}/libroDiario`), newRowWithIdElemento); // Añade un documento segun los datos extraidos
-      setData([...data, { ...newRowWithIdElemento, id: docRef.id }]); // Coloca los datos por defecto
-      setNewRow({}); // Coloca datos por defecto
-      setIsCreatingAccountingEntry(false); // Cerrar el Modal
-    } catch (error) { //Si no se pudo realizar
-      console.error("Error al agregar fila:", error);//Error a consola
-      toast({// Error detallado a la consola
+    if (!user || !viewingUID) return;
+  
+    try {
+      const newRowsWithIds = rows.map(row => ({
+        ...row,
+        idElemento: row.idElemento || `AC-${Date.now().toString()}`,
+      }));
+  
+      const batch = newRowsWithIds.map(async (row) => {
+        const docRef = await addDoc(collection(db, `users/${viewingUID}/libroDiario`), row);
+        return { ...row, id: docRef.id };
+      });
+  
+      const addedRows = await Promise.all(batch);
+      
+      setData([...data, ...addedRows]);
+      setRows([]); // Vaciar las filas después de guardar
+      setIsCreatingAccountingEntry(false);
+    } catch (error) {
+      console.error("Error al agregar fila:", error);
+      toast({
         title: "Error",
         description: "Hubo un problema al agregar la fila. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
+  };
+
+  // Funcion para agregar una nueva fila al libro diario
+  const handleAddNewRow = () => {
+    setRows([...rows, { cuentaContable: "", monto: "", descripcion: "" }]); // Define los campos vacíos iniciales
+  };  
+
+  // Función para eliminar las filas creadas en el libro diario
+  const handleDeleteNewRow = (index: number) => {
+    setRows(rows.filter((_, i) => i !== index));
+  };  
+
+  // Funcion para manejar los campos en de las filas creadas
+  const handleRowChange = (index: number, key: string, value: string) => {
+    const updatedRows = [...rows];
+    updatedRows[index] = { ...updatedRows[index], [key]: value };
+    setRows(updatedRows);
   };
 
   // Función para editar una fila del libro diario
@@ -955,7 +990,7 @@ export default function ContabilidadApp() {
     }
   }
 
-  // Función para eliminar una fila del libro diario
+  // Función para eliminar un registro del libro diario
   const handleDeleteRow = async (id: string) => {
     if (!viewingUID) return// si usuario existe
 
@@ -980,11 +1015,6 @@ export default function ContabilidadApp() {
     ))
   }
 
-  // Función para manejar cambios en la nueva fila
-  const handleNewRowChange = (field: string, value: any) => {
-    setNewRow({ ...newRow, [field]: value })
-  }
-
   const ordenDeseadoLd = ["fecha", "nombreCuenta", "descripcion", "idElemento", "debe", "haber"]
 
   const ordenarCategoriasLd = (categorias: string[]): string[] => {
@@ -1003,6 +1033,12 @@ export default function ContabilidadApp() {
       return acc;
     }, {} as { [key: string]: RowData[] });
   };
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight; // Mueve el scroll al final
+    }
+  }, [newRow]); // Se ejecuta cuando 'rows' cambia
 
   {/* Filtros */}
 
@@ -2650,7 +2686,7 @@ export default function ContabilidadApp() {
                           <Edit className="h-4 w-4 mr-2" />
                           Editar Campos
                         </Button>
-                        <Button onClick={() => setIsCreatingAccountingEntry(true)}>
+                        <Button onClick={() => {setIsCreatingAccountingEntry(true); setRows([{ cuentaContable: "", monto: "", descripcion: "" }]);}}>
                           Crear Asiento Contable
                         </Button>
 
@@ -5185,6 +5221,7 @@ export default function ContabilidadApp() {
                             type={field.type}
                             value={newInventoryItem[key] || ''}
                             onChange={(e) => setNewInventoryItem({ ...newInventoryItem, [key]: e.target.value })}
+                            required
                           />
                         </div>
                       ))}
@@ -5208,28 +5245,71 @@ export default function ContabilidadApp() {
 
               {/* Modal para crear asiento contable */}
               <Dialog open={isCreatingAccountingEntry} onOpenChange={setIsCreatingAccountingEntry}>
-                <DialogContent aria-describedby={undefined}>
+                <DialogContent aria-describedby={undefined} className={stylesLDiario.modalContent}>
                   <DialogHeader>
                     <DialogTitle>Crear Asiento Contable</DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className={stylesLDiario.scrollArea}>
-                    <div className={stylesLDiario.container}>
-                      {Object.entries(appConfig.libroDiario).map(([key, field]) => (
-                        <div key={key} className={stylesLDiario.fieldContainer}>
-                          <Label htmlFor={key}>{field.name}</Label>
-                          <Input
-                            id={key}
-                            type={field.type}
-                            value={newRow[key] || ''}
-                            onChange={(e) => handleNewRowChange(key, e.target.value)}
-                          />
+                  <ScrollArea ref={scrollRef} className={stylesLDiario.scrollArea}>
+                    {rows.map((newRow, index) => (
+                      <div key={index} style={{ gap: '16px', marginBottom: '16px' }} className={stylesLDiario.content}>
+                        
+                        {/* Campo de cuenta contable */}
+                        <div style={{ flex: 1 }}>
+                          <Label>Cuenta Contable</Label>
+                          <Select onValueChange={(value) => handleRowChange(index, 'cuentaContable', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione una cuenta" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cuentasContables.map((categoria) => (
+                                <SelectGroup key={categoria.categoria}>
+                                  <SelectLabel>{categoria.categoria}</SelectLabel>
+                                  {categoria.cuentas.map((cuenta) => (
+                                    <SelectItem key={cuenta} value={cuenta}>
+                                      {cuenta}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      ))}
-                    </div>
+
+                        {/* Iterar en el orden definido */}
+                        {ordenDeseadoLd.map((key) => {
+                          const field = appConfig.libroDiario[key]; // Obtener la configuración del campo
+                          return (
+                            <div key={key} style={{ flex: 1 }}>
+                              <Label htmlFor={key}>{field.name}</Label>
+                              <Input
+                                id={key}
+                                type={field.type}
+                                value={newRow[key] || ''}
+                                className={stylesLDiario.inputs}
+                                onChange={(e) => handleRowChange(index, key, e.target.value)}
+                                required
+                              />
+                            </div>
+                          );
+                        })}
+
+                        {/* Botón de eliminar */}
+                        <Button 
+                          onClick={() => handleDeleteNewRow(index)} 
+                          variant="destructive"
+                          disabled={rows.length <= 1} // Deshabilita el botón si solo queda una fila
+                        >
+                          <IoTrashBinSharp className={stylesService.icon} />
+                        </Button>
+                      </div>
+                    ))}
                   </ScrollArea>
                   <DialogFooter>
+                  <Button onClick={handleAddNewRow} style={{ marginBottom: '16px' }}>
+                      Agregar Fila
+                    </Button>
                     <Button onClick={() => handleCancelCreationLibroDiario(() => {
-                      setNewRow({});
+                      setRows([]); // Limpiar filas
                       setIsCreatingAccountingEntry(false);
                     })}>
                       Cancelar
