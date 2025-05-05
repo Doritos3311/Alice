@@ -44,11 +44,11 @@ import ChatPanel from "@/components/ChatPanel/ChatPanel";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
-import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info, Check, Building2, CircleUser } from "lucide-react"
+import { FileSpreadsheet, BarChart2, Package, FileText, Bot, X, Plus, Trash2, Save, Calendar, Upload, Mic, /*User,*/ Star, Edit, Users, Moon, Sun, Settings, Mail, UserCircle, Eye, DollarSign, Handshake, LogOut, Home, ChevronUp, ChevronDown, FileUp, CircleUserRound, Info, Check, Building2, CircleUser, PencilIcon, CalculatorIcon } from "lucide-react"
 import { toast } from "@/components/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -58,6 +58,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/react-scroll-area"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Importacion de OpenAI
 import OpenAI from "openai"
@@ -72,7 +73,7 @@ import { IoMenu, IoTrashBinSharp } from "react-icons/io5";
 // Importaciones de Firebase
 import { initializeApp } from "firebase/app"
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot, orderBy, query } from "firebase/firestore"
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, onSnapshot, orderBy, query, increment } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 
 // Modo Obscuro
@@ -87,7 +88,6 @@ import { Toaster } from "@/components/ui/toaster";
 import JoyrideWrapper from "@/components/Joyride/JoyrideWrapper";
 import { Step } from '../Joyride/CustomJoyride';
 import React from "react";
-
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -143,10 +143,20 @@ const cuentasContables = [
   { categoria: 'Patrimonio', cuentas: ['Capital social', 'Utilidades retenidas'] },
 ];
 
+// Tipo para un registro individual de un ítem
+interface ItemRecord {
+  id: string
+  cantidadDisponible: number
+  precioCompra: number
+  precioVenta: number
+  fechaIngreso: string
+}
+
 // Definicion Inventario
 type InventoryItem = {
   id: string
-  [key: string]: any
+  records?: ItemRecord[] // Nuevo campo para registros
+  [key: string]: any;
 }
 
 // Definicion Factura
@@ -179,6 +189,13 @@ interface DetalleFactura {
   detalle: string;
   precioUnitario: string;
   valorTotal: number;
+}
+
+// Definicion de Ventas
+interface VentasConfig {
+  activo: boolean;
+  itemsSeleccionados: InventoryItem[];
+  ultimaActualizacion?: string;
 }
 
 // Definicion Servicios
@@ -284,6 +301,16 @@ export default function ContabilidadApp() {
   // Estados Inventario
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [newInventoryItem, setNewInventoryItem] = useState<InventoryItem>({} as InventoryItem)
+  const [isInventoryRecordModalOpen, setIsInventoryRecordModalOpen] = useState(false)
+  const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
+  const [itemRecords, setItemRecords] = useState<ItemRecord[]>([])
+  const [newRecord, setNewRecord] = useState<Omit<ItemRecord, "id">>({
+    cantidadDisponible: 0,
+    precioCompra: 0,
+    precioVenta: 0,
+    fechaIngreso: new Date().toISOString().split("T")[0],
+  })
 
   // Estados Terceros
   const [isTercerosOpen, setIsTercerosOpen] = useState(false)
@@ -365,6 +392,20 @@ export default function ContabilidadApp() {
   const [detallesServicio, setDetallesServicio] = useState<ServiceDetail[]>([
     { usoDeItem: '', gastosPorItem: '0', cantidad: 0, gastosPorServicio: '0' }
   ]);
+  const [showRightSection, setShowRightSection] = useState(false)
+  const [ventasConfig, setVentasConfig] = useState<VentasConfig>({
+    activo: false,
+    itemsSeleccionados: []
+  });
+
+  // Nuevo estado para el servicio de ventas
+  const [ventasServiceActive, setVentasServiceActive] = useState(false)
+  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
+  const [selectedInventoryItems, setSelectedInventoryItems] = useState<InventoryItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isEditingVentasItems, setIsEditingVentasItems] = useState<boolean>(false);
+  const [isGeneratingVentasEntry, setIsGeneratingVentasEntry] = useState<boolean>(false);
+  
 
   // Estados de edicion de inventario
   const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null)
@@ -590,10 +631,11 @@ export default function ContabilidadApp() {
       }
       await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), defaultConfig)
       setAppConfig(defaultConfig)
+      crearConfiguracionVentasInicial(user.uid)
     }
   }
 
-  // Función para cargar datos
+  // Función para cargar datos almacenados
   const loadData = (groupUID: string | null = null) => {
     if (!user) return;
   
@@ -640,6 +682,18 @@ export default function ContabilidadApp() {
         }
       );
 
+      // Escuchar cambios en la configuración de ventas
+      const ventasUnsubscribe = onSnapshot(
+        doc(db, `users/${uidToUse}/ventas`, 'config'),
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const ventasData = docSnap.data() as VentasConfig;
+            setVentasConfig(ventasData);
+            setSelectedInventoryItems(ventasData.itemsSeleccionados || []);
+          }
+        }
+      );
+
       // Cargar proveedores
       const proveedoresUnsubscribe = onSnapshot(
         query(collection(db, `users/${uidToUse}/proveedores`), orderBy("nombre")),
@@ -669,6 +723,7 @@ export default function ContabilidadApp() {
         inventarioUnsubscribe();
         facturacionUnsubscribe();
         serviciosUnsubscribe();
+        ventasUnsubscribe();
         proveedoresUnsubscribe();
         clientesUnsubscribe();
       };
@@ -1121,11 +1176,8 @@ export default function ContabilidadApp() {
 
   // Función para editar un ítem del inventario
   const handleEditInventoryItem = (id: string) => {
-    setEditingInventoryId(id)//Busca el item en base al id
-    const itemToEdit = inventoryItems.find(item => item.id === id)//Compara que exista el item seleccionado
-    if (itemToEdit) {//Si existe entonces
-      setNewInventoryItem(itemToEdit)//Modificar los cambios aplicados
-    }
+    // Ahora abrimos el modal avanzado en lugar de editar directamente
+    openAdvancedModal(id)
   }
 
   // Función para guardar los cambios de un ítem del inventario
@@ -1170,6 +1222,171 @@ export default function ContabilidadApp() {
     }
   };
 
+  // Función para abrir el modal avanzado
+  const openAdvancedModal = async (itemId: string) => {
+    if (!viewingUID) return
+
+    try {
+      const itemToEdit = inventoryItems.find((item) => item.id === itemId)
+      if (itemToEdit) {
+        setSelectedItem(itemToEdit)
+
+        // Obtener los registros actuales del ítem
+        const itemDoc = await getDoc(doc(db, `users/${viewingUID}/inventario`, itemId))
+
+        if (itemDoc.exists()) {
+          const itemData = itemDoc.data()
+          // Si el ítem no tiene registros, creamos uno con los valores actuales
+          const records = itemData.records || [
+            {
+              id: "initial",
+              cantidadDisponible: Number(itemToEdit.cantidadDisponible) || 0,
+              precioCompra: Number(itemToEdit.precioCompra) || 0,
+              precioVenta: Number(itemToEdit.precioVenta) || 0,
+              fechaIngreso: itemToEdit.fechaIngreso || new Date().toISOString().split("T")[0],
+            },
+          ]
+
+          setItemRecords(records)
+        }
+
+        setIsAdvancedModalOpen(true)
+      }
+    } catch (error) {
+      console.error("Error al cargar los registros del ítem:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los detalles del ítem.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Calcular los valores promediados
+  const calculateAverages = () => {
+    if (!itemRecords || itemRecords.length === 0) {
+      return {
+        cantidadDisponible: 0,
+        precioCompra: 0,
+        precioVenta: 0,
+      }
+    }
+
+    const totalCantidad = itemRecords.reduce((sum, record) => sum + Number(record.cantidadDisponible), 0)
+
+    // Promedio ponderado del precio de compra
+    const totalPrecioCompra = itemRecords.reduce(
+      (sum, record) => sum + Number(record.precioCompra) * Number(record.cantidadDisponible),
+      0,
+    )
+
+    // Promedio ponderado del precio de venta
+    const totalPrecioVenta = itemRecords.reduce(
+      (sum, record) => sum + Number(record.precioVenta) * Number(record.cantidadDisponible),
+      0,
+    )
+
+    const avgPrecioCompra = totalCantidad > 0 ? totalPrecioCompra / totalCantidad : 0
+    const avgPrecioVenta = totalCantidad > 0 ? totalPrecioVenta / totalCantidad : 0
+
+    return {
+      cantidadDisponible: totalCantidad,
+      precioCompra: avgPrecioCompra,
+      precioVenta: avgPrecioVenta,
+    }
+  }
+
+  // Agregar un nuevo registro
+  const handleAddRecord = () => {
+    const newRecordWithId = {
+      ...newRecord,
+      id: `record_${Date.now()}`,
+    }
+
+    setItemRecords([...itemRecords, newRecordWithId])
+
+    // Resetear el formulario de nuevo registro
+    setNewRecord({
+      cantidadDisponible: 0,
+      precioCompra: 0,
+      precioVenta: 0,
+      fechaIngreso: new Date().toISOString().split("T")[0],
+    })
+  }
+
+  // Eliminar un registro
+  const handleDeleteRecord = (recordId: string) => {
+    // No permitir eliminar si solo queda un registro
+    if (itemRecords.length <= 1) {
+      toast({
+        title: "Aviso",
+        description: "No se puede eliminar el único registro existente.",
+      })
+      return
+    }
+
+    setItemRecords(itemRecords.filter((record) => record.id !== recordId))
+  }
+
+  // Actualizar un registro existente
+  const handleUpdateRecord = (recordId: string, field: string, value: string) => {
+    setItemRecords(
+      itemRecords.map((record) =>
+        record.id === recordId
+          ? { ...record, [field]: field.includes("precio") || field === "cantidadDisponible" ? Number(value) : value }
+          : record,
+      ),
+    )
+  }
+
+  // Guardar todos los cambios del modal avanzado
+  const handleSaveAdvancedChanges = async () => {
+    if (!selectedItem || !viewingUID) return
+
+    try {
+      const averages = calculateAverages()
+
+      // Actualizar el documento en Firebase
+      await updateDoc(doc(db, `users/${viewingUID}/inventario`, selectedItem.id), {
+        cantidadDisponible: averages.cantidadDisponible,
+        precioCompra: averages.precioCompra,
+        precioVenta: averages.precioVenta,
+        records: itemRecords,
+      })
+
+      // Actualizar el estado local
+      setInventoryItems(
+        inventoryItems.map((item) =>
+          item.id === selectedItem.id
+            ? {
+                ...item,
+                cantidadDisponible: averages.cantidadDisponible,
+                precioCompra: averages.precioCompra,
+                precioVenta: averages.precioVenta,
+                records: itemRecords,
+              }
+            : item,
+        ),
+      )
+
+      setIsAdvancedModalOpen(false)
+      setSelectedItem(null)
+      setItemRecords([])
+
+      toast({
+        title: "Éxito",
+        description: "Cambios guardados correctamente.",
+      })
+    } catch (error) {
+      console.error("Error al guardar los cambios:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al guardar los cambios. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const ordenDeseadoIv = ["idElemento", "category", "descripcion", "cantidadDisponible", "stockMinimo", "precioCompra" , "precioVenta" , "fechaIngreso", "proveedor"]
 
   // Funcion para ordenar categorias en inventario
@@ -1179,6 +1396,10 @@ export default function ContabilidadApp() {
     return [...categoriasOrdenadas, ...categoriasAdicionales]
   }
 
+  const averages = calculateAverages()
+
+
+  
   {/* Provedores */}
 
   // Función para agregar un nuevo proveedor
@@ -1944,6 +2165,232 @@ export default function ContabilidadApp() {
       setCurrentServiceId(null)
     }
   }
+
+  // Función para obtener configuración
+  const obtenerConfigVentas = async (userId: string): Promise<VentasConfig> => {
+    const docRef = doc(db, `users/${userId}/ventas`, 'config');
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return {
+        activo: false,
+        itemsSeleccionados: [],
+        ...docSnap.data() // Spread operator para asegurar los valores por defecto
+      };
+    }
+    // Si no existe, creamos la estructura inicial
+    await setDoc(docRef, { activo: false, itemsSeleccionados: [] });
+    return { activo: false, itemsSeleccionados: [] };
+  };
+
+  // Función para guardar/actualizar configuración
+  const guardarConfigVentas = async (userId: string, config: Partial<VentasConfig>) => {
+    const docRef = doc(db, `users/${userId}/ventas`, 'config');
+    await setDoc(docRef, config, { merge: true }); 
+  };
+
+  const handleEditVentasItems = () => {
+    const initialItems = inventoryItems.slice(0, 4);
+    setFilteredItems(initialItems);
+    setIsEditingVentasItems(true);
+  };
+
+  const handleGenerarAsientoVentas = () => {
+    setIsGeneratingVentasEntry(true)
+  }
+
+  const handleSearchItems = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+  
+    if (term.trim() === "") {
+      setFilteredItems(inventoryItems.slice(0, 4));
+    } else {
+      const filtered = inventoryItems
+        .filter((item) => item.idElemento?.toLowerCase().includes(term))
+        .slice(0, 10);
+      setFilteredItems(filtered);
+    }
+  };
+
+  // Funcion de actualizar los items
+  const actualizarItemsSeleccionados = async (userId: string, items: InventoryItem[]) => {
+    await actualizarConfiguracionVentas(userId, { itemsSeleccionados: items });
+  };
+
+  // Funcion de comprovacion de ventas activo o no
+  const toggleVentasActivo = async () => {
+    if (!user?.uid) return;
+    
+    const nuevoEstado = !ventasConfig.activo;
+    try {
+      await guardarConfigVentas(user.uid, { activo: nuevoEstado });
+      setVentasConfig(prev => ({ ...prev, activo: nuevoEstado }));
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+    }
+  };
+
+  // Funcion seleccionar item dentro de ventas
+  const toggleItemSelection = async (item: InventoryItem) => {
+    if (!user?.uid) return;
+  
+    const nuevosItems = selectedInventoryItems.some(i => i.idElemento === item.idElemento)
+      ? selectedInventoryItems.filter(i => i.idElemento !== item.idElemento)
+      : [...selectedInventoryItems, item];
+  
+    try {
+      // Actualiza SOLO en ventas/config
+      await updateDoc(doc(db, `users/${user.uid}/ventas`, 'config'), {
+        itemsSeleccionados: nuevosItems.map(item => ({
+          id: item.id,
+          idElemento: item.idElemento,
+          precioVenta: item.precioVenta
+        }))
+      });
+      
+      setSelectedInventoryItems(nuevosItems);
+    } catch (error) {
+      console.error("Error al actualizar items:", error);
+    }
+  };
+
+  // Funcion precargar configuracion de venta
+  const actualizarConfiguracionVentas = async (userId: string, config: Partial<VentasConfig>) => {
+    try {
+      const docRef = doc(db, `users/${userId}/servicios`, 'Ventas');
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        // Actualizar documento existente
+        await updateDoc(docRef, config);
+      } else {
+        // Crear nuevo documento con valores por defecto
+        const configCompleta: VentasConfig = {
+          activo: false,
+          itemsSeleccionados: [],
+          ...config
+        };
+        await setDoc(docRef, configCompleta);
+      }
+    } catch (error) {
+      console.error("Error al actualizar configuración de ventas:", error);
+      throw error;
+    }
+  };
+
+  // Función para crear la configuración inicial de ventas
+  const crearConfiguracionVentasInicial = async (userId: string) => {
+    const configInicial: VentasConfig = {
+      activo: false,
+      itemsSeleccionados: [],
+      ultimaActualizacion: new Date().toISOString()
+    };
+    
+    await setDoc(doc(db, `users/${userId}/ventas`, 'config'), configInicial);
+  };
+
+  const clearSelectedItems = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      await updateDoc(doc(db, `users/${user.uid}/ventas`, 'config'), {
+        itemsSeleccionados: []
+      });
+      setSelectedInventoryItems([]);
+    } catch (error) {
+      console.error("Error al limpiar items:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.uid) return;
+  
+    const unsubscribe = onSnapshot(doc(db, `users/${user.uid}/ventas`, 'config'), (doc) => {
+      if (doc.exists()) {
+        const data = doc.data() as VentasConfig;
+        setVentasConfig(data);
+        // Cargamos los detalles completos de los items
+        getSelectedItems(user.uid).then(items => {
+          setSelectedInventoryItems(items);
+        });
+      }
+    });
+  
+    return () => unsubscribe();
+  }, [user]);
+
+  // Funcion para mostrar los items seleccionados
+  const isItemSelected = (itemId: any) => {
+    return selectedInventoryItems.some((item) => item.idElemento === itemId)
+  }
+
+  // Funcion obtener los item seleccionados
+  const getSelectedItems = async (userId: string): Promise<InventoryItem[]> => {
+    const configRef = doc(db, `users/${userId}/ventas`, 'config');
+    const configSnap = await getDoc(configRef);
+    
+    if (configSnap.exists()) {
+      const config = configSnap.data() as VentasConfig;
+      // Obtenemos los detalles completos de cada item desde inventario
+      const itemsPromises = config.itemsSeleccionados.map(async (item) => {
+        const itemSnap = await getDoc(doc(db, `users/${userId}/inventario`, item.id));
+        return itemSnap.exists() ? { id: itemSnap.id, ...itemSnap.data() } as InventoryItem : null;
+      });
+      
+      const items = await Promise.all(itemsPromises);
+      return items.filter(item => item !== null) as InventoryItem[];
+    }
+    return [];
+  };
+
+  // Funcion seleccionar el item dentro de ventas
+  const generateItemAccountingEntry = async (item: InventoryItem) => {
+    if (!user?.uid) return;
+  
+    try {
+      // 1. Crear el asiento contable en libroDiario
+      const asientoContable = {
+        fecha: new Date().toISOString().split("T")[0],
+        nombreCuenta: `Venta de Inventario`,
+        descripcion: `Venta del item: ${item.descripcion || item.idElemento}`,
+        idElemento: item.idElemento || "",
+        debe: Number(item.precioVenta) || 0,
+        haber: Number(item.precioCompra) || 0,
+      };
+  
+      await addDoc(collection(db, `users/${user.uid}/libroDiario`), asientoContable);
+  
+      // 2. Actualizar el inventario (reducir cantidad si es necesario)
+      // Esto es opcional, dependiendo de tu flujo
+      await updateDoc(doc(db, `users/${user.uid}/inventario`, item.id), {
+        cantidadDisponible: increment(-1) // Firestore increment operation
+      });
+  
+      // 3. Registrar la venta en la colección de ventas
+      const ventaDoc = {
+        itemId: item.idElemento,
+        fecha: new Date().toISOString(),
+        precioVenta: Number(item.precioVenta) || 0,
+        precioCosto: Number(item.precioCompra) || 0,
+        usuario: user.uid
+      };
+  
+      await addDoc(collection(db, `users/${user.uid}/ventas/transacciones/items`), ventaDoc);
+  
+      toast({
+        title: "Éxito",
+        description: `Venta registrada para ${item.idElemento}`,
+      });
+    } catch (error) {
+      console.error("Error al registrar venta:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo registrar la venta",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Funcion para agregar nuevos items seleccionables dentro de servicio
   const agregarNuevaFilaService = () => {
@@ -3165,6 +3612,19 @@ export default function ContabilidadApp() {
                         <Table>
                           <TableHeader>
                             <TableRow>
+                              {/* Botón + para modo edición */}
+                              {editingInventoryId && (
+                                <TableHead className="w-10">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-0 h-8 w-8"
+                                    onClick={() => openAdvancedModal(editingInventoryId)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </TableHead>
+                              )}
                               {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
                                 <TableHead key={categoria}>{appConfig.inventario[categoria]?.name || categoria}</TableHead>
                               ))}
@@ -3176,6 +3636,8 @@ export default function ContabilidadApp() {
                               .filter((item) => selectedCategory === "all" || item.category === selectedCategory)
                               .map((item) => (
                                 <TableRow key={item.id}>
+                                  {/* Celda vacía para alinear con el botón + en el encabezado */}
+                                  {editingInventoryId && <TableCell className="w-10"></TableCell>}
                                   {ordenarCategoriasIv(Object.keys(appConfig.inventario)).map((categoria) => (
                                     <TableCell key={categoria}>
                                       {editingInventoryId === item.id ? (
@@ -3493,10 +3955,89 @@ export default function ContabilidadApp() {
                       <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
 
                       <div className={stylesService.serviciosCabecera}>
-                        <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
-                          Agregar Nuevo Servicio
-                        </Button>
+                        <div className="flex space-x-4">
+                          <Button onClick={() => setIsCreatingService(true)} disabled={isCreatingService}>
+                            Agregar Nuevo Servicio
+                          </Button>
+                          <Button onClick={toggleVentasActivo} variant={ventasConfig.activo ? "destructive" : "default"}>
+                            {ventasConfig.activo ? "Desactivar Ventas" : "Activar Ventas"}
+                          </Button>
+                        </div>
                       </div>
+
+                      {/* Tarjeta de Ventas desde Inventario */}
+                      <div>
+                        {ventasConfig.activo && (
+                          <Card className="mb-6">
+                            <CardHeader className={`${stylesService.cardHeader} ${theme === "light" ? stylesService.cardHeaderLight : stylesService.cardHeaderDark}`}>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className={`${stylesService.cardTitle} ${theme === "light" ? stylesService.cardTitleLight : stylesService.cardTitleDark}`}>Ventas desde Inventario</h3>
+                                  <p className="text-sm text-gray-500">
+                                    {ventasConfig.itemsSeleccionados?.length ?? 0} items seleccionados
+                                  </p>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={handleEditVentasItems}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                    Editar Items
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleGenerarAsientoVentas}
+                                    disabled={!ventasConfig.itemsSeleccionados.length}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <CalculatorIcon className="h-4 w-4" />
+                                    Generar Asiento Contable
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardHeader>
+
+                            <CardContent className="pt-4">
+                              {selectedInventoryItems.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {selectedInventoryItems.slice(0, 4).map((item) => (
+                                    <div key={item.idElemento} className="flex items-center space-x-2 p-2 border rounded">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{item.idElemento}</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {item.categoria || 'Sin categoría'}
+                                        </p>
+                                      </div>
+                                      <span className="text-sm font-semibold">
+                                        ${Number(item.precioVenta || 0).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {selectedInventoryItems.length > 4 && (
+                                    <div className="flex items-center justify-center p-2 border rounded">
+                                      <span className="text-sm text-muted-foreground">
+                                        +{selectedInventoryItems.length - 4} más
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-center py-4">
+                                  <p className="text-sm text-muted-foreground">
+                                    No hay items seleccionados para venta
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                      
+                      <div className={`${stylesContent.separacion} ${theme === "light" ? stylesContent.separacionLight : stylesContent.separacionDark}`}></div>
 
                       {hayItems(servicios) ? (
                       <>
@@ -5241,6 +5782,178 @@ export default function ContabilidadApp() {
                 </DialogContent>
               </Dialog>
 
+              {/* Modal para agregar nuevo registro a items */}
+              <Dialog open={isAdvancedModalOpen} onOpenChange={setIsAdvancedModalOpen}>
+                <DialogContent className="sm:max-w-[800px]">
+                  <DialogHeader>
+                    <DialogTitle>Gestión Avanzada de Inventario</DialogTitle>
+                  </DialogHeader>
+
+                  {selectedItem && (
+                    <>
+                      <div className="space-y-6">
+                        {/* Sección de resumen con valores promediados */}
+                        <div className="bg-muted p-4 rounded-md">
+                          <h3 className="text-lg font-medium mb-2">Resumen del Ítem (Promedio Ponderado)</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Descripción</p>
+                              <p className="font-medium">{selectedItem.descripcion}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Categoría</p>
+                              <p className="font-medium">{selectedItem.category}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Cantidad Total</p>
+                              <p className="font-medium">{calculateAverages().cantidadDisponible}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Stock Mínimo</p>
+                              <p className="font-medium">{selectedItem.stockMinimo}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Precio de Compra Promedio</p>
+                              <p className="font-medium">${calculateAverages().precioCompra.toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Precio de Venta Promedio</p>
+                              <p className="font-medium">${calculateAverages().precioVenta.toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Proveedor</p>
+                              <p className="font-medium">{selectedItem.proveedor}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sección de registros individuales */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-medium">Registros Individuales</h3>
+                          </div>
+
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Cantidad</TableHead>
+                                <TableHead>Precio Compra</TableHead>
+                                <TableHead>Precio Venta</TableHead>
+                                <TableHead>Fecha Ingreso</TableHead>
+                                <TableHead>Acciones</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {itemRecords.map((record) => (
+                                <TableRow key={record.id}>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      value={record.cantidadDisponible}
+                                      onChange={(e) => handleUpdateRecord(record.id, "cantidadDisponible", e.target.value)}
+                                      className="w-full"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      value={record.precioCompra}
+                                      onChange={(e) => handleUpdateRecord(record.id, "precioCompra", e.target.value)}
+                                      className="w-full"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      value={record.precioVenta}
+                                      onChange={(e) => handleUpdateRecord(record.id, "precioVenta", e.target.value)}
+                                      className="w-full"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="date"
+                                      value={record.fechaIngreso}
+                                      onChange={(e) => handleUpdateRecord(record.id, "fechaIngreso", e.target.value)}
+                                      className="w-full"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+
+                        {/* Formulario para agregar nuevo registro */}
+                        <div className="bg-muted p-4 rounded-md">
+                          <h3 className="text-lg font-medium mb-2">Agregar Nuevo Registro</h3>
+                          <div className="grid grid-cols-4 gap-4">
+                            <div>
+                              <label className="text-sm">Cantidad</label>
+                              <Input
+                                type="number"
+                                value={newRecord.cantidadDisponible}
+                                onChange={(e) => setNewRecord({ ...newRecord, cantidadDisponible: Number(e.target.value) })}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm">Precio Compra</label>
+                              <Input
+                                type="number"
+                                value={newRecord.precioCompra}
+                                onChange={(e) => setNewRecord({ ...newRecord, precioCompra: Number(e.target.value) })}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm">Precio Venta</label>
+                              <Input
+                                type="number"
+                                value={newRecord.precioVenta}
+                                onChange={(e) => setNewRecord({ ...newRecord, precioVenta: Number(e.target.value) })}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm">Fecha Ingreso</label>
+                              <Input
+                                type="date"
+                                value={newRecord.fechaIngreso}
+                                onChange={(e) => setNewRecord({ ...newRecord, fechaIngreso: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <Button onClick={handleAddRecord} className="mt-4">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Agregar Registro
+                          </Button>
+                        </div>
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsAdvancedModalOpen(false)
+                            setSelectedItem(null)
+                            setItemRecords([])
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button onClick={handleSaveAdvancedChanges}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Guardar Cambios
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
+              
               {/* Modal Libro Diario */}
 
               {/* Modal para crear asiento contable */}
@@ -5336,7 +6049,7 @@ export default function ContabilidadApp() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className={stylesService.contenidoservicio}>
+                  <div className={` ${showRightSection === false ? stylesService.contenidoserviciohidden : stylesService.contenidoservicio}`} >
                     <div className={stylesService.contenidoIzquierdoServicio}>
                       <div className={stylesService.camposIzq}>
                         <Label htmlFor="nombre">Nombre del Servicio</Label>
@@ -5357,7 +6070,7 @@ export default function ContabilidadApp() {
                       <div className={stylesService.camposIzq}>
                         <Label htmlFor="tipoIVA">Tipo de IVA</Label>
                         <Select
-                          value={newService.tipoIVA || "15"} // Valor por defecto "12"
+                          value={newService.tipoIVA || "15"}
                           onValueChange={(value) => setNewService({ ...newService, tipoIVA: value })}
                         >
                           <SelectTrigger>
@@ -5382,112 +6095,243 @@ export default function ContabilidadApp() {
                       </div>
                     </div>
 
-                    <div className={stylesService.contenidoDerechoServicio}>
-                      <div className={stylesService.contenedorTabla}>
-                        <table className={stylesService.tabla}>
-                          <thead>
+                    {/* Sección derecha que se muestra condicionalmente */}
+                    {showRightSection && (
+                      <div className={stylesService.contenidoDerechoServicio}>
+                        <div className={stylesService.contenedorTabla}>
+                          <table className={stylesService.tabla}>
+                            <thead>
+                              <tr>
+                                <th className={stylesService.camposDere}>Uso de Item</th>
+                                <th className={stylesService.camposDere}>Gastos por Item</th>
+                                <th className={stylesService.camposDere}>Cantidad</th>
+                                <th className={stylesService.camposDere}>Gastos Servicio</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {detallesServicio.map((detalle, index) => (
+                                <tr key={index}>
+                                  <td className={stylesService.camposDetalle}>
+                                    <Select
+                                      value={detalle.usoDeItem || ""}
+                                      onValueChange={(value) => handleUsoDeItemSelect(value, index)}
+                                    >
+                                      <SelectTrigger className={stylesService.SelectTrigger}>
+                                        <SelectValue placeholder="Seleccionar item" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Ninguno</SelectItem>
+                                        {inventoryItems.map((item) => (
+                                          <SelectItem key={item.idElemento} value={item.idElemento}>
+                                            {item.idElemento}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </td>
+                                  <td className={stylesService.camposDetalle}>
+                                    <Input
+                                      className={stylesService.inputDetalle}
+                                      type="number"
+                                      value={detalle.gastosPorItem || ""}
+                                      readOnly
+                                    />
+                                  </td>
+                                  <td className={stylesService.camposDetalle}>
+                                    <Input
+                                      className={stylesService.inputDetalle}
+                                      type="number"
+                                      value={detalle.cantidad || 0}
+                                      onChange={(e) => handleDetalleChangeService(index, "cantidad", e.target.value)}
+                                    />
+                                  </td>
+                                  <td className={stylesService.camposDetalle}>
+                                    <Input
+                                      className={stylesService.inputDetalle}
+                                      type="number"
+                                      value={detalle.gastosPorServicio || ""}
+                                      readOnly
+                                    />
+                                  </td>
+                                  <td>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => eliminarFilaService(index)}
+                                      disabled={detallesServicio.length === 1}
+                                    >
+                                      <IoTrashBinSharp className={stylesService.icon} />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
+                            Agregar Fila
+                          </Button>
+                          <div>
+                            <div className={stylesService.campoVTot}>
+                              <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
+                              <Input
+                                id="gastosTotalesPorServicio"
+                                type="number"
+                                value={newService.gastosTotalesPorServicio || "0"}
+                                readOnly
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <DialogFooter className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-between w-full">
+                    <div className="order-1 sm:order-1">
+                      <Button
+                        onClick={() => setShowRightSection(!showRightSection)}
+                        className="w-full sm:w-auto"
+                      >
+                        {showRightSection ? "Eliminar Gastos de Servicio" : "Agregar Gastos A Servicio"}
+                      </Button>
+                    </div>
+
+                    <div className="order-2 sm:order-2 flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsCreatingService(false)
+                          setIsEditingService(false)
+                          resetNewService()
+                          setShowRightSection(false)
+                        }}
+                        className={`w-full sm:w-auto ${stylesService.btnFooter}`}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={isEditingService ? handleSaveService : handleAddService}
+                        className={`w-full sm:w-auto ${stylesService.btnFooter}`}
+                      >
+                        {isEditingService ? "Guardar" : "Crear"}
+                      </Button>
+                    </div>
+                  </DialogFooter>
+
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal para editar items de ventas */}
+              <Dialog open={isEditingVentasItems} onOpenChange={() => setIsEditingVentasItems(false)}>
+                <DialogContent className={stylesService.dialogServiceContent}>
+                  <DialogHeader>
+                    <DialogTitle>Editar Items para Ventas</DialogTitle>
+                    <DialogDescription>
+                      Selecciona los items del inventario que deseas incluir en el servicio de ventas.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="py-4">
+                    <div className="mb-4">
+                      <Label htmlFor="search">Buscar por ID</Label>
+                      <Input id="search" placeholder="Buscar items..." value={searchTerm} onChange={handleSearchItems} />
+                    </div>
+
+                    <div className="border rounded-md">
+                      <table className="w-full">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="text-left p-2">Activo</th>
+                            <th className="text-left p-2">ID</th>
+                            <th className="text-left p-2">Categoría</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedInventoryItems.map((item) => (
+                            <tr key={`selected-${item.idElemento}`} className="border-t">
+                              <td className="p-2">
+                                <Checkbox checked={true} onCheckedChange={() => toggleItemSelection(item)} />
+                              </td>
+                              <td className="p-2">{item.idElemento}</td>
+                              <td className="p-2">{item.categoria}</td>
+                            </tr>
+                          ))}
+                          {filteredItems
+                            .filter((item) => !isItemSelected(item.idElemento))
+                            .map((item) => (
+                              <tr key={item.idElemento} className="border-t">
+                                <td className="p-2">
+                                  <Checkbox checked={false} onCheckedChange={() => toggleItemSelection(item)} />
+                                </td>
+                                <td className="p-2">{item.idElemento}</td>
+                                <td className="p-2">{item.categoria}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditingVentasItems(false)}>
+                      Cerrar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Modal para generar asiento contable de ventas */}
+              <Dialog open={isGeneratingVentasEntry} onOpenChange={() => setIsGeneratingVentasEntry(false)}>
+                <DialogContent className={stylesService.dialogServiceContent}>
+                  <DialogHeader>
+                    <DialogTitle>Generar Asiento Contable</DialogTitle>
+                    <DialogDescription>Selecciona los items para generar asientos contables.</DialogDescription>
+                  </DialogHeader>
+
+                  <div className="py-4">
+                    {selectedInventoryItems.length > 0 ? (
+                      <div className="border rounded-md">
+                        <table className="w-full">
+                          <thead className="bg-muted">
                             <tr>
-                              <th className={stylesService.camposDere}>Uso de Item</th>
-                              <th className={stylesService.camposDere}>Gastos por Item</th>
-                              <th className={stylesService.camposDere}>Cantidad</th>
-                              <th className={stylesService.camposDere}>Gastos Servicio</th>
+                              <th className="text-left p-2">ID</th>
+                              <th className="text-left p-2">Categoría</th>
+                              <th className="text-left p-2">Descripción</th>
+                              <th className="text-left p-2">Precio Venta</th>
+                              <th className="text-left p-2">Acción</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {detallesServicio.map((detalle, index) => (
-                              <tr key={index}>
-                                <td className={stylesService.camposDetalle}>
-                                  <Select
-                                    value={detalle.usoDeItem || ""}
-                                    onValueChange={(value) => handleUsoDeItemSelect(value, index)}
-                                  >
-                                    <SelectTrigger className={stylesService.SelectTrigger}>
-                                      <SelectValue placeholder="Seleccionar item" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">Ninguno</SelectItem>
-                                      {inventoryItems.map((item) => (
-                                        <SelectItem key={item.idElemento} value={item.idElemento}>
-                                          {item.idElemento}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </td>
-                                <td className={stylesService.camposDetalle}>
-                                  <Input
-                                    className={stylesService.inputDetalle}
-                                    type="number"
-                                    value={detalle.gastosPorItem || ""}
-                                    readOnly
-                                  />
-                                </td>
-                                <td className={stylesService.camposDetalle}>
-                                  <Input
-                                    className={stylesService.inputDetalle}
-                                    type="number"
-                                    value={detalle.cantidad || 0}
-                                    onChange={(e) => handleDetalleChangeService(index, "cantidad", e.target.value)}
-                                  />
-                                </td>
-                                <td className={stylesService.camposDetalle}>
-                                  <Input
-                                    className={stylesService.inputDetalle}
-                                    type="number"
-                                    value={detalle.gastosPorServicio || ""}
-                                    readOnly
-                                  />
-                                </td>
-                                <td>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => eliminarFilaService(index)}
-                                    disabled={detallesServicio.length === 1}
-                                  >
-                                    <IoTrashBinSharp className={stylesService.icon} />
+                            {selectedInventoryItems.map((item) => (
+                              <tr key={item.idElemento} className="border-t">
+                                <td className="p-2">{item.idElemento}</td>
+                                <td className="p-2">{item.categoria}</td>
+                                <td className="p-2">{item.descripcion || "Sin descripción"}</td>
+                                <td className="p-2">${item.precioVenta || 0}</td>
+                                <td className="p-2">
+                                  <Button size="sm" variant="ghost" onClick={() => generateItemAccountingEntry(item)}>
+                                    <Plus className="h-4 w-4" />
                                   </Button>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                        <Button className={stylesService.botonAdd} onClick={agregarNuevaFilaService}>
-                          Agregar Fila
-                        </Button>
-                        <div>
-                          <div className={stylesService.campoVTot}>
-                            <Label htmlFor="gastosTotalesPorServicio">Gastos Totales por Servicio</Label>
-                            <Input
-                              id="gastosTotalesPorServicio"
-                              type="number"
-                              value={newService.gastosTotalesPorServicio || "0"}
-                              readOnly
-                            />
-                          </div>
-                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No hay items seleccionados. Por favor, edita la lista de items primero.
+                      </div>
+                    )}
                   </div>
 
                   <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsCreatingService(false)
-                        setIsEditingService(false)
-                        resetNewService()
-                      }}
-                      className={stylesService.btnFooter}
-                    >
-                      Cancelar
+                    <Button variant="outline" onClick={() => setIsGeneratingVentasEntry(false)}>
+                      Cerrar
                     </Button>
-                    <Button onClick={isEditingService ? handleSaveService : handleAddService} className={stylesService.btnFooter}>{isEditingService ? "Guardar" : "Crear"}</Button>
                   </DialogFooter>
-
                 </DialogContent>
               </Dialog>
-
 
               {/* Control de Modales */}
 

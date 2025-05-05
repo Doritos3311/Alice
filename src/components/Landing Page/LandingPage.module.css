@@ -1,884 +1,808 @@
-
-
-  /* Agregar al inicio del archivo LandingPage.css */
-  .landing_page {
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-    background-color: #1E1E1E; /* Fondo oscuro */
-    color: #FFFF;
-  }
-  
-  #animated-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .landing_page {
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-    z-index: 1;
-  }
-  
-  .header {
-    width: 100%;
-    position: fixed;
-    padding: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-left: 2rem;
-    color: #FFFF;
-  }
-  
-  .nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  } 
-  
-  .nav_link {
-    margin: 1rem;
-    display: flex;
-    font-size: 1rem;
-    transition: color 0.3s;
-    color: #FFFF;
-  }
-  
-  .dark .nav_link {
-    color: white;
-  }
-  
-  .light .nav_link {
-    color: black;
-  }
-  
-  .nav_link:hover {
-    color: #a78bfa;
-  }
-  
-  .user_profile {
-    margin-top: 1.25rem;
-    margin-bottom: 0.25rem;
-    margin-right: 20px;
-    background-color: #1E1E1E;
-  }
-
-  .user_button {
-    width: 100%;
-    height: 100%;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0.5rem;
-  }
-  
-  .avatar {
-    height: 2.5rem;
-    width: 2.5rem;
-    margin-right: 0.5rem;
-  }
-
-  .avatarImg{
-    background: #373737;
-  }
-  
-  .user_name {
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: #FFFF;
-  }
-  
-  .popover_content {
-    background-color: #1E1E1E;
-    color: #FFFF;
-    border-color: #292524;
-    width: 20rem;
-    padding: 0;
-    transform: translateY(0.75rem);
-    border-radius: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Agrega una sombra */
-  }
-
-  .popover_contentDark {
-    background-color: #1E1E1E;
-  }
-  
-  .user_info {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .avatar_large {
-    height: 4rem;
-    width: 4rem;
-    margin-right: 1rem;
-    margin-left: 1rem;
-    margin-top: 1rem;
-  }
-  
-  .avatar_fallback {
-    font-size: 1.125rem;
-    font-weight: bold;
-    background-color: #373737;
-  }
-  
-  .user_display_name {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-top: 1rem;
-  }
-  
-  .user_email {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-  
-  .divider {
-    border-top: 1px solid #9ca3af;
-  }
-  
-  .menu_button {
-    border-radius: 0;
-    font-size: 1rem;
-    width: 100%;
-    height: 45px;
-    justify-content: flex-start;
-    margin-top: 0.5rem;
-  }
-
-  .menu_buttonContent {
-    border-radius: 0;
-    font-size: 1rem;
-    width: 100%;
-    height: 45px;
-    justify-content: flex-start;
-    margin-bottom: 0.5rem;
-  }
-  
-  .menuitemlogout {
-    border-radius: 0;
-    font-size: 1rem;
-    width: 100%;
-    height: 45px;
-    justify-content: flex-start;
-    margin-bottom: 1rem;
-    margin-top: 0.5rem;
-  }
-  
-  .icon {
-    margin-right: 0.5rem;
-    height: 1rem;
-    width: 1rem;
-  }
-  
-  .login_button {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .login_link {
-    background-color: white;
-    color: black;
-    border: 1px solid #4b5563;
-    transition: background-color 0.3s;
-    margin-right: 1rem;
-  }
-
-  .register_link {
-    background-color: black;
-    color: white;
-    border: 1px solid #ffffff;
-    transition: background-color 0.3s;
-    margin-right: 20px;
-  }
-  
-  .login_link:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .dialog_content {
-    max-width: 425px;
-  }
-  
-  .dark .dialog_content {
-    color: white;
-  }
-  
-  .light .dialog_content {
-    background-color: #e5e7eb;
-  }
-
-  .sectionIniced {
-    margin-top: 5.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-height: 850px;
-    height: 100vh;
-    padding: 5.5rem;
-    background-attachment: fixed;
-    background-image: url(https://cards.algoreducation.com/_next/image?url=https%3A%2F%2Ffiles.algoreducation.com%2Fproduction-ts%2F__S3__c12cb0e6-06a3-4c90-a541-1cc29bb8a6c9&w=3840&q=75);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
+/* Base layout */
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: black;
+  color: white;
 }
 
-  .hero {
-    background-color: rgba(124, 124, 124, 0.39);
-    padding: 5rem 2rem;
-    width: 100%;
-    border-radius: 1rem;
+.header {
+  position: fixed;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  top: 0;
+  z-index: 100;
+  background-color: hsla(0, 0%, 49%, .39);
+  width: 100%;
+}
+
+/* Ajustar el tamaño de los elementos de navegación en pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .header {
+    padding: 0.75rem 1rem;
   }
-  
-  .hero_title {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+/* Ajustar el logo para que sea responsive */
+.logo_text {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
+  .logo_text {
+    font-size: 1.875rem;
   }
-  
-  .cta_button {
-    margin-top: 1rem;
-    background-color: #f1f1f1;
-    color: black;
-    padding: 1rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s;
+}
+
+@media (max-width: 480px) {
+  .logo_text {
+    font-size: 1.25rem;
   }
-  
-  .cta_button:hover {
-    background-color: #dadada;
-  }
-  
-  .features {
-    margin-top: 3rem;
-    width: 100%;
-    padding: 1rem;
-  }
-  
-  .feature_grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Modificar el nav para que siempre esté visible pero se adapte */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .nav {
     gap: 2rem;
-    width: 100%;
-    margin-top: 2rem;
-  }
-  
-  .feature_card {
-    background: #292929;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  .image_placeholder {
-    width: 100%;
-    height: 200px;
-    background: #444;
-    border-radius: 8px;
-    margin-top: 1rem;
-  }
-  
-  /* Pricing.module.css */
-  .pricing {
-    padding: 4rem 0;
-    text-align: center;
-  }
-
-  .pricing h2 {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .pricingGrid {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .planCard {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 2rem;
-    width: 400px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background-color: #131313;;
-    color: #FFFF;
-  }
-
-  .planCard:hover {
-    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.397);
-  }
-
-  .planCard h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .planCard p {
     font-size: 1rem;
-    color: #666;
   }
-  
-  .dialog_title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-align: center;
+}
+
+@media (max-width: 480px) {
+  .nav {
+    gap: 0.5rem;
+    font-size: 0.75rem;
   }
-  
-  .login_form {
+}
+
+.nav_link {
+  color: white;
+  transition: color 0.3s;
+}
+
+.nav_link:hover {
+  color: #d1d5db;
+  /* gray-300 */
+}
+
+@media (max-width: 480px) {
+  .nav_link {
+    padding: 0.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .user_menu {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 1rem;
   }
-  
-  .input {
-    background-color: #2e2e2e;
-    width: 100%;
-  }
-  
-  .dark .input {
-    background-color: #2E2E2E;
-    color: white;
-  }
-  
-  .light .input {
-    background-color: #d1d5db;
-    color: black;
-  }
-  
-  .submit_button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .dark .submit_button {
-    background-color: white;
-    color: black;
-  }
-  
-  .dark .submit_button:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .light .submit_button {
-    background-color: black;
-    color: white;
-  }
-  
-  .light .submit_button:hover {
-    background-color: #1f2937;
-  }
-  
-  .signup_link {
-    margin-top: 1rem;
-    text-align: center;
-  }
-  
-  .signup_button {
-    color: #60a5fa;
-  }
-  
-  .signup_button:hover {
-    color: #3b82f6;
-  }
-  
-  .google_button {
-    margin-top: 1rem;
-  }
-  
-  .google_login {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .dark .google_login {
-    background-color: white;
-    color: black;
-  }
-  
-  .dark .google_login:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .light .google_login {
-    background-color: black;
-    color: white;
-  }
-  
-  .light .google_login:hover {
-    background-color: #1f2937;
-  }
-  
-  .google_icon {
-    margin-right: 0.5rem;
-  }
-  
-  .inice-content {
-    margin-top: 5vh;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2rem;
-  }
-  
-  .main_title {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-  
-  .content-wrapper {
-    max-width: 56rem;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2rem;
-  }
-  
-  .text-content {
-    flex: 1;
-    text-align: center;
-  }
-  
-  @media (min-width: 768px) {
-    .text-content {
-      text-align: left;
-    }
+}
 
-    .content-wrapper {
-      flex-direction: row;
-    }
+/* User profile and popover */
+.user_button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.avatar {
+  height: 2.5rem;
+  width: 2.5rem;
+  margin-right: 0.5rem;
+}
+
+.avatar_large {
+  height: 4rem;
+  width: 4rem;
+  margin-left: 1rem;
+  margin-top: 1rem;
+}
+
+.user_name {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .user_name {
+    display: inline;
   }
-  
-  .description {
-    font-size: 1.25rem;
-    margin-bottom: 1.5rem;
+}
+
+.popover_content {
+  background-color: #1e1e1e;
+  color: #fff;
+  border-color: #292524;
+  width: 20rem;
+  padding: 0;
+  transform: translateY(.75rem);
+  border-radius: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, .3);
+}
+
+.user_info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user_info_header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.user_info_details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user_display_name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+.user_email {
+  font-size: .875rem;
+  color: #6b7280;
+  margin-left: 1rem;
+}
+
+.divider {
+  height: 0.5px;
+  background-color: #c0bbbb;
+  margin: 0.5rem 0;
+}
+
+.menu_button {
+  border-radius: 0;
+  font-size: 1rem;
+  width: 100%;
+  height: 45px;
+  justify-content: flex-start;
+}
+
+.menu_button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.menu_icon {
+  margin-right: 0.5rem;
+  height: 1rem;
+  width: 1rem;
+}
+
+.logout_button {
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+/* Authentication buttons */
+.login_button {
+  background-color: white;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.login_button:hover {
+  background-color: #e5e7eb;
+  /* gray-200 */
+}
+
+.register_button {
+  background-color: black;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ffffff;
+  border-radius: 0.375rem;
+  transition: background-color 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.register_button:hover {
+  background-color: black;
+}
+
+@media (max-width: 480px) {
+
+  .login_button,
+  .register_button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
-  
-  .join-section {
-    flex: 1;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    height: 16.5rem;
+}
+
+/* Dialog and form */
+.dialog_content {
+  max-width: 28rem;
+}
+
+.dialog_title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.input {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  color: white;
+}
+
+.submit_button {
+  width: 100%;
+  background-color: white;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.submit_button:hover {
+  background-color: #e5e7eb;
+  /* gray-200 */
+}
+
+.text_center {
+  text-align: center;
+}
+
+.text_sm {
+  font-size: 0.875rem;
+}
+
+.text_gray {
+  color: #9ca3af;
+  /* gray-400 */
+}
+
+.link_button {
+  color: white;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.google_button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid white;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.google_icon {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+/* Hero section */
+.main_container {
+  flex-grow: 1;
+  position: relative;
+  background-image: url(https://cards.algoreducation.com/_next/image?url=https%3A%2F%2Ffiles.algoreducation.com%2Fproduction-ts%2F__S3__c12cb0e6-06a3-4c90-a541-1cc29bb8a6c9&w=3840&q=75);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+
+.image_background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.image_cover {
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.hero_content {
+  position: relative;
+  z-index: 20;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 0;
+  padding: 5rem 1.5rem;
+}
+
+.hero_container {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.hero_title {
+  font-size: 2.25rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero_title {
+    font-size: 3.75rem;
   }
-  
-  .dark .join-section {
-    background-color: #1E1E1E;
-  }
-  
-  .light .join-section {
-    background-color: #e5e7eb;
-  }
-  
-  .join_title {
+}
+
+.hero_subtitle {
+  font-size: 1.25rem;
+  color: white;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero_subtitle {
     font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    text-align: center;
   }
-  
-  .join-description {
-    font-size: 1.25rem;
-    margin-bottom: 1.5rem;
+}
+
+.hero_button {
+  background-color: white;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.hero_button:hover {
+  background-color: #e5e7eb;
+  /* gray-200 */
+}
+
+/* Features section */
+.features_section {
+  width: 100%;
+  background-color: black;
+  padding: 4rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .features_section {
+    padding: 4rem 2rem;
   }
-  
-  .join_button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10rem;
+}
+
+.section_container {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.features_title {
+  color: white;
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .features_title {
+    font-size: 2.25rem;
   }
-  
-  .join_link {
-    background-color: black;
-    color: white;
-    border: 1px solid #4b5563;
-    transition: background-color 0.3s;
+}
+
+.features_grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .features_grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  
-  .join_link:hover {
-    background-color: #1f2937;
+}
+
+@media (min-width: 1024px) {
+  .features_grid {
+    grid-template-columns: repeat(4, 1fr);
   }
-  
-  .dark .join_link {
-    background-color: white;
-    color: black;
-  }
-  
-  .dark .join_link:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .pricing-content {
-    width: 100%;
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 4rem 1rem;
-  }
-  
-  .pricing_title {
-    font-size: 3rem;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 4rem;
-  }
-  
-  .plansGrid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 3rem;
-  }
-  
-  @media (min-width: 1024px) {
-    .plans_grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  
-  .plan_card {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  
-  .plan_card.highlighted {
-    border: 2px solid black;
-  }
-  
-  .dark .plan_card {
-    background-color: #1E1E1E;
-    color: white;
-  }
-  
-  .card_header {
-    text-align: center;
-    padding-bottom: 2rem;
-  }
-  
-  .plan_name {
-    font-size: 1.875rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-  }
-  
-  .plan-price {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-  }
-  
-  .plan-duration {
-    font-size: 1.25rem;
-  }
-  
-  .card_content {
-    flex-grow: 1;
-  }
-  
-  .features_list {
-    list-style-type: none;
-    padding: 0;
+}
+
+.feature_card {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .feature_card {
     margin: 0;
-    text-align: left;
   }
-  
-  .feature_item {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-  }
-  
-  .check_icon {
-    margin-right: 0.75rem;
-    height: 1.5rem;
-    width: 1.5rem;
-    margin-top: 0.25rem;
-    flex-shrink: 0;
-  }
-  
-  .feature-text {
-    font-size: 1.125rem;
-  }
-  
-  .plan-note {
-    margin-top: 1.5rem;
-    font-size: 1rem;
-    font-style: italic;
-  }
-  
-  .card_footer {
-    padding-top: 2rem;
-  }
-  
-  .select-plan_button {
-    width: 100%;
-    font-size: 1.25rem;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-    transition: background-color 0.3s;
-  }
-  
-  .dark .select-plan_button {
-    background-color: white;
-    color: black;
-  }
-  
-  .dark .select-plan_button:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .light .select-plan_button {
-    background-color: black;
-    color: white;
-  }
-  
-  .light .select-plan_button:hover {
-    background-color: #1f2937;
-  }
-  
-  .footer {
-    position: fixed;
-    bottom: 0;
-    left: 0%;
-    width: 100%;
-    z-index: 1000;
-    padding: 1rem;
-    text-align: center;
-    font-size: 0.875rem;
-  }
-  
-  .dark .footer {
-    color: #9ca3af;
-  }
-  
-  .light .footer {
-    color: #6b7280;
-  }
-  
-  .logout_dialog {
-    background-color: white;
-    color: black;
-  }
-  
-  .dark .logout_dialog {
-    background-color: #121212;
-    color: white;
-  }
-  
-  .logout_title {
+}
+
+.feature_title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .feature_title {
     font-size: 1.5rem;
-    font-weight: bold;
-    text-align: center;
   }
-  
-  .logout_description {
-    text-align: center;
+}
+
+.feature_description {
+  color: #767676;
+  font-size: 1rem;
+}
+
+/* Modificar la grid de características para invertir el orden en móvil */
+.caracteristicas_section {
+  padding: 5rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .caracteristicas_section {
+    padding: 5rem 2rem;
   }
-  
-  .logout_buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 1rem;
+}
+
+.caracteristicas_grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 8rem;
+}
+
+@media (min-width: 768px) {
+  .caracteristicas_grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  
-  .confirm_button {
-    background-color: #dc2626;
-    color: white;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
+}
+
+/* Añadir más padding al texto de características en pantallas pequeñas */
+.caracteristicas_text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .caracteristicas_text {
+    padding: 0;
   }
-  
-  .confirm_button:hover {
-    background-color: #b91c1c;
-  }
+}
 
-  /* Ajustes generales para móviles */
-  @media (max-width: 768px) {
+.caracteristicas_image {
+  border: 1px solid white;
+  border-radius: 0.5rem;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 28rem;
+  justify-self: center;
+}
 
-    .inice-content {
-      margin-top: 3vh;
-    }
-  
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-left: 1rem;
-    }
-
-    .user_button {
-      justify-content: center;
-      padding-right: 0;
-      margin-bottom: 0.5rem;
-    }
-
-    .user_button:hover {
-      background: #292524;
-    }
-
-
-    .nav_link {
-      display: none;
-    }
-
-    .user_name {
-      display: none;
-    }
-
-    .user_profile {
-      margin-top: 0.8rem;
-    }
-  
-    .nav {
-      gap: 0;
-      overflow-x: auto; /* Hace que el contenido sea desplazable horizontalmente */
-      white-space: nowrap; /* Evita que los elementos se envuelvan a la siguiente línea */
-    }
-
-    .hero_title {
-      font-size: 2.3rem;
-    }
-
-    .sectionIniced {
-      margin-top: 5rem;
-      padding: 2.5rem;
-    }
-  
-    .main_title {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-  
-    .description {
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-  
-    .content-wrapper {
-      flex-direction: column;
-      gap: 1rem;
-    }
-  
-    .text-content {
-      text-align: center;
-    }
-  
-    .join-section {
-      padding: 1rem;
-      height: auto;
-    }
-  
-    .join_title {
-      font-size: 1.25rem;
-    }
-  
-    .join-description {
-      font-size: 1rem;
-    }
-  
-    .join_button {
-      margin-bottom: 1rem;
-    }
-
-    .planCard {
-      margin: 1rem;
-      margin-bottom: 1rem;
-    }
-  
-    .pricing-content {
-      padding: 2rem 1rem;
-    }
-  
-    .pricing_title {
-      font-size: 2rem;
-      margin-bottom: 2rem;
-    }
-  
-    .plans_grid {
-      grid-template-columns: repeat(1, 1fr);
-      gap: 1.5rem;
-    }
-  
-    .plan_card {
-      padding: 1rem;
-    }
-  
-    .plan_name {
-      font-size: 1.5rem;
-    }
-  
-    .plan-price {
-      font-size: 2rem;
-    }
-  
-    .plan-duration {
-      font-size: 1rem;
-    }
-  
-    .feature-text {
-      font-size: 1rem;
-    }
-  
-    .select-plan_button {
-      font-size: 1rem;
-      padding: 1rem;
-    }
-
-    .dialog-content {
-      max-width: 325px;
-      border-radius: 0.4rem;
-    }
-
-    .signup_link {
-      margin-top: 0.2rem;
-    }
-  
-    .footer {
-      padding: 0.5rem;
-      font-size: 0.75rem;
-    }
+@media (min-width: 768px) {
+  .order_md_1 {
+    order: 1;
   }
 
-  @keyframes scale-up {
-    to { scale: 1.5; }
+  .order_md_2 {
+    order: 2;
+  }
+}
+
+.text_right {
+  text-align: right;
+}
+
+/* Invertir el orden en móvil para que el texto aparezca primero */
+.dashboard_section {
+  background-color: black;
+  color: white;
+  min-height: 100vh;
+  padding: 4rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard_section {
+    padding: 4rem 2rem;
+  }
+}
+
+.grid_section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 8rem;
+}
+
+/* Añadir padding adicional a los textos en la sección del dashboard */
+.grid_section .caracteristicas_text {
+  order: 1;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid_section .caracteristicas_text {
+    padding: 0;
+  }
+}
+
+.grid_section .image_container {
+  order: 2;
+}
+
+@media (min-width: 768px) {
+  .grid_section {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  @keyframes fade-away {
-    to { opacity: 0; }
+  .grid_section .caracteristicas_text {
+    order: unset;
   }
+
+  .grid_section .image_container {
+    order: unset;
+  }
+
+  .order_md_1 {
+    order: 1;
+  }
+
+  .order_md_2 {
+    order: 2;
+  }
+}
+
+.section_title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.section_description {
+  font-size: 1.125rem;
+}
+
+.image_container {
+  border: 1px solid white;
+  border-radius: 1.5rem;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 28rem;
+  justify-self: center;
+}
+
+/* Pricing section */
+.pricing_container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: black;
+  color: white;
+}
+
+.pricing_main {
+  flex: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+}
+
+.pricing_title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.pricing_grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .pricing_grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.plan_card {
+  background-color: #1e1e1e;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan_title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.plan_price {
+  color: #767676;
+  margin-bottom: 1.5rem;
+}
+
+.plan_features {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feature_item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.check_icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: white;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.plan_notice {
+  color: #767676;
+  font-size: 0.875rem;
+  margin: 1.5rem 0;
+}
+
+.select_button {
+  background-color: #d9d9d9;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  width: max-content;
+  margin: 1.5rem auto 0;
+  border: none;
+  cursor: pointer;
+}
+
+.select_button:hover {
+  background-color: #bfbfbf;
+}
+
+/* Footer */
+.footer {
+  padding: 2rem 0;
+  border-top: 1px solid #4b4848;
+}
+
+.footer_container {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.social_icon_container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.icon_container {
+  width: 2rem;
+  height: 2rem;
+}
+
+.social_link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social_icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.copyright {
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+/* Logout modal */
+.logout_modal {
+  max-width: 28rem;
+  color: white;
+}
+
+.modal_title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.modal_description {
+  color: #9ca3af;
+  /* gray-400 */
+}
+
+.modal_actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.cancel_button {
+  background-color: transparent;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.confirm_button {
+  background-color: #ef4444;
+  /* red-500 */
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm_button:hover {
+  background-color: #dc2626;
+  /* red-600 */
+}

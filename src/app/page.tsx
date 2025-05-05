@@ -119,13 +119,6 @@ export default function ContabilidadApp() {
   }
 
   return (
-    <LandingPage
-      theme="dark"
-      user={user}
-      setIsLoginModalOpen={() => {}}
-      setIsLogOutModalOpen={() => {}}
-      setActiveTab={() => {}}
-      onUpdateUserType={(newType) => console.log(newType)}
-    />
+    <LandingPage/>
   );
 }

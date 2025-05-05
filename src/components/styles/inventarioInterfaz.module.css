@@ -1,0 +1,54 @@
+/* Inventariointerfaz.module.css */
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    margin-right: 2.5rem;
+    /* mr-10 */
+}
+
+.title {
+    font-size: 1.875rem;
+    /* text-3xl */
+    font-weight: bold;
+    /* font-bold */
+    min-width: max-content;
+}
+
+.divider {
+    border-top: 1px solid #9CA3AF;
+    /* border-gray-400 */
+    margin-top: 1rem;
+    /* my-4 */
+    margin-bottom: 1rem;
+    /* my-4 */
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    /* space-x-4 */
+}
+
+.selectTrigger {
+    width: 180px;
+    /* w-[180px] */
+    margin-left: 1rem;
+    /* ml-4 */
+}
+
+.tableActions {
+    margin: 0.25rem;
+    /* m-1 */
+}
+
+.noItemsContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(65vh);
+    min-width: max-content;
+}
