@@ -377,19 +377,19 @@ export default function Home() {
         <div className={styles.section_container}>
         <div className={styles.grid_section}>
             <div className={styles.caracteristicas_text}>
-              <h2 className={styles.section_title}>Registro de Inventario</h2>
+              <h2 className={styles.section_titleR}>Registro de Inventario</h2>
               <p className={styles.section_description}>
               Optimiza la gestión de inventario para microempresarios, permitiendo administrar, consultar y actualizar productos
               y materiales de manera eficiente para tomar decisiones informadas sobre el stock.
               </p>
             </div>
-            <div className={styles.image_container}></div>
+            <div className={styles.image_containerR}><img src="/img/registroDeInventario.jpg"/></div>
           </div>
 
           <div className={styles.grid_section}>
             <div className={`${styles.image_container} ${styles.order_md_1}`} />
             <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
-              <h2 className={styles.section_title}>Servicios</h2>
+              <h2 className={styles.section_titleS}>Servicios</h2>
               <p className={`${styles.section_description} ${styles.text_right}`}>
               El módulo de Servicios gestiona la facturación, permitiendo registrar, actualizar y seleccionar servicios y productos
                del inventario para asegurar coherencia contable.
@@ -399,7 +399,7 @@ export default function Home() {
 
           <div className={styles.grid_section}>
             <div className={styles.caracteristicas_text}>
-              <h2 className={styles.section_title}>Terceros</h2>
+              <h2 className={styles.section_titleT}>Terceros</h2>
               <p className={styles.section_description}>
               En la sección de terceros, puedes ver y gestionar todos proveedores y clientes registrados.
               </p>
@@ -410,7 +410,7 @@ export default function Home() {
           <div className={styles.grid_section}>
             <div className={`${styles.image_container} ${styles.order_md_1}`} />
             <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
-              <h2 className={styles.section_title}>Facturación</h2>
+              <h2 className={styles.section_titleF}>Facturación</h2>
               <p className={`${styles.section_description} ${styles.text_right}`}>
                 Permite gestionar la emisión y recepción de facturas, facilitando el control, almacenamiento y consulta 
                 para una contabilidad eficiente y cumplimiento empresarial.
@@ -425,7 +425,7 @@ export default function Home() {
             {/* Libro Diario Section */}
             <div className={styles.grid_section}>
               <div className={styles.caracteristicas_text}>
-                <h2 className={styles.section_title}>Libro Diario</h2>
+                <h2 className={styles.section_titleL}>Libro Diario</h2>
                 <p className={styles.section_description}>
                   El Libro Diario registra transacciones en orden cronológico, facilitando el análisis contable, el
                   cumplimiento fiscal y el control financiero.
@@ -438,7 +438,7 @@ export default function Home() {
             <div className={styles.grid_section}>
               <div className={`${styles.image_container} ${styles.order_md_1}`} />
               <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
-                <h2 className={styles.section_title}>Dashboard</h2>
+                <h2 className={styles.section_titleD}>Dashboard</h2>
                 <p className={`${styles.section_description} ${styles.text_right}`}>
                   Módulo central de visualización que ofrece un resumen en tiempo real del estado financiero e inventario,
                   basado en datos de Facturación y Libro Diario.
@@ -449,7 +449,7 @@ export default function Home() {
             {/* Grupos de Trabajo Section */}
             <div className={styles.grid_section}>
               <div className={styles.caracteristicas_text}>
-                <h2 className={styles.section_title}>Grupos de Trabajo</h2>
+                <h2 className={styles.section_titleG}>Grupos de Trabajo</h2>
                 <p className={styles.section_description}>
                   Gestiona datos según roles. El personal solicita acceso y la empresa lo aprueba o rechaza. Los permisos
                   se asignan y modifican según necesidad. Los cambios en los datos se sincronizan en tiempo real.
@@ -462,7 +462,7 @@ export default function Home() {
             <div className={styles.grid_section}>
               <div className={`${styles.image_container} ${styles.order_md_1}`} />
               <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
-                <h2 className={styles.section_title}>Generar Registros</h2>
+                <h2 className={styles.section_titleGr}>Generar Registros</h2>
                 <p className={`${styles.section_description} ${styles.text_right}`}>
                   Permite crear reportes en Excel en tiempo real. Los usuarios pueden elegir entre reportes como Libro
                   Diario, Facturación, Inventario o un Reporte Combinado, que integra toda la información en un solo

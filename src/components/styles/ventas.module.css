@@ -1,0 +1,55 @@
+.dialogContainer {
+    max-width: 800px;
+    width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .tituloPrincipal {
+    margin-bottom: 1rem;
+  }
+  
+  .summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tableContainer {
+    margin-bottom: 1.5rem;
+  }
+  
+  .formGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .footerButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 1rem;
+  }
+  
+  /* Estilos para pantallas pequeñas */
+  @media (max-width: 768px) {
+    .summaryGrid {
+      grid-template-columns: 1fr;
+    }
+    
+    .formGrid {
+      grid-template-columns: 1fr;
+    }
+    
+    .dialogContent {
+      padding: 1rem;
+    }
+  }

@@ -29,6 +29,8 @@ import stylesService from "@/components/styles/servicio.module.css"
 import stylesLDiario from "@/components/styles/libroDiario.module.css"
 import stylesGruposdeTrabajointerfaz from "@/components/styles/gruposTrabajo.module.css"
 import stylesEstFacturacionRec from "@/components/styles/esFacRec.module.css" 
+import stylesVentas from "@/components/styles/ventas.module.css" 
+
 
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage"
@@ -2325,23 +2327,63 @@ export default function ContabilidadApp() {
     return selectedInventoryItems.some((item) => item.idElemento === itemId)
   }
 
-  // Funcion obtener los item seleccionados
+  // Funcion obtener los item seleccionados //Chambiar
   const getSelectedItems = async (userId: string): Promise<InventoryItem[]> => {
-    const configRef = doc(db, `users/${userId}/ventas`, 'config');
-    const configSnap = await getDoc(configRef);
-    
-    if (configSnap.exists()) {
+    try {
+      const configRef = doc(db, `users/${userId}/ventas`, 'config');
+      const configSnap = await getDoc(configRef);
+      
+      if (!configSnap.exists()) {
+        console.warn("El documento de configuración de ventas no existe");
+        return [];
+      }
+  
       const config = configSnap.data() as VentasConfig;
-      // Obtenemos los detalles completos de cada item desde inventario
-      const itemsPromises = config.itemsSeleccionados.map(async (item) => {
-        const itemSnap = await getDoc(doc(db, `users/${userId}/inventario`, item.id));
-        return itemSnap.exists() ? { id: itemSnap.id, ...itemSnap.data() } as InventoryItem : null;
+      
+      // Protección múltiple: verifica si existe y es array
+      if (!config?.itemsSeleccionados || !Array.isArray(config.itemsSeleccionados)) {
+        console.warn("Items seleccionados no es un array válido", config.itemsSeleccionados);
+        return [];
+      }
+  
+      // Filtramos items sin ID válido
+      const itemsValidos = config.itemsSeleccionados.filter(item => 
+        item?.id && typeof item.id === 'string'
+      );
+  
+      if (itemsValidos.length === 0) {
+        return [];
+      }
+  
+      // Obtenemos los detalles con manejo de errores por item
+      const itemsPromises = itemsValidos.map(async (item) => {
+        try {
+          const itemSnap = await getDoc(doc(db, `users/${userId}/inventario`, item.id));
+          if (!itemSnap.exists()) {
+            console.warn(`Item ${item.id} no encontrado en inventario`);
+            return null;
+          }
+          return { 
+            id: itemSnap.id, 
+            ...itemSnap.data(),
+            // Aseguramos campos críticos
+            idElemento: itemSnap.data().idElemento || item.id,
+            precioVenta: itemSnap.data().precioVenta || 0,
+            precioCompra: itemSnap.data().precioCompra || 0
+          } as InventoryItem;
+        } catch (error) {
+          console.error(`Error cargando item ${item.id}:`, error);
+          return null;
+        }
       });
       
       const items = await Promise.all(itemsPromises);
       return items.filter(item => item !== null) as InventoryItem[];
+      
+    } catch (error) {
+      console.error("Error en getSelectedItems:", error);
+      return [];
     }
-    return [];
   };
 
   // Funcion seleccionar el item dentro de ventas
@@ -3991,7 +4033,7 @@ export default function ContabilidadApp() {
                                     variant="outline"
                                     size="sm"
                                     onClick={handleGenerarAsientoVentas}
-                                    disabled={!ventasConfig.itemsSeleccionados.length}
+                                    disabled={!ventasConfig?.itemsSeleccionados?.length}
                                     className="flex items-center gap-1"
                                   >
                                     <CalculatorIcon className="h-4 w-4" />
@@ -5784,173 +5826,176 @@ export default function ContabilidadApp() {
 
               {/* Modal para agregar nuevo registro a items */}
               <Dialog open={isAdvancedModalOpen} onOpenChange={setIsAdvancedModalOpen}>
-                <DialogContent className="sm:max-w-[800px]">
-                  <DialogHeader>
-                    <DialogTitle>Gestión Avanzada de Inventario</DialogTitle>
-                  </DialogHeader>
+                <DialogContent className={stylesVentas.dialogContainer}>
+                  <div className={stylesVentas.dialogContent}>
+                    <DialogHeader>
+                      <DialogTitle className={stylesVentas.tituloPrincipal}>Gestión Avanzada de Inventario</DialogTitle>
+                    </DialogHeader>
 
-                  {selectedItem && (
-                    <>
-                      <div className="space-y-6">
-                        {/* Sección de resumen con valores promediados */}
-                        <div className="bg-muted p-4 rounded-md">
-                          <h3 className="text-lg font-medium mb-2">Resumen del Ítem (Promedio Ponderado)</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Descripción</p>
-                              <p className="font-medium">{selectedItem.descripcion}</p>
+                    {selectedItem && (
+                      <>
+                        <div className="space-y-6">
+                          {/* Sección de resumen con valores promediados */}
+                          <div className="bg-muted p-4 rounded-md">                            <h3 className={stylesVentas.sectionTitle}>Resumen del Ítem (Promedio Ponderado)</h3>
+                            <div className={stylesVentas.summaryGrid}>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Descripción</p>
+                                <p className="font-medium">{selectedItem.descripcion}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Categoría</p>
+                                <p className="font-medium">{selectedItem.category}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Cantidad Total</p>
+                                <p className="font-medium">{calculateAverages().cantidadDisponible}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Stock Mínimo</p>
+                                <p className="font-medium">{selectedItem.stockMinimo}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Precio de Compra Promedio</p>
+                                <p className="font-medium">${calculateAverages().precioCompra.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Precio de Venta Promedio</p>
+                                <p className="font-medium">${calculateAverages().precioVenta.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Proveedor</p>
+                                <p className="font-medium">{selectedItem.proveedor}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Categoría</p>
-                              <p className="font-medium">{selectedItem.category}</p>
+                          </div>
+
+                          {/* Sección de registros individuales */}
+                          <div className={stylesVentas.tableContainer}>
+                            <div className="flex justify-between items-center mb-2">
+                              <h3 className={stylesVentas.sectionTitle}>Registros Individuales</h3>
                             </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Cantidad Total</p>
-                              <p className="font-medium">{calculateAverages().cantidadDisponible}</p>
+
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Cantidad</TableHead>
+                                    <TableHead>Precio Compra</TableHead>
+                                    <TableHead>Precio Venta</TableHead>
+                                    <TableHead>Fecha Ingreso</TableHead>
+                                    <TableHead>Acciones</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {itemRecords.map((record) => (
+                                    <TableRow key={record.id}>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={record.cantidadDisponible}
+                                          onChange={(e) => handleUpdateRecord(record.id, "cantidadDisponible", e.target.value)}
+                                          className={stylesVentas.tableInput}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={record.precioCompra}
+                                          onChange={(e) => handleUpdateRecord(record.id, "precioCompra", e.target.value)}
+                                          className={stylesVentas.tableInput}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="number"
+                                          value={record.precioVenta}
+                                          onChange={(e) => handleUpdateRecord(record.id, "precioVenta", e.target.value)}
+                                          className={stylesVentas.tableInput}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          type="date"
+                                          value={record.fechaIngreso}
+                                          onChange={(e) => handleUpdateRecord(record.id, "fechaIngreso", e.target.value)}
+                                          className={stylesVentas.tableInput}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
                             </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Stock Mínimo</p>
-                              <p className="font-medium">{selectedItem.stockMinimo}</p>
+                          </div>
+
+                          {/* Formulario para agregar nuevo registro */}
+                          <div className="bg-muted p-4 rounded-md">
+                            <h3 className={stylesVentas.sectionTitle}>Agregar Nuevo Registro</h3>
+                            <div className={stylesVentas.formGrid}>
+                              <div>
+                                <label className="text-sm">Cantidad</label>
+                                <Input
+                                  type="number"
+                                  value={newRecord.cantidadDisponible}
+                                  onChange={(e) => setNewRecord({ ...newRecord, cantidadDisponible: Number(e.target.value) })}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm">Precio Compra</label>
+                                <Input
+                                  type="number"
+                                  value={newRecord.precioCompra}
+                                  onChange={(e) => setNewRecord({ ...newRecord, precioCompra: Number(e.target.value) })}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm">Precio Venta</label>
+                                <Input
+                                  type="number"
+                                  value={newRecord.precioVenta}
+                                  onChange={(e) => setNewRecord({ ...newRecord, precioVenta: Number(e.target.value) })}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm">Fecha Ingreso</label>
+                                <Input
+                                  type="date"
+                                  value={newRecord.fechaIngreso}
+                                  onChange={(e) => setNewRecord({ ...newRecord, fechaIngreso: e.target.value })}
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Precio de Compra Promedio</p>
-                              <p className="font-medium">${calculateAverages().precioCompra.toFixed(2)}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Precio de Venta Promedio</p>
-                              <p className="font-medium">${calculateAverages().precioVenta.toFixed(2)}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Proveedor</p>
-                              <p className="font-medium">{selectedItem.proveedor}</p>
-                            </div>
+                            <Button onClick={handleAddRecord} className="mt-4">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Agregar Registro
+                            </Button>
                           </div>
                         </div>
 
-                        {/* Sección de registros individuales */}
-                        <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-medium">Registros Individuales</h3>
-                          </div>
-
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Cantidad</TableHead>
-                                <TableHead>Precio Compra</TableHead>
-                                <TableHead>Precio Venta</TableHead>
-                                <TableHead>Fecha Ingreso</TableHead>
-                                <TableHead>Acciones</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {itemRecords.map((record) => (
-                                <TableRow key={record.id}>
-                                  <TableCell>
-                                    <Input
-                                      type="number"
-                                      value={record.cantidadDisponible}
-                                      onChange={(e) => handleUpdateRecord(record.id, "cantidadDisponible", e.target.value)}
-                                      className="w-full"
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      type="number"
-                                      value={record.precioCompra}
-                                      onChange={(e) => handleUpdateRecord(record.id, "precioCompra", e.target.value)}
-                                      className="w-full"
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      type="number"
-                                      value={record.precioVenta}
-                                      onChange={(e) => handleUpdateRecord(record.id, "precioVenta", e.target.value)}
-                                      className="w-full"
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      type="date"
-                                      value={record.fechaIngreso}
-                                      onChange={(e) => handleUpdateRecord(record.id, "fechaIngreso", e.target.value)}
-                                      className="w-full"
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteRecord(record.id)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-
-                        {/* Formulario para agregar nuevo registro */}
-                        <div className="bg-muted p-4 rounded-md">
-                          <h3 className="text-lg font-medium mb-2">Agregar Nuevo Registro</h3>
-                          <div className="grid grid-cols-4 gap-4">
-                            <div>
-                              <label className="text-sm">Cantidad</label>
-                              <Input
-                                type="number"
-                                value={newRecord.cantidadDisponible}
-                                onChange={(e) => setNewRecord({ ...newRecord, cantidadDisponible: Number(e.target.value) })}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm">Precio Compra</label>
-                              <Input
-                                type="number"
-                                value={newRecord.precioCompra}
-                                onChange={(e) => setNewRecord({ ...newRecord, precioCompra: Number(e.target.value) })}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm">Precio Venta</label>
-                              <Input
-                                type="number"
-                                value={newRecord.precioVenta}
-                                onChange={(e) => setNewRecord({ ...newRecord, precioVenta: Number(e.target.value) })}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm">Fecha Ingreso</label>
-                              <Input
-                                type="date"
-                                value={newRecord.fechaIngreso}
-                                onChange={(e) => setNewRecord({ ...newRecord, fechaIngreso: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                          <Button onClick={handleAddRecord} className="mt-4">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Agregar Registro
+                        <div className={stylesVentas.footerButtons}>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsAdvancedModalOpen(false);
+                              setSelectedItem(null);
+                              setItemRecords([]);
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button onClick={handleSaveAdvancedChanges}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Guardar Cambios
                           </Button>
                         </div>
-                      </div>
-
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setIsAdvancedModalOpen(false)
-                            setSelectedItem(null)
-                            setItemRecords([])
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button onClick={handleSaveAdvancedChanges}>
-                          <Save className="h-4 w-4 mr-2" />
-                          Guardar Cambios
-                        </Button>
-                      </DialogFooter>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </DialogContent>
               </Dialog>
               
