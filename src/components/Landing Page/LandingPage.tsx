@@ -373,6 +373,7 @@ export default function Home() {
       </section>
 
       {/* Caracteristicas */}
+      {/* Registro de inventario Section */}
       <section id="Caracteristicas" className={styles.caracteristicas_section}>
         <div className={styles.section_container}>
         <div className={styles.grid_section}>
@@ -383,11 +384,12 @@ export default function Home() {
               y materiales de manera eficiente para tomar decisiones informadas sobre el stock.
               </p>
             </div>
-            <div className={styles.image_containerR}><img src="/img/registroDeInventario.jpg"/></div>
+            <div className={styles.image_containerR}></div>
           </div>
 
-          <div className={styles.grid_section}>
-            <div className={`${styles.image_container} ${styles.order_md_1}`} />
+            {/* Servicios Section */}
+          <div className={styles.grid_sectionS}>
+            <div className={`${styles.image_containerS} ${styles.order_md_1}`} />
             <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
               <h2 className={styles.section_titleS}>Servicios</h2>
               <p className={`${styles.section_description} ${styles.text_right}`}>
@@ -397,6 +399,7 @@ export default function Home() {
             </div>
           </div>
 
+            {/* Terceros Section */}
           <div className={styles.grid_section}>
             <div className={styles.caracteristicas_text}>
               <h2 className={styles.section_titleT}>Terceros</h2>
@@ -404,11 +407,12 @@ export default function Home() {
               En la sección de terceros, puedes ver y gestionar todos proveedores y clientes registrados.
               </p>
             </div>
-            <div className={styles.image_container}></div>
+            <div className={styles.image_containerT}></div>
           </div>
 
-          <div className={styles.grid_section}>
-            <div className={`${styles.image_container} ${styles.order_md_1}`} />
+            {/* Facturacion Section */}
+          <div className={styles.grid_sectionF}>
+            <div className={`${styles.image_containerF} ${styles.order_md_1}`} />
             <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
               <h2 className={styles.section_titleF}>Facturación</h2>
               <p className={`${styles.section_description} ${styles.text_right}`}>
@@ -431,12 +435,12 @@ export default function Home() {
                   cumplimiento fiscal y el control financiero.
                 </p>
               </div>
-              <div className={styles.image_container}></div>
+              <div className={styles.image_containerL}></div>
             </div>
 
             {/* Dashboard Section */}
-            <div className={styles.grid_section}>
-              <div className={`${styles.image_container} ${styles.order_md_1}`} />
+            <div className={styles.grid_sectionD}>
+              <div className={`${styles.image_containerD} ${styles.order_md_1}`} />
               <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
                 <h2 className={styles.section_titleD}>Dashboard</h2>
                 <p className={`${styles.section_description} ${styles.text_right}`}>
@@ -455,12 +459,12 @@ export default function Home() {
                   se asignan y modifican según necesidad. Los cambios en los datos se sincronizan en tiempo real.
                 </p>
               </div>
-              <div className={styles.image_container}></div>
+              <div className={styles.image_containerG}></div>
             </div>
 
             {/* Generar Registros Section */}
-            <div className={styles.grid_section}>
-              <div className={`${styles.image_container} ${styles.order_md_1}`} />
+            <div className={styles.grid_sectionGr}>
+              <div className={`${styles.image_containerGr} ${styles.order_md_1}`} />
               <div className={`${styles.caracteristicas_text} ${styles.order_md_2}`}>
                 <h2 className={styles.section_titleGr}>Generar Registros</h2>
                 <p className={`${styles.section_description} ${styles.text_right}`}>
