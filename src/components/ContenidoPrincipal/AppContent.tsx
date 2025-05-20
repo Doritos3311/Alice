@@ -31,7 +31,6 @@ import stylesGruposdeTrabajointerfaz from "@/components/styles/gruposTrabajo.mod
 import stylesEstFacturacionRec from "@/components/styles/esFacRec.module.css" 
 import stylesVentas from "@/components/styles/ventas.module.css" 
 
-
 //Componentes Aplicacion
 import ConfiguracionPage from "@/components/Configuracion/ConfiguracionPage"
 import UsuariosRegistrados from '@/components/UsuariosRegistrados/UsuariosRegistrados'
@@ -157,7 +156,6 @@ interface ItemRecord {
 // Definicion Inventario
 type InventoryItem = {
   id: string
-  records?: ItemRecord[] // Nuevo campo para registros
   [key: string]: any;
 }
 
@@ -614,7 +612,7 @@ export default function ContabilidadApp() {
           subtotal: { name: 'Subtotal', type: 'number' },
           impuestos: { name: 'Impuestos Aplicables', type: 'number' },
           total: { name: 'Total a Pagar', type: 'number' },
-          metodoPago: { name: 'Método de Pago', type: 'text' }
+          formaPago: { name: 'Método de Pago', type: 'text' }
         },
         //Datos por defecto de facturacion recibida
         facturacionRecibida: {
@@ -628,7 +626,7 @@ export default function ContabilidadApp() {
           subtotal: { name: 'Subtotal', type: 'number' },
           impuestos: { name: 'Impuestos Aplicables', type: 'number' },
           total: { name: 'Total a Pagar', type: 'number' },
-          metodoPago: { name: 'Método de Pago', type: 'text' }
+          formaPago: { name: 'Método de Pago', type: 'text' }
         }
       }
       await setDoc(doc(db, `users/${user.uid}/config`, 'fields'), defaultConfig)
@@ -5122,7 +5120,7 @@ export default function ContabilidadApp() {
                         <div className="border p-4 rounded-md">
                           <div className="col-span-2">
                             <Label htmlFor="empresaGuardada">Empresa Emisora</Label>
-                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"}/>
+                            <Input id="empresaGuardada" placeholder="Ingrese el nombre de la empresa" value={nombreEmisor || "Nombre Comercial"} onChange={(e) => { setNombreEmisor(e.target.value); setNewInvoiceItem({...newInvoiceItem, empresaGuardada: e.target.value}); }}/>
                           </div>
                           <div className="col-span-2 mt-2">
                             <Label htmlFor="correoEmisor">Correo Empresa Emisora</Label>
@@ -5148,11 +5146,11 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="numeroAutorizacion">Número de Autorización:</Label>
-                            <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" />
+                            <Input id="numeroAutorizacion" placeholder="Ingrese el número de autorización" type="number" onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, numeroAutorizacion: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="numeroFactura">Número de Factura:</Label>
-                            <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" value={1} />
+                            <Input id="numeroFactura" placeholder="Ingrese el número de factura" type="number" onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, numeroFactura: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaAutorizacion">Fecha Autorización:</Label>
@@ -5195,9 +5193,15 @@ export default function ContabilidadApp() {
                         <Button
                           onClick={() => {
                             if (selectedCliente) {
-                              setClienteNombre(selectedCliente.nombre)
-                              setClienteCorreo(selectedCliente.correo)
-                              setClienteRucCi(selectedCliente.rucCi)
+                              setClienteNombre(selectedCliente.nombre);
+                              setClienteCorreo(selectedCliente.correo);
+                              setClienteRucCi(selectedCliente.rucCi);
+                              setNewInvoiceItem({
+                                ...newInvoiceItem,
+                                identificacionAdquiriente: selectedCliente.nombre,
+                                correoEmisorRecibido: selectedCliente.correo,
+                                rucCi: selectedCliente.rucCi
+                              });
                             }
                           }}
                         >
@@ -5218,7 +5222,7 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="telefono">Teléfono Adquiriente:</Label>
-                            <Input id="telefono" placeholder="Teléfono del adquiriente" />
+                            <Input id="telefono" placeholder="Teléfono del adquiriente" value={newInvoiceItem.telefono} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, telefono: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="fechaEmision">Fecha de Emisión:</Label>
@@ -5232,7 +5236,7 @@ export default function ContabilidadApp() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="direccionCliente">Dirección Adquiriente:</Label>
-                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" />
+                            <Input id="direccionCliente" placeholder="Dirección del adquiriente" value={newInvoiceItem.direccionCliente} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, direccionCliente: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="guiaRemision">Guía de Remisión:</Label>
@@ -5308,11 +5312,11 @@ export default function ContabilidadApp() {
                         <div className="border p-4 rounded-md space-y-2">
                           <div className="space-y-2">
                             <Label htmlFor="formaPago">Forma de Pago:</Label>
-                            <Input id="formaPago" placeholder="Ingrese la forma de pago" value={newInvoiceItem.metodoPago} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, metodoPago: e.target.value })} />
+                            <Input id="formaPago" placeholder="Ingrese la forma de pago" value={newInvoiceItem.formaPago} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, formaPago: e.target.value })} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="otros">Otros:</Label>
-                            <Input id="otros" placeholder="Ingrese otros detalles" />
+                            <Input id="otros" placeholder="Ingrese otros detalles" value={newInvoiceItem.otros} onChange={(e) => setNewInvoiceItem({ ...newInvoiceItem, otros: e.target.value })} />
                           </div>
                         </div>
 
@@ -5486,6 +5490,13 @@ export default function ContabilidadApp() {
                             setProveedorRucCi(selectedProveedor.rucCi)
                             setProveedorDireccionMatriz(selectedProveedor.direccionMatriz)
                             setProveedorDireccionSucursal(selectedProveedor.direccionSucursal)
+                            setNewInvoiceItem({
+                              ...newInvoiceItem,
+                              identificacionAdquiriente: selectedProveedor.nombre,
+                              correoEmisorRecibido: selectedProveedor.rucCi,
+                              rucCi: selectedProveedor.direccionMatriz,
+                              direccionSucursal: selectedProveedor.direccionSucursal
+                            });
                           }
                         }}
                       >
